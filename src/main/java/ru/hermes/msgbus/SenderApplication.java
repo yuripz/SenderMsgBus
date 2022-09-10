@@ -63,7 +63,8 @@ public class SenderApplication implements CommandLineRunner {
 
 		AppThead_log.info("Hellow for SenderApplication ");
 		ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
-		 ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostAddress(), AppThead_log );
+		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
+		 ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ", AppThead_log );
 		String propConnectMsgBus = connectionProperties.getconnectMsgBus();
 		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://localhost:61216";
 
@@ -209,20 +210,23 @@ public class SenderApplication implements CommandLineRunner {
 
 		for (;;) {
 			count = taskExecutor.getActiveCount();
+			// taskExecutor.execute();
+			// messageSendTask[ i ].run();
 			AppThead_log.info("Active Threads : " + count);
 			try {
 
 				// Thread.sleep(25000);
-				Thread.sleep(10000);
+				Thread.sleep(19000);
 				CurrentTime = DataAccess.getCurrentTime(AppThead_log);
 				if ( CurrentTime != null )
 				{
 					Runtime r = Runtime.getRuntime();
 					long freeMemory = r.maxMemory() - r.totalMemory() + r.freeMemory();
-					AppThead_log.info(" \"free memory\" of a Java process before GC is : " + freeMemory );
+					AppThead_log.info(" \"free memory\"( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process before GC is : " + freeMemory );
 					Runtime.getRuntime().gc();
+					Thread.sleep(1000);
 					freeMemory = r.maxMemory() - r.totalMemory() + r.freeMemory();
-					AppThead_log.info(" \"free memory\" of a Java process after GC is : " + freeMemory );
+					AppThead_log.info(" \"free memory\"( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process after GC is : " + freeMemory );
 
 					if ( count != TotalNumTasks )
 						ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Количество потоков=*" + count +" !=" + TotalNumTasks +" у Sender Application on " + InetAddress.getLocalHost().getHostAddress(), AppThead_log );

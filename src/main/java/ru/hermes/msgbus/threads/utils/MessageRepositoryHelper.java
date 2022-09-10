@@ -26,6 +26,27 @@ public class MessageRepositoryHelper {
         return MessageDirectionsCode;
     }
 
+    public static Integer look4MessageType_Connect_4_Num_Thread( Integer Num_Thread, Logger messegeSend_log) {
+        int MsgDirection_maxBase_Thread_Id = -1;
+        int MsgDirectionVO_4_Direction_Key = -1;
+        Integer MessageType_Connect = null;
+        for (int j = 0; j < MessageDirections.AllMessageDirections.size(); j++) {
+            MessageDirectionsVO messageDirectionsVO = MessageDirections.AllMessageDirections.get(j);
+            if (( messageDirectionsVO.getBase_Thread_Id() <= Num_Thread ) &&
+                    ( messageDirectionsVO.getBase_Thread_Id() + messageDirectionsVO.getNum_Thread() >= Num_Thread ))
+            {
+                if (messageDirectionsVO.getBase_Thread_Id() > MsgDirection_maxBase_Thread_Id )
+                {
+                    MsgDirection_maxBase_Thread_Id = messageDirectionsVO.getBase_Thread_Id();
+                    MsgDirectionVO_4_Direction_Key = j;
+                }
+            }
+        }
+        if ( MsgDirectionVO_4_Direction_Key >= 0 )
+            MessageType_Connect = MessageDirections.AllMessageDirections.get(MsgDirectionVO_4_Direction_Key).getType_Connect();
+        return MessageType_Connect;
+    }
+
 public static String look4List_Lame_Threads_4_Num_Thread( Integer Num_Thread, Logger messegeSend_log) {
     int MsgDirection_maxBase_Thread_Id = -1;
     int MsgDirectionVO_4_Direction_Key = -1;

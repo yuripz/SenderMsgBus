@@ -3,6 +3,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.net.ssl.SSLContext;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
@@ -10,6 +11,7 @@ public class MessageDetails {
 
     public  int MessageRowNum =0;
     public  HashMap<Integer, MessageDetailVO > Message = new HashMap<Integer, MessageDetailVO >();
+    public  HashMap<Integer, ArrayList > MessageIndex_by_Tag_Par_Num = new HashMap<Integer, ArrayList>(); // для получения messageDetails.Message.get( messageDetails.RecordIndex_by_TagId.get(Tag_Num) )
     public  int ConfirmationRowNum=0;
     public  HashMap<Integer, MessageDetailVO > Confirmation = new HashMap<Integer, MessageDetailVO >();
     public StringBuilder XML_MsgOUT = new StringBuilder();
@@ -37,6 +39,7 @@ public class MessageDetails {
 
     public  MessageDetails() {
         this.Message.clear();
+        this.MessageIndex_by_Tag_Par_Num.clear();
         this.Confirmation.clear();
         this.XML_MsgOUT.setLength(0);
         this.XML_ClearBodyResponse.setLength(0);
@@ -50,6 +53,7 @@ public class MessageDetails {
     }
     public void ReInitMessageDetails( SSLContext sslContext, HttpClientBuilder  httpClientBuilder , CloseableHttpClient simpleHttpClient, CloseableHttpClient RestHermesAPIHttpClient  ) {
         this.Message.clear();
+        this.MessageIndex_by_Tag_Par_Num.clear();
         this.Confirmation.clear();
         this.XML_MsgOUT.setLength(0);
         this.XML_ClearBodyResponse.setLength(0);

@@ -8,13 +8,13 @@ import org.jdom2.input.JDOMParseException;
 import org.jdom2.input.SAXBuilder;
 import org.slf4j.Logger;
 import ru.hermes.msgbus.common.XMLchars;
-import ru.hermes.msgbus.common.sStackTracе;
+//import ru.hermes.msgbus.common.sStackTracе;
 import ru.hermes.msgbus.model.MessageDetailVO;
 import ru.hermes.msgbus.model.MessageDetails;
-import ru.hermes.msgbus.model.MessageQueueVO;
-import ru.hermes.msgbus.model.MessageTemplate4Perform;
-import ru.hermes.msgbus.threads.TheadDataAccess;
-import ru.hermes.msgbus.ws.client.core.SoapClient;
+//import ru.hermes.msgbus.model.MessageQueueVO;
+//import ru.hermes.msgbus.model.MessageTemplate4Perform;
+//import ru.hermes.msgbus.threads.TheadDataAccess;
+
 
 import javax.validation.constraints.NotNull;
 import javax.xml.xpath.XPathExpressionException;

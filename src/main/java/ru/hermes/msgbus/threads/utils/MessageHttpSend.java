@@ -30,6 +30,7 @@ import ru.hermes.msgbus.threads.TheadDataAccess;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -281,15 +282,16 @@ public class MessageHttpSend {
             MessageSoapSend.getResponseBody (messageDetails, MessegeSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
             MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
-            else // HE-9187
-             if ( messageDetails.XML_ClearBodyResponse.length() > 101 )
-                 MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[100 char]=(" +
-                                     messageDetails.XML_ClearBodyResponse.substring(0, 100)
-                         + "...)");
-                 else
-                MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[100 char]=(" +
-                                messageDetails.XML_ClearBodyResponse.toString() + "...)");
-            // client.wait(100);
+            else {// HE-9187
+                if (messageDetails.XML_ClearBodyResponse.length() > 2049)
+                    MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[2048 char]=(" +
+                            messageDetails.XML_ClearBodyResponse.substring(0, 2048)
+                            + "...)");
+                else
+                    MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[all char]=(" +
+                            messageDetails.XML_ClearBodyResponse.toString() + "...)");
+                // client.wait(2048); --HE-10763 : Расширить размер логируемого сообщения ( ответ при ответ при сбое на стороне получателя ) до 2 кб
+            }
 
         } catch (Exception e) {
             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTracе.strInterruptedException(e));
@@ -597,8 +599,10 @@ public class MessageHttpSend {
                     if (( Encoding_Out != null) && ( Encoding_Out!= "UTF-8" ) )
                         papamsInXml.put(RestElmnt.getName(), XML.from_UTF_8( XML.escape( RestElmnt.getText()), Encoding_Out ) );
                         else
-                    papamsInXml.put(RestElmnt.getName(), XML.escape( RestElmnt.getText() ) );
-                    MessegeSend_Log.info("setHttpGetParams=(" + RestElmnt.getName() + "=" + XML.escape( RestElmnt.getText() ) + ")");
+                         papamsInXml.put(RestElmnt.getName(), URLEncoder.encode( RestElmnt.getText() , StandardCharsets.UTF_8.toString() )
+                            // XML.escape( RestElmnt.getText() )
+                              );
+                    MessegeSend_Log.info("setHttpGetParams=(" + RestElmnt.getName() + "=>=" + URLEncoder.encode( RestElmnt.getText() , StandardCharsets.UTF_8.toString() )+ ")");
                 }
             }
         return nOfParams;

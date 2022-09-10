@@ -1,5 +1,7 @@
 package ru.hermes.msgbus.common;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
@@ -87,7 +89,7 @@ public class XMLchars {
 
     final public static int MAX_TAG_VALUE_BYTE_SIZE=3966;
 
-    public static byte[] cutUTF8ToMAX_TAG_VALUE_BYTE_SIZE(String s)  {
+    public static byte @NotNull [] cutUTF8ToMAX_TAG_VALUE_BYTE_SIZE(@NotNull String s)  {
         byte[] utf8;
         try {
             utf8 = s.getBytes("UTF-8");

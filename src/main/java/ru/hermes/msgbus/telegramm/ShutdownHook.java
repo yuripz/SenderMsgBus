@@ -23,8 +23,8 @@ public class ShutdownHook {
         ShutdownHook_log.info("###STOPing###");
 
         try {
-            ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", ShutdownHook_log );
-            ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*" );
+            ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*", ShutdownHook_log );
+            ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*" );
             // Thread.sleep(1 * 1000); InterruptedException |
         } catch ( UnknownHostException e) {
             ShutdownHook_log.error(" хрякнулось InetAddress.getLocalHost().getHostAddress()", e);;

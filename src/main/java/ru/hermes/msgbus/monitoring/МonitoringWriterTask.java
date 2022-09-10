@@ -93,10 +93,10 @@ public class МonitoringWriterTask  implements Runnable
             AppendDataAccess monitorDataAccess = new AppendDataAccess();
             // Установаливем " соединение" , что бы сбрасывать  очередь в БД
             monitorWriter_Log.info(
-                    "make_Monitoring_Connection( " + this.MonitoringdataSourceClassName +", " +
-                            this.MonitoringDbURL +", " + this.MonitoringDbLogin +", " + this.MonitoringDbPasswd +", " +  this.MonitoringStoreTableName
+                    "make_Monitoring_Connection( " + this.MonitoringdataSourceClassName + ", " +
+                            this.MonitoringDbURL + ", " + this.MonitoringDbLogin + ", " + this.MonitoringDbPasswd + ", " + this.MonitoringStoreTableName
             );
-            Connection MonitorDB_Connection = monitorDataAccess.make_Monitoring_Connection( this.MonitoringdataSourceClassName,
+            Connection MonitorDB_Connection = monitorDataAccess.make_Monitoring_Connection(this.MonitoringdataSourceClassName,
                     this.MonitoringDbURL, this.MonitoringDbLogin, this.MonitoringDbPasswd, this.MonitoringStoreTableName,
                     monitorWriter_Log
             );
@@ -104,6 +104,11 @@ public class МonitoringWriterTask  implements Runnable
 
             monitorWriter_Log.info("MonitorWriterTask[" + theadNum + "]: is runing [" + theadRunCount + "] times");
             MonitoringQueueVO monitoringQueueVO = new MonitoringQueueVO();
+            if (monitorDataAccess == null)
+            {
+                monitorWriter_Log.warn("MonitorWriterTask[" + theadNum + "]: cann't make DB connection");
+                return;
+            }
 
             Date moment = new Date(1451665447567L); // Задаем количество миллисекунд Unix-time с того-самого-момента
             long startTimestamp = Instant.ofEpochSecond(0L).until(Instant.now(), ChronoUnit.SECONDS);

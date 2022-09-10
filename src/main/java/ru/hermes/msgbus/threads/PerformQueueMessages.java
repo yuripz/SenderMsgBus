@@ -9,11 +9,11 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.params.ConnRouteParams;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
+//import org.apache.http.conn.params.ConnRouteParams;
+//import org.apache.http.conn.scheme.Scheme;
+//import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
+//import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -31,9 +31,9 @@ import ru.hermes.msgbus.common.xlstErrorListener;
 import ru.hermes.msgbus.model.*;
 import ru.hermes.msgbus.monitoring.ConcurrentQueue;
 import ru.hermes.msgbus.threads.utils.*;
-import ru.hermes.msgbus.ws.client.SoapClientException;
-import ru.hermes.msgbus.ws.client.core.Security;
-import ru.hermes.msgbus.ws.client.ssl.SSLUtils;
+//import ru.hermes.msgbus.ws.client.SoapClientException;
+//import ru.hermes.msgbus.ws.client.core.Security;
+//import ru.hermes.msgbus.ws.client.ssl.SSLUtils;
 import ru.hermes.msgbus.threads.utils.MessageRepositoryHelper;
 
 import javax.net.ssl.SSLContext;
@@ -45,21 +45,19 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.GeneralSecurityException;
+import java.io.*;
+//import java.net.URI;
+//import java.net.URISyntaxException;
+//import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
 
 import static ru.hermes.msgbus.common.sStackTracе.strInterruptedException;
-import static ru.hermes.msgbus.ws.client.core.SoapConstants.HTTPS;
+//import static ru.hermes.msgbus.ws.client.core.SoapConstants.HTTPS;
 
-import ru.hermes.msgbus.common.xlstErrorListener;
+//import ru.hermes.msgbus.common.xlstErrorListener;
 public class PerformQueueMessages {
 
     private DefaultHttpClient client=null;
@@ -72,9 +70,7 @@ public class PerformQueueMessages {
     public void setExternalConnectionManager( ThreadSafeClientConnManager externalConnectionManager ) {
         this.ExternalConnectionManager = externalConnectionManager;
     }
-    public void setConvXMLuseXSLTerr( String p_ConvXMLuseXSLTerr) {
-        this.ConvXMLuseXSLTerr = p_ConvXMLuseXSLTerr;
-    }
+    //public void setConvXMLuseXSLTerr( String p_ConvXMLuseXSLTerr) { this.ConvXMLuseXSLTerr = p_ConvXMLuseXSLTerr; }
 
     public  long performMessage(MessageDetails Message, MessageQueueVO messageQueueVO, TheadDataAccess theadDataAccess, Logger MessegeSend_Log) {
         // 1. Получаем шаблон обработки для MessageQueueVO
@@ -85,9 +81,6 @@ public class PerformQueueMessages {
         String Queue_Direction = messageQueueVO.getQueue_Direction();
         String AnswXSLTQueue_Direction=Queue_Direction;
 
-
-        //int Max_Retry_Count = 1;
-        //int Max_Retry_Time = 30;
         String URL_SOAP_Send = "";
         int Function_Result = 0;
 
@@ -202,15 +195,15 @@ public class PerformQueueMessages {
         switch (Queue_Direction){
             case XMLchars.DirectOUT:
                 // читаем их БД тело XML
-                MessegeSend_Log.info(Queue_Direction +" ["+ Queue_Id +"] читаем из БД тело XML" );
-                MessageUtils.ReadMessage( theadDataAccess, Queue_Id, Message, MessegeSend_Log);
+                MessegeSend_Log.info(Queue_Direction +" ["+ Queue_Id +"] зачитывем из БД тело XML, IsDebugged=" + Message.MessageTemplate4Perform.getIsDebugged() );
+                MessageUtils.ReadMessage( theadDataAccess, Queue_Id, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessegeSend_Log);
                 if ( Message.MessageTemplate4Perform.getMessageXSD() != null )
                 { boolean is_Message_OUT_Valid;
                     is_Message_OUT_Valid = TestXMLByXSD( Message.XML_MsgOUT.toString(), Message.MessageTemplate4Perform.getMessageXSD(), Message.MsgReason, MessegeSend_Log );
                     if ( ! is_Message_OUT_Valid ) {
                         MessegeSend_Log.error(" ["+ Queue_Id +"] validateXMLSchema: message\n" + Message.XML_MsgOUT.toString() + "\n is not valid for XSD\n" + Message.MessageTemplate4Perform.getMessageXSD());
                         MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO,   Message,  theadDataAccess,
-                                "validateXMLSchema: message\n" + Message.XML_MsgOUT.toString() + "\n is not valid for XSD\n" + Message.MessageTemplate4Perform.getMessageXSD() ,
+                                "validateXMLSchema: message {" + Message.XML_MsgOUT.toString() + "} is not valid for XSD {" + Message.MessageTemplate4Perform.getMessageXSD() + "}" ,
                                 null ,  MessegeSend_Log);
 //                        try {  SimpleHttpClient.close(); } catch ( IOException e) {
 //                            MessegeSend_Log.error("и еще ошибка SimpleHttpClient.close(): " + e.getMessage() );
@@ -238,6 +231,10 @@ public class PerformQueueMessages {
                     }
                     else XML_4_XSLT = Message.XML_MsgOUT.toString();
                     try {
+                        // Чисто для проверки конструкторов byte[] bb = new Message.XML_MsgOUT;Message.XML_MsgOUT.toString()
+                        //StringBuilder xmlStringBuilder = new StringBuilder();
+                        //ByteArrayInputStream xmlByteArrayInputStream  = new ByteArrayInputStream( xmlStringBuilder.toString().getBytes("UTF-8") );
+
                         Message.XML_MsgSEND = ConvXMLuseXSLT(Queue_Id, XML_4_XSLT, // Message.XML_MsgOUT.toString(),
                                 MessageXSLT_4_OUT_2_SEND, Message.MsgReason,
                                 MessegeSend_Log, Message.MessageTemplate4Perform.getIsDebugged()
@@ -307,7 +304,7 @@ public class PerformQueueMessages {
                 if ( !Queue_Direction.equals("OUT") ) {
                     // надо читать из БД
                     MessegeSend_Log.info(Queue_Direction +"-> SEND ["+ Queue_Id +"] читаем SEND БД тело XML" );
-                    MessageUtils.ReadMessage( theadDataAccess, Queue_Id, Message, MessegeSend_Log);
+                    MessageUtils.ReadMessage( theadDataAccess, Queue_Id, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessegeSend_Log);
                     if ( Message.MessageRowNum <= 0 ) {
                         MessegeSend_Log.error(Queue_Direction +"-> SEND ["+ Queue_Id +"] тело XML для SEND в БД пустое !" );
                         MessageUtils.ProcessingOutError(  messageQueueVO,   Message,  theadDataAccess,
@@ -459,7 +456,7 @@ public class PerformQueueMessages {
                     if ( !Queue_Direction.equals("SEND") ) {
                         // надо читать из БД
                         MessegeSend_Log.error(Queue_Direction +"-> DELOUT/ATTOUT/ERROUT ["+ Queue_Id +"] читаем SEND БД тело XML" );
-                        MessageUtils.ReadMessage( theadDataAccess, Queue_Id, Message, MessegeSend_Log);
+                        MessageUtils.ReadMessage( theadDataAccess, Queue_Id, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessegeSend_Log);
                         Message.XML_MsgSEND = Message.XML_MsgOUT.toString();
                         Queue_Direction = XMLchars.DirectPOSTOUT;
                         MessegeSend_Log.error("["+ Queue_Id +"] Этот код для повторнй обработки Ответв на Исходяе событие ещё не написан.  " );
@@ -788,8 +785,8 @@ public class PerformQueueMessages {
 
     public CloseableHttpClient getCloseableHttpClient( SSLContext sslContext, MessageTemplate4Perform messageTemplate4Perform,
                                                                                                Logger getHttpClient_Log) {
-        Integer SocketTimeout =  messageTemplate4Perform.getPropTimeout_Read() * 1000;
-        Integer ConnectTimeout = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
+        int SocketTimeout =  messageTemplate4Perform.getPropTimeout_Read() * 1000;
+        int ConnectTimeout = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
 
         if ( this.client == null ) {
             this.client = new DefaultHttpClient( this.ExternalConnectionManager );
@@ -798,9 +795,12 @@ public class PerformQueueMessages {
 
         HttpConnectionParams.setConnectionTimeout(httpParameters, ConnectTimeout) ; // connectTimeoutInMillis);
         HttpConnectionParams.setSoTimeout(httpParameters, SocketTimeout );  //readTimeoutInMillis;
+        this.client.setParams(httpParameters);
+
+        /* proxy is nit USED !
         HttpHost proxyHost;
-        String isProxySet = System.getProperty("http.proxySet");
-        getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxySet\") [" + isProxySet + "]");
+        //String isProxySet = System.getProperty("http.proxySet");
+        //getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxySet\") [" + isProxySet + "]");
         if ( (isProxySet != null) && (isProxySet.equals("true")) ) {
             getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxyHost\") [" + System.getProperty("http.proxyHost") + "]");
             getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxyPort\") [" + System.getProperty("http.proxyPort") + "]");
@@ -810,12 +810,15 @@ public class PerformQueueMessages {
         }
 
         this.client.setParams(httpParameters);
+        /*
         String EndPointUrl;
 
         if ( StringUtils.substring(messageTemplate4Perform.getEndPointUrl(),0,"http".length()).equalsIgnoreCase("http") )
             EndPointUrl = messageTemplate4Perform.getEndPointUrl();
         else
             EndPointUrl = "http://" + messageTemplate4Perform.getEndPointUrl();
+        // https work ovet ngnix
+
         if ( StringUtils.substring(EndPointUrl,0,"https".length()).equalsIgnoreCase("https") ) {
             SSLSocketFactory factory;
             int port;
@@ -836,6 +839,8 @@ public class PerformQueueMessages {
                 throw new SoapClientException(ex);
             }
         }
+        */
+
         return  this.client;
 
     }
@@ -844,8 +849,8 @@ public class PerformQueueMessages {
 
     public CloseableHttpClient getProxedHttpClient( SSLContext sslContext, MessageTemplate4Perform messageTemplate4Perform,
                                                        Logger getHttpClient_Log) {
-        Integer SocketTimeout =  messageTemplate4Perform.getPropTimeout_Read() * 1000;
-        Integer ConnectTimeout = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
+        int SocketTimeout =  messageTemplate4Perform.getPropTimeout_Read() * 1000;
+        int ConnectTimeout = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         CloseableHttpClient  safeHttpClient=null;
         if ( this.httpClient != null )
             try {  this.httpClient.close();
@@ -915,85 +920,17 @@ public class PerformQueueMessages {
 
             this.httpClient = safeHttpClient;
 
-/****************************************
- PoolingHttpClientConnectionManager syncConnectionManager = new PoolingHttpClientConnectionManager();
- syncConnectionManager.setMaxTotal((Integer)4);
- syncConnectionManager.setDefaultMaxPerRoute((Integer)2);
-
- httpClientBuilder = HttpClientBuilder.create()
- .disableDefaultUserAgent()
- .disableRedirectHandling()
- .disableAutomaticRetries()
- .setUserAgent("Mozilla/5.0")
- .setSSLContext(sslContext)
- .disableAuthCaching()
- .disableConnectionState()
- .disableCookieManagement()
- .setConnectionManager(syncConnectionManager)
- .setSSLHostnameVerifier(new NoopHostnameVerifier());
-
- httpClientBuilder.setConnectionTimeToLive( SocketTimeout + ConnectTimeout, TimeUnit.SECONDS);
- httpClientBuilder.evictIdleConnections((long) (SocketTimeout + ConnectTimeout)*2, TimeUnit.SECONDS);
-
- //            PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(r.build());
- //            cm.setMaxTotal(maxConnect * 2);
- //            cm.setDefaultMaxPerRoute(2);
- //            cm.setValidateAfterInactivity(timeout * 1000);
- //            builder.setConnectionManager(cm);
-
- RequestConfig rc = RequestConfig.custom()
- .setConnectionRequestTimeout(ConnectTimeout * 1000)
- .setConnectTimeout(ConnectTimeout * 1000)
- .setSocketTimeout( SocketTimeout * 1000)
- .build();
- httpClientBuilder.setDefaultRequestConfig(rc);
- ///HttpClients.custom().build();
- HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
- SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
- getHttpClient_Log.info("httpClientBuilder: setSSLHostnameVerifier(allowAllHosts)");
-
- unsafeHttpClient = httpClientBuilder
- .setSSLHostnameVerifier(allowAllHosts)
- .setSSLSocketFactory(connectionFactory)
- .build();
-
- //                    .setSSLContext(sslContext)
- //                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
- //                    .build();
- //
- //            unsafeHttpClient = HttpClients.custom().setSSLContext(sslContext)
- //                    .setSSLHostnameVerifier(new NoopHostnameVerifier()).build();
- /* ПРИМЕР !!!
- RequestConfig clientConfig = RequestConfig.custom()
- .setConnectTimeout(((Long)connectionTimeout).intValue())
- .setSocketTimeout(((Long)socketTimeout).intValue())
- .setConnectionRequestTimeout(((Long)socketTimeout).intValue())
- .setProxy(proxy)
- .build();
- PoolingHttpClientConnectionManager syncConnectionManager = new PoolingHttpClientConnectionManager();
- syncConnectionManager.setMaxTotal((Integer)maxTotal);
- syncConnectionManager.setDefaultMaxPerRoute((Integer)maxPerRoute);
- setOption(Option.HTTPCLIENT,
- HttpClientBuilder.create().setDefaultRequestConfig(clientConfig).setConnectionManager(syncConnectionManager).build());
- */
-/*
-        if ( client == null ) {
-
-            client = new DefaultHttpClient( this.ExternalConnectionManager );
-        }
-
-        */
         }
         return safeHttpClient;
 
     }
-    private Security endpointProperties;
-
+   // private Security endpointProperties;
+/*
     private void registerTlsScheme(SchemeLayeredSocketFactory factory, int port) {
         Scheme sch = new Scheme(HTTPS, port, factory);
         client.getConnectionManager().getSchemeRegistry().register(sch);
     }
-
+*/
     private  boolean TestXMLByXSD(@NotNull String xmldata, @NotNull String xsddata, StringBuilder MsgResult,  Logger MessegeSend_Log)// throws Exception
     {
         Validator valid=null;
@@ -1011,7 +948,7 @@ public class PerformQueueMessages {
         catch ( Exception exp ) {
             MessegeSend_Log.error("Exception: " + exp.getMessage());
             MsgResult.setLength(0);
-            MsgResult.append( "TestXMLByXSD:"  + strInterruptedException(exp) );
+            MsgResult.append( "TestXMLByXSD:"); MsgResult.append( strInterruptedException(exp) );
             return false;}
         MessegeSend_Log.info("validateXMLSchema message\n" + xmldata + "\n is VALID for XSD\n" + xsddata );
         return true;
@@ -1024,12 +961,12 @@ public class PerformQueueMessages {
         Transformer transformer;
         StreamResult result;
         ByteArrayInputStream xmlInputStream=null;
+        //BufferedInputStream  _xmlInputStream;
         ByteArrayOutputStream fout=new ByteArrayOutputStream();
         String res=XMLchars.EmptyXSLT_Result;
         ConvXMLuseXSLTerr="";
         try {
-            xmlInputStream  = new ByteArrayInputStream(xmldata.getBytes("UTF-8"));
-
+            xmlInputStream  = new ByteArrayInputStream( xmldata.getBytes("UTF-8") );
         }
         catch ( Exception exp ) {
             ConvXMLuseXSLTerr = strInterruptedException(exp);
@@ -1037,7 +974,7 @@ public class PerformQueueMessages {
             System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.ByteArrayInputStream Exception" );
             MessegeSend_Log.error("["+ QueueId  + "] Exception: " + ConvXMLuseXSLTerr );
             MsgResult.setLength(0);
-            MsgResult.append( "ConvXMLuseXSLT:"  + ConvXMLuseXSLTerr );
+            MsgResult.append( "ConvXMLuseXSLT:");  MsgResult.append( ConvXMLuseXSLTerr );
             return XMLchars.EmptyXSLT_Result ;
         }
 
@@ -1051,7 +988,7 @@ public class PerformQueueMessages {
                 System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.ByteArrayInputStream Exception" );
                 MessegeSend_Log.error("["+ QueueId  + "] Exception: " + ConvXMLuseXSLTerr );
                 MsgResult.setLength(0);
-                MsgResult.append( "ConvXMLuseXSLT:"  + ConvXMLuseXSLTerr );
+                MsgResult.append( "ConvXMLuseXSLT:");  MsgResult.append( ConvXMLuseXSLTerr );
                 return XMLchars.EmptyXSLT_Result ;
             }
         result = new StreamResult(fout);
@@ -1082,7 +1019,9 @@ public class PerformQueueMessages {
                 res = XMLchars.EmptyXSLT_Result;
                 // System.err.println("result= null, res:" + res );
             }
-        try { fout.close();} catch( IOException IOexc)  { ; }
+        try { fout.close();} catch( IOException IOexc)  {
+            System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.Transformer IOException" );
+            IOexc.printStackTrace(); }
                 if ( IsDebugged ) {
                 MessegeSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XML IN ): " + xmldata);
                 MessegeSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XSLT ): " + XSLTdata);
@@ -1091,7 +1030,7 @@ public class PerformQueueMessages {
         }
         catch ( TransformerException exp ) {
             ConvXMLuseXSLTerr = strInterruptedException(exp);
-            System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.Transformer Exception" );
+            System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.Transformer TransformerException" );
             exp.printStackTrace();
 
             if (  !IsDebugged ) {
@@ -1101,7 +1040,7 @@ public class PerformQueueMessages {
             }
             MessegeSend_Log.error("["+ QueueId  + "] Transformer.Exception: " + ConvXMLuseXSLTerr);
             MsgResult.setLength(0);
-            MsgResult.append( "ConvXMLuseXSLT.Transformer:"  + ConvXMLuseXSLTerr );
+            MsgResult.append( "ConvXMLuseXSLT.Transformer:");  MsgResult.append( ConvXMLuseXSLTerr );
             throw exp;
             // return XMLchars.EmptyXSLT_Result ;
         }

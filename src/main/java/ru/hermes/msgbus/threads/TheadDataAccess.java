@@ -597,7 +597,7 @@ public class TheadDataAccess {
 
     public  int  doUPDATE_MessageQueue_Queue_Date4Send( MessageQueueVO  messageQueueVO,   Logger dataAccess_log ) {
 
-        Long Queue_Id = messageQueueVO.getQueue_Id();
+        long Queue_Id = messageQueueVO.getQueue_Id();
 
 
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
@@ -624,7 +624,7 @@ public class TheadDataAccess {
     }
 
     public  int doUPDATE_MessageQueue_Out2Send(  MessageQueueVO  messageQueueVO,  String pMsg_Reason, Logger dataAccess_log ) {
-        Long Queue_Id = messageQueueVO.getQueue_Id();
+        long Queue_Id = messageQueueVO.getQueue_Id();
 
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -666,7 +666,7 @@ public class TheadDataAccess {
 
     public int doUPDATE_MessageQueue_Send2ErrorOUT( MessageQueueVO  messageQueueVO  ,  String pMsg_Reason, int pMsgStatus, int pMsgRetryCount,  Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
-        Long Queue_Id = messageQueueVO.getQueue_Id();
+        long Queue_Id = messageQueueVO.getQueue_Id();
 
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -712,7 +712,7 @@ public class TheadDataAccess {
 
     public int doUPDATE_MessageQueue_Send2AttOUT(MessageQueueVO  messageQueueVO, String pMsg_Reason, int pMsgStatus, int pMsgRetryCount,  Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
-        Long Queue_Id = messageQueueVO.getQueue_Id();
+        long Queue_Id = messageQueueVO.getQueue_Id();
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
@@ -754,7 +754,7 @@ public class TheadDataAccess {
 
     public int doUPDATE_MessageQueue_SetMsg_Reason(MessageQueueVO messageQueueVO, String pMsg_Reason, int pMsgStatus, int pMsgRetryCount,  Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
-        Long Queue_Id = messageQueueVO.getQueue_Id();
+        long Queue_Id = messageQueueVO.getQueue_Id();
         dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_Queue_Date4Send()" );
 
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
@@ -797,7 +797,7 @@ public class TheadDataAccess {
 
     public int doUPDATE_MessageQueue_Out2ErrorOUT( MessageQueueVO messageQueueVO , String pMsg_Reason, Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Out2ErrorOUT:" + pMsg_Reason );
-        Long Queue_Id= messageQueueVO.getQueue_Id();
+        long Queue_Id= messageQueueVO.getQueue_Id();
         messageQueueVO.setMsg_Reason(pMsg_Reason);
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
@@ -821,7 +821,7 @@ public class TheadDataAccess {
     }
 
     public int  do_SelectMESSAGE_QUEUE( MessageQueueVO messageQueueVO, Logger dataAccess_log ) {
-        Long Queue_Id = messageQueueVO.getQueue_Id();
+        long Queue_Id = messageQueueVO.getQueue_Id();
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
@@ -870,11 +870,7 @@ public class TheadDataAccess {
         try {
 
         StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
-        "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num" +
-        " from artx_proj.message_queuedet D" +
-        " where (1=1)" +
-        " and d.QUEUE_ID = ? " +
-        " order by   Tag_Par_Num, Tag_Num "
+        "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from artx_proj.Message_QueueDet D where (1=1) and d.QUEUE_ID = ? order by d.Tag_Par_Num, d.Tag_Num"
         );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );

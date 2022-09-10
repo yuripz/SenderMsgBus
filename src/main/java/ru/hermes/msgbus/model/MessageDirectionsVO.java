@@ -82,6 +82,7 @@ public class MessageDirectionsVO {
     public int getBase_Thread_Id(){ return this.Base_Thread_Id;    }
     public int getNum_Thread(){ return this.Num_Thread;    }
 
+
     public int getShort_retry_count(){ return        this.Short_retry_count ; }
     public int getShort_retry_interval(){ return    this.Short_retry_interval ; }
     public int getLong_retry_count(){ return   this.Long_retry_count ; }

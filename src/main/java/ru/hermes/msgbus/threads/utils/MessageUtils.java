@@ -20,12 +20,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+//import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
+
+import static ru.hermes.msgbus.threads.MessageSendTask.MessegeSend_Log;
 
 public class MessageUtils {
 
@@ -90,7 +96,7 @@ public class MessageUtils {
     }
 
     public static Integer ProcessingOut2ErrorOUT(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess,
-                                             String whyIsFault , Exception e , Logger MessegeSend_Log)
+                                                 String whyIsFault , Exception e , Logger MessegeSend_Log)
     {
         String ErrorExceptionMessage;
         if ( e != null ) {
@@ -104,7 +110,7 @@ public class MessageUtils {
         return result;
     }
     public static Integer ProcessingOutError(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess,
-                                              String whyIsFault , Exception e , Logger MessegeSend_Log)
+                                             String whyIsFault , Exception e , Logger MessegeSend_Log)
     {
         String ErrorExceptionMessage;
         if ( e != null ) {
@@ -328,8 +334,8 @@ public class MessageUtils {
 
         return AnswXSLTQueue_Direction;
     }
-    public static int ReadMessage(TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, Logger MessegeSend_Log) {
 
+    public static int ReadMessage(TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, boolean IsDebugged, Logger MessegeSend_Log) {
         messageDetails.Message.clear();
         messageDetails.MessageRowNum = 0;
         messageDetails.Message_Tag_Num = 0;
@@ -341,32 +347,50 @@ public class MessageUtils {
             String rTag_Value=null;
             String rTag_Id=null;
             String xmlTag_Id;
+            int PrevTag_Par_Num=-102030405;
+            int rTag_Num;
+            int rTag_Par_Num;
+            ArrayList<Integer> ChildVO_ArrayList= new ArrayList<Integer>();
+
             while (rs.next()) {
                 MessageDetailVO messageDetailVO = new MessageDetailVO();
                 rTag_Value = rs.getString("Tag_Value");
+                rTag_Num= rs.getInt("Tag_Num");
+                rTag_Par_Num = rs.getInt("Tag_Par_Num");
                 rTag_Id= rs.getString("Tag_Id");
                 if ( pattern.matcher( rTag_Id ).matches() )
                     xmlTag_Id = "Element" + rTag_Id;
                 else
                     xmlTag_Id = rTag_Id;
                 if ( rTag_Value == null )
-                messageDetailVO.setMessageQueue(
-                        xmlTag_Id,
-                        null,
-                        rs.getInt("Tag_Num"),
-                        rs.getInt("Tag_Par_Num")
-                );
+                    messageDetailVO.setMessageQueue( xmlTag_Id, null, rTag_Num,rTag_Par_Num);
                 else
-                    messageDetailVO.setMessageQueue(
-                            xmlTag_Id,
+                    messageDetailVO.setMessageQueue( xmlTag_Id,
                             StringEscapeUtils.escapeXml10(stripNonValidXMLCharacters(rTag_Value)),
-                            //StringEscapeUtils.escapeXml10(rTag_Value.replaceAll(XMLchars.XML10pattern,"")),
-                            // StringEscapeUtils.escapeXml10(rTag_Value).replaceAll(XMLchars.XML10pattern,""),
-                            rs.getInt("Tag_Num"),
-                            rs.getInt("Tag_Par_Num")
-                    );
+                            rTag_Num,rTag_Par_Num);
+
                 messageDetails.Message.put(messageDetails.MessageRowNum, messageDetailVO);
+
+                // для получения messageDetails.Message.get( messageDetails.MessageIndex_by_Tag_Par_Num.get(Tag_Par_Num) )
+                if (PrevTag_Par_Num != rTag_Par_Num) { // получили элемент у которого другой "пара"
+                    if (PrevTag_Par_Num != -102030405 ) {
+                        //MessegeSend_Log.warn("PrevTag_Par_Num[" + PrevTag_Par_Num +"]: ChildVO_ArrayList size=" + ChildVO_ArrayList.size());
+                        ChildVO_ArrayList = new ArrayList<Integer>();
+                    }
+
+                    messageDetails.MessageIndex_by_Tag_Par_Num.put( rTag_Par_Num, ChildVO_ArrayList);
+                    PrevTag_Par_Num = rTag_Par_Num;
+                }
+                else {
+                    ChildVO_ArrayList = messageDetails.MessageIndex_by_Tag_Par_Num.get(rTag_Par_Num);
+                    //MessegeSend_Log.warn("rTag_Par_Num[" + rTag_Par_Num +"]: ChildVO_ArrayList size=" + ChildVO_ArrayList.size());
+                }
+                ChildVO_ArrayList.add( messageDetails.MessageRowNum );
+                //MessegeSend_Log.warn("add to Tag_Par_Num[" + rTag_Par_Num +"]: ChildVO_ArrayList size=" + ChildVO_ArrayList.size());
+
                 messageDetails.MessageRowNum += 1;
+                if ( messageDetails.MessageRowNum % 10000 == 0)
+                    MessegeSend_Log.info( "["+ Queue_Id +"] читаем из БД тело XML, " + messageDetails.MessageRowNum + " записей" );
                 // MessegeSend_Log.info( "Tag_Id:" + rs.getString("Tag_Id") + " [" + rs.getString("Tag_Value") + "]");
             }
         } catch (SQLException e) {
@@ -374,9 +398,39 @@ public class MessageUtils {
             e.printStackTrace();
             return messageDetails.MessageRowNum;
         }
+        MessegeSend_Log.info( "["+ Queue_Id +"] считали из БД фрагменты XML, " + messageDetails.MessageRowNum + " записей" );
+
         if ( messageDetails.MessageRowNum > 0 )
-        XML_Current_Tags(messageDetails, 0);
-        MessegeSend_Log.info(messageDetails.XML_MsgOUT.toString());
+            try {
+                XML_Current_Tags( messageDetails, 0);
+            } catch ( NullPointerException e ) {
+                // NPE случилось, печатаем диагностику
+                MessegeSend_Log.warn("[" + Queue_Id + "] проверяем вторчный индекс MessageIndex_by_Tag_Par_Num, потому как получили NullPointerException на подготовке XML" );
+                Set<Integer> MessageIndexSet = messageDetails.MessageIndex_by_Tag_Par_Num.keySet();
+                Iterator MessageIndexIterator = MessageIndexSet.iterator();
+                while (MessageIndexIterator.hasNext()) {
+                    Integer i = (Integer) MessageIndexIterator.next();
+                    MessegeSend_Log.warn("[" + Queue_Id + "] MessageIndex_by_Tag_Par_Num[" + i + "]" +
+                            messageDetails.MessageIndex_by_Tag_Par_Num.get(i).toString());
+                }
+                MessageIndexSet = messageDetails.Message.keySet();
+                Iterator messageDetailsIterator = MessageIndexSet.iterator();
+                while (messageDetailsIterator.hasNext()) {
+                    Integer i = (Integer) messageDetailsIterator.next();
+                    MessegeSend_Log.warn("[" + Queue_Id + "] messageDetails.Message[" + i + "] <" +
+                            messageDetails.Message.get(i).Tag_Id + ">" +
+                            messageDetails.Message.get(i).Tag_Value +
+                            "; Tag_Num=" + messageDetails.Message.get(i).Tag_Num +
+                            "; Tag_Par_Num=" + messageDetails.Message.get(i).Tag_Par_Num
+                    );
+                }
+                MessegeSend_Log.info( "["+ Queue_Id +"] тело XML тело XML не получено из БД , остановлено на " + messageDetails.XML_MsgOUT.length() + " символов" );
+            }
+
+        MessegeSend_Log.info( "["+ Queue_Id +"] получили из БД тело XML, " + messageDetails.XML_MsgOUT.length() + " символов" );
+        if (IsDebugged ) {
+            MessegeSend_Log.info(messageDetails.XML_MsgOUT.toString());
+        }
         return messageDetails.MessageRowNum;
     }
 
@@ -399,42 +453,136 @@ public class MessageUtils {
     }
 
     // @messageDetails.XML_MsgOUT формируется из messageDetails.Message
-    public static int XML_Current_Tags(@NotNull MessageDetails messageDetails, int Current_Elm_Key) {
+    public static int XML_Current_Tags(@NotNull MessageDetails messageDetails, int Current_Elm_Key) throws UnsupportedOperationException, NullPointerException  {
         MessageDetailVO messageDetailVO = messageDetails.Message.get(Current_Elm_Key);
 
-        if ( messageDetailVO.Tag_Num != 0 ) {
 
-            // !было:  StringBuilder XML_Tag = new StringBuilder( XMLchars.OpenTag + messageDetailVO.Tag_Id );
-            // стало:
-            messageDetails.XML_MsgOUT.append(XMLchars.OpenTag + messageDetailVO.Tag_Id);
-            // XML_Tag.append ( "<" + messageDetailVO.Tag_Id + ">" );
+        if ( messageDetailVO.Tag_Num != 0 ) { // Tag_Num Всегда начинается с 1 для сообщения! ( проверка на всякий случай )
+
+            messageDetails.XML_MsgOUT.append(XMLchars.OpenTag ); messageDetails.XML_MsgOUT.append( messageDetailVO.Tag_Id);
+
+            MessageDetailVO messageChildVO;
+            ArrayList<Integer> ChildVO_ArrayList =  messageDetails.MessageIndex_by_Tag_Par_Num.get( messageDetailVO.Tag_Num );
+            if (ChildVO_ArrayList != null ) { // у элемента <messageDetailVO.Tag_Id ...> есть либо атрибуты, либо вложенные элементы
+                Iterator<Integer> ChildVO_AttributeIterator = ChildVO_ArrayList.iterator();
+                    // 1й проход, достаём атрибуты элемента
+                    while (ChildVO_AttributeIterator.hasNext()) {
+                        Integer i = ChildVO_AttributeIterator.next();
+                        messageChildVO = messageDetails.Message.get(i);
+                        if ( messageChildVO != null) {
+                            if ((messageChildVO.Tag_Par_Num == messageDetailVO.Tag_Num) && // нашли Дочерний элемент
+                                    (messageChildVO.Tag_Num == 0))  // это атрибут элемента, у которого нет потомков
+                            {
+                                if (messageChildVO.Tag_Value != null) { // фармирукм Attribute="Value"
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Space);
+                                    messageDetails.XML_MsgOUT.append(messageChildVO.Tag_Id);
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Equal);
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Quote);
+                                    messageDetails.XML_MsgOUT.append(messageChildVO.Tag_Value);
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Quote);
+                                } else {  // фармирукм Attribute=""
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Space);
+                                    messageDetails.XML_MsgOUT.append(messageChildVO.Tag_Id);
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Equal);
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Quote);
+                                    messageDetails.XML_MsgOUT.append(XMLchars.Quote);
+                                }
+                            }
+                        }
+                        else {
+                           String messageException = "1й проход, достаём атрибуты элемента: XML_Current_Tags [" + Current_Elm_Key + "] messageDetails.Message.get[" + i + "] вернуло NULL! Tag_Id: <" +
+                                   messageDetails.Message.get(Current_Elm_Key).Tag_Id + "> Tag_Value=" +
+                                   messageDetails.Message.get(Current_Elm_Key).Tag_Value +
+                                   "; Tag_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Num +
+                                   "; Tag_Par_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Par_Num;
+                           MessegeSend_Log.error(messageException);
+                           throw new NullPointerException( messageException);
+                        }
+                    }
+                messageDetails.XML_MsgOUT.append(XMLchars.CloseTag); // + ">" );
+                if ( messageDetailVO.Tag_Value != null )
+                    messageDetails.XML_MsgOUT.append(messageDetailVO.getTag_Value());
+
+                Iterator<Integer> ChildVO_ElementIterator = ChildVO_ArrayList.iterator();
+                // 2й проход, достаём дочерние элементы
+                while (ChildVO_ElementIterator.hasNext()) {
+                    Integer i = ChildVO_ElementIterator.next();
+                    messageChildVO = messageDetails.Message.get(i);
+                    if (messageChildVO != null) {
+                        if ((messageChildVO.Tag_Par_Num == messageDetailVO.Tag_Num) && // нашли Дочерний элемент - проверка!!!
+                                (messageChildVO.Tag_Num != 0))  // И это элемент, который может быть потомком!
+                        {  // вызываем рекурсию
+                            XML_Current_Tags(messageDetails, i);
+                        }
+                    }
+                    else {
+                        String messageException = "2й проход, достаём дочерние элементы: XML_Current_Tags [" + Current_Elm_Key + "] messageDetails.Message.get[" + i + "] вернуло NULL! Tag_Id: <" +
+                                messageDetails.Message.get(Current_Elm_Key).Tag_Id + "> Tag_Value=" +
+                                messageDetails.Message.get(Current_Elm_Key).Tag_Value +
+                                "; Tag_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Num +
+                                "; Tag_Par_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Par_Num;
+                        MessegeSend_Log.error(messageException);
+                        throw new NullPointerException( messageException);
+                    }
+                }
+
+            } else { // вложенных элементов нет, чисто значение
+                messageDetails.XML_MsgOUT.append(XMLchars.CloseTag); // + ">" );
+                if ( messageDetailVO.Tag_Value != null )
+                    messageDetails.XML_MsgOUT.append(messageDetailVO.getTag_Value());
+            }
+
+            messageDetails.XML_MsgOUT.append(XMLchars.OpenTag ); // <\Tag_Id>
+            messageDetails.XML_MsgOUT.append( XMLchars.EndTag );
+            messageDetails.XML_MsgOUT.append( messageDetailVO.Tag_Id );
+            messageDetails.XML_MsgOUT.append( XMLchars.CloseTag);
+            return 1; //XML_Tag;
+        } else {
+            // !было: StringBuilder XML_Tag = new StringBuilder(XMLchars.Space);
+            return 0; //XML_Tag;
+        }
+    }
+
+    public static int _4_save_XML_Current_Tags(@NotNull MessageDetails messageDetails, int Current_Elm_Key) {
+        MessageDetailVO messageDetailVO = messageDetails.Message.get(Current_Elm_Key);
+
+        if ( messageDetailVO.Tag_Num != 0 ) { // Tag_Num Всегда начинается с 1 для сообщения! ( проверка на всякий случай )
+            MessageDetailVO messageChildVO;
+
+            messageDetails.XML_MsgOUT.append(XMLchars.OpenTag ); messageDetails.XML_MsgOUT.append( messageDetailVO.Tag_Id);
+            // XML_Tag.append ( "<" + messageDetailVO.Tag_Id + ...
             // цикл по формированию параметров-аьтрибутов элемента
             for (int i = 0; i < messageDetails.Message.size(); i++) {
-                MessageDetailVO messageChildVO = messageDetails.Message.get(i);
+                // MessageDetailVO
+                messageChildVO = messageDetails.Message.get(i);
                 if ( (messageChildVO.Tag_Par_Num == messageDetailVO.Tag_Num) && // нашли Дочерний элемент
                         (messageChildVO.Tag_Num == 0) )  // это атрибут элемента, у которого нет потомков
                 {
-                    if ( messageChildVO.Tag_Value != null )
-                        // !было:XML_Tag.append ( XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + messageChildVO.Tag_Value + XMLchars.Quote );
-                        // стало:
-                        messageDetails.XML_MsgOUT.append(XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + messageChildVO.Tag_Value + XMLchars.Quote);
-                    else
-                        // !было: XML_Tag.append ( XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + XMLchars.Quote );
-                        // стало:
-                        messageDetails.XML_MsgOUT.append(XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + XMLchars.Quote);
+                    if ( messageChildVO.Tag_Value != null ){ // фармирукм Attribute="Value"
+                        messageDetails.XML_MsgOUT.append( XMLchars.Space );
+                        messageDetails.XML_MsgOUT.append( messageChildVO.Tag_Id );
+                        messageDetails.XML_MsgOUT.append( XMLchars.Equal );
+                        messageDetails.XML_MsgOUT.append( XMLchars.Quote);
+                        messageDetails.XML_MsgOUT.append( messageChildVO.Tag_Value );
+                        messageDetails.XML_MsgOUT.append( XMLchars.Quote);
+                    }
+                    else {  // фармирукм Attribute=""
+                        messageDetails.XML_MsgOUT.append(XMLchars.Space );
+                        messageDetails.XML_MsgOUT.append( messageChildVO.Tag_Id);
+                        messageDetails.XML_MsgOUT.append( XMLchars.Equal);
+                        messageDetails.XML_MsgOUT.append( XMLchars.Quote );
+                        messageDetails.XML_MsgOUT.append( XMLchars.Quote);
+                    }
                 }
             }
-            // !было: XML_Tag.append( XMLchars.CloseTag);
-            // стало:
-            messageDetails.XML_MsgOUT.append(XMLchars.CloseTag);
+            messageDetails.XML_MsgOUT.append(XMLchars.CloseTag); // + ">" );
 
             if ( messageDetailVO.Tag_Value != null )
-                // !было: XML_Tag.append( messageDetailVO.getTag_Value() );
-                // стало:
                 messageDetails.XML_MsgOUT.append(messageDetailVO.getTag_Value());
 
             for (int i = 0; i < messageDetails.Message.size(); i++) {
-                MessageDetailVO messageChildVO = messageDetails.Message.get(i);
+                // MessageDetailVO
+                messageChildVO = messageDetails.Message.get(i);
                 if ( (messageChildVO.Tag_Par_Num == messageDetailVO.Tag_Num) && // нашли Дочерний элемент
                         (messageChildVO.Tag_Num != 0) )  // И это элемент, который может быть потомком!
                 {
@@ -444,9 +592,10 @@ public class MessageUtils {
                 }
             }
 
-            // !было: XML_Tag.append( XMLchars.OpenTag + XMLchars.EndTag + messageDetailVO.Tag_Id + XMLchars.CloseTag);
-            // стало:
-            messageDetails.XML_MsgOUT.append(XMLchars.OpenTag + XMLchars.EndTag + messageDetailVO.Tag_Id + XMLchars.CloseTag);
+            messageDetails.XML_MsgOUT.append(XMLchars.OpenTag ); // <\Tag_Id>
+            messageDetails.XML_MsgOUT.append( XMLchars.EndTag );
+            messageDetails.XML_MsgOUT.append( messageDetailVO.Tag_Id );
+            messageDetails.XML_MsgOUT.append( XMLchars.CloseTag);
             return 1; //XML_Tag;
         } else {
             // !было: StringBuilder XML_Tag = new StringBuilder(XMLchars.Space);
@@ -500,7 +649,7 @@ public class MessageUtils {
     }
 
     public static int SplitMessage(MessageDetails messageDetails, Element EntryElement, int tag_Par_Num,
-                            Logger MessegeSend_Log) {
+                                   Logger MessegeSend_Log) {
         // Tag_Par_Num- №№ Тага, к которому прилепляем всё от EntryElement,ссылка на Tag_Num родителя
         // Tag_Num - сквозной!!! нумератор записей
 
@@ -599,7 +748,7 @@ public class MessageUtils {
                 String AttributeValue = XMLattribute.getValue();
                 // Attribute не увеличивает Tag_Num ( сквозной нумератор записей )
                 // в БД имеет Tag_Num= 0, ссылается на элемент.
-               // MessegeSend_Log.info("Tag_Par_Num[" + messageDetails.Message_Tag_Num + "][" + 0 + "]: \"" + AttributeEntry + "\"=" + AttributeValue);
+                // MessegeSend_Log.info("Tag_Par_Num[" + messageDetails.Message_Tag_Num + "][" + 0 + "]: \"" + AttributeEntry + "\"=" + AttributeValue);
                 ATTRmessageDetailVO.setMessageQueue(AttributeEntry, // "Tag_Id"
                         AttributeValue, // Tag_Value
                         0,
@@ -682,13 +831,13 @@ public class MessageUtils {
             return -3;
         }
         */
-        MessegeSend_Log.info(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "] : Delete and INSERT new Message Details, " + nn + " rows done");
+        MessegeSend_Log.info("Queue_Id=[" + Queue_Id + "] : Delete and INSERT new Message Details, " + nn + " rows done");
         return nn;
     }
 
 
     public static int SplitConfirmation(MessageDetails messageDetails, Element EntryElement, int tag_Par_Num,
-                                   Logger MessegeSend_Log) {
+                                        Logger MessegeSend_Log) {
         // Tag_Par_Num- №№ Тага, к которому прилепляем всё от EntryElement,ссылка на Tag_Num родителя
         // Tag_Num - сквозной!!! нумератор записей
 
@@ -720,7 +869,7 @@ public class MessageUtils {
 
             String ElementEntry = XMLelement.getName();
             if (( XMLelement.getParentElement().getName().equals( XMLchars.TagConfirmation ) )
-                &&
+                    &&
                     (XMLelement.getName().equals(XMLchars.TagNext)) )
             {
                 ; // пропускаем /Confirmation/Next

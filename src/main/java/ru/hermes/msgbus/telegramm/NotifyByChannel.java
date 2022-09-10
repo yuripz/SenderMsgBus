@@ -48,6 +48,10 @@ public class NotifyByChannel {
             return ;
         }
 
+        if ( ! ChatBotUrl.startsWith("http") ) {
+            sendMessage_log.warn( "Telegram_SendMessage ChatBotUrl != http !" );
+            return ;
+        }
         String URI_Sring=null;
         //
         try {
