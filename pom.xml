@@ -2,19 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	<!--suppress MavenModelInspection -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.4.13</version>
+		<version>2.6.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>ru.hermes</groupId>
 	<artifactId>sender</artifactId>
-	<version>0.2.22.02-05b-SNAPSHOT</version>
-	<name>Sender_v02</name>
+	<version>0.2.22.05-01-SNAPSHOT</version>
+	<name>Sender_v03</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 	</properties>
 	<dependencies>
 
@@ -31,14 +32,14 @@
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-core</artifactId>
-			<version>1.2.9</version>
+			<version>1.2.11</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.17.0</version>
+			<version>2.17.2</version>
 		</dependency>
 
 		<dependency>
@@ -50,7 +51,7 @@
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>2.17.0</version>
+			<version>2.17.2</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
@@ -122,7 +123,7 @@
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-broker</artifactId>
-			<version>5.15.14</version>
+			<version>5.15.15</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/xalan/xalan -->
@@ -135,41 +136,13 @@
 		<dependency>
 			<groupId>org.jdom</groupId>
 			<artifactId>jdom2</artifactId>
-			<version>2.0.6</version>
+			<version>2.0.6.1</version>
 		</dependency>
 
 		<dependency>
 			<groupId>jaxen</groupId>
 			<artifactId>jaxen</artifactId>
-			<version>1.1.1</version>
-		</dependency>
-
-		<!--- ru.hermes.msgbus.ws.legacy-->
-		<dependency>
-			<groupId>wsdl4j</groupId>
-			<artifactId>wsdl4j</artifactId>
-			<version>1.6.3</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.xmlbeans/xmlbeans -->
-		<!-- https://mvnrepository.com/artifact/org.jibx.schema.org.xmlsoap.schemas/org.xmlsoap.schemas -->
-		<dependency>
-			<groupId>org.jibx.schema.org.xmlsoap.schemas</groupId>
-			<artifactId>org.xmlsoap.schemas</artifactId>
-			<version>1.2.1</version>
-			<type>pom</type>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.jibx.schema.org.xmlsoap.schemas/org.jibx.schema.org.xmlsoap.schemas.wsdl -->
-		<dependency>
-			<groupId>org.jibx.schema.org.xmlsoap.schemas</groupId>
-			<artifactId>org.jibx.schema.org.xmlsoap.schemas.wsdl</artifactId>
-			<version>1.2.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.xmlbeans</groupId>
-			<artifactId>xmlbeans</artifactId>
-			<version>3.1.0</version>
+			<version>1.1.6</version>
 		</dependency>
 
 		<dependency>
@@ -189,15 +162,6 @@
 			<artifactId>commons-text</artifactId>
 			<version>1.8</version>
 		</dependency>
-<!--
-		<dependency>
-			<groupId>org.apache.ws.commons.schema</groupId>
-			<artifactId>XmlSchema</artifactId>
-			<version>1.4.7</version>
-		</dependency>
--->
-
-
 
 		<!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
 		<dependency>
@@ -249,13 +213,13 @@
 		<dependency>
 			<groupId>com.oracle.database.jdbc</groupId>
 			<artifactId>ojdbc11</artifactId>
-			<version>21.3.0.0</version>
+			<version>21.4.0.0.1</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.oracle.database.nls</groupId>
 			<artifactId>orai18n</artifactId>
-			<version>21.3.0.0</version>
+			<version>19.3.0.0</version>
 		</dependency>
                 <!--
                         <dependency>
@@ -291,10 +255,11 @@
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>3.1.0</version>
 			</plugin>
+			<!--suppress MavenModelInspection -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>2.4.13</version>
+				<version>2.6.6</version>
 				<configuration>
 					<executable>true</executable>
 					<includeSystemScope>true</includeSystemScope>

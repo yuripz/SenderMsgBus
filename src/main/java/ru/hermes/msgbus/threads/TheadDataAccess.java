@@ -35,7 +35,7 @@ public class TheadDataAccess {
                     " Q.msg_status," +
                     " Q.msg_date Msg_Date," +
                     " Q.operation_id," +
-                    " Q.outqueue_id," +
+                    " to_Char(Q.outqueue_id) outqueue_id," +
                     " Q.msg_type," +
                     " Q.msg_reason," +
                     " Q.msgdirection_id," +

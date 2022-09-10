@@ -246,7 +246,7 @@ public class MessageSendTask  implements Runnable
             // Готовим набор SQL
             try {
                 String selectMessage4RowIdSQL= "select q.ROWID, Q.queue_id, Q.queue_direction, NVL(Q.queue_date, sysdate - 1 / (24 * 60)) Queue_Date," +
-                        " Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, Q.outqueue_id, Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid," +
+                        " Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id) outqueue_id, Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid," +
                         " Q.msg_type_own,Q.msg_result, Q.subsys_cod, NVL(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date," +
                         " NVL(Q.queue_create_date, NVL(Q.queue_date, sysdate - 1 / (24 * 60))) Queue_Create_Date, Q.Perform_Object_Id" +
                         " from ARTX_PROJ.MESSAGE_QUEUE q where q.ROWID=?";
@@ -260,7 +260,7 @@ public class MessageSendTask  implements Runnable
                                 " Q.msg_status," +
                                 " Q.msg_date Msg_Date," +
                                 " Q.operation_id," +
-                                " Q.outqueue_id," +
+                                " to_Char(Q.outqueue_id) outqueue_id," +
                                 " Q.msg_type," +
                                 " Q.msg_reason," +
                                 " Q.msgdirection_id," +
@@ -364,7 +364,7 @@ public class MessageSendTask  implements Runnable
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
-                                rs.getLong("OutQueue_Id"),
+                                rs.getString("OutQueue_Id"),  //
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),
@@ -461,7 +461,7 @@ public class MessageSendTask  implements Runnable
                                 messageQueueVO.setMessageQueue(
                                         rs.getLong("Queue_Id"),
                                         rs.getTimestamp("Queue_Date"),
-                                        rs.getLong("OutQueue_Id"),
+                                        rs.getString("OutQueue_Id"),
                                         rs.getTimestamp("Msg_Date"),
                                         rs.getInt("Msg_Status"),
                                         rs.getInt("MsgDirection_Id"),
@@ -749,7 +749,7 @@ stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selec
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
-                                rs.getLong("OutQueue_Id"),
+                                rs.getString("OutQueue_Id"), // get OutQueue_Id as to_Char(Q.outQueue_id)
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),

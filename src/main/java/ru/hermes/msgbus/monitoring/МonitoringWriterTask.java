@@ -133,7 +133,8 @@ public class МonitoringWriterTask  implements Runnable
                             monitorDataAccess.stmtInsertData.setInt( 4,  monitoringQueueVO.Msg_Status );
                             monitorDataAccess.stmtInsertData.setTimestamp(5,  monitoringQueueVO.Msg_Date );
                             monitorDataAccess.stmtInsertData.setInt( 6,  monitoringQueueVO.Operation_Id );
-                            monitorDataAccess.stmtInsertData.setLong(7, monitoringQueueVO.OutQueue_Id );
+                            //monitorDataAccess.stmtInsertData.setBigDecimal(7, monitoringQueueVO.OutQueue_Id );
+                            monitorDataAccess.stmtInsertData.setLong(7, 0L );
                             monitorDataAccess.stmtInsertData.setString(8, monitoringQueueVO.Msg_Type );
                             monitorDataAccess.stmtInsertData.setString(9, monitoringQueueVO.Msg_Reason );
                             monitorDataAccess.stmtInsertData.setInt( 10,  monitoringQueueVO.MsgDirection_Id );

@@ -43,7 +43,7 @@ public class ConcurrentQueue {
         boolean is_added2queue;
     monitoringQueueVO.Queue_Id = messageQueueVO.getQueue_Id();
     monitoringQueueVO.Msg_Date = messageQueueVO.getMsg_Date(); // java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) );
-    monitoringQueueVO.OutQueue_Id = messageQueueVO.getOutQueue_Id();
+    // monitoringQueueVO.OutQueue_Id = messageQueueVO.getOutQueue_Id();
     monitoringQueueVO.Msg_InfoStreamId = messageQueueVO.getMsg_InfoStreamId() ; //theadNum + this.FirstInfoStreamId;
     monitoringQueueVO.Queue_Direction = messageQueueVO.getQueue_Direction();
     monitoringQueueVO.Queue_Date= messageQueueVO.getQueue_Date(); //java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ); //localDate.format( DTformatter ); //dateFormat.format( localDate);

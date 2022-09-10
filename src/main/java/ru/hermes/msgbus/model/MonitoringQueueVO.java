@@ -3,7 +3,8 @@ package ru.hermes.msgbus.model;
 public class MonitoringQueueVO {
     public long    Queue_Id;          // собственный идентификатор сообщения
     public java.sql.Timestamp    Queue_Date;           //  время создания  сообщения
-    public long    OutQueue_Id;
+    // public long OutQueue_Id;
+    // public java.math.BigDecimal OutQueue_Id;
     public java.sql.Timestamp    Msg_Date;             //   время установки последнего  статуса
     public int     Msg_Status=0;         //  статус сообщения
     public int     MsgDirection_Id;     // Идентификатор sysId: для входящего - источник, для исходящего - получатель
@@ -25,6 +26,7 @@ public class MonitoringQueueVO {
     public java.sql.Timestamp Resp_Dt;
     public String Response;
 
+     /* !! не должен использоваться
     @Override
     public String toString(){
         return "MonitoringQueueVO= { Queue_Id: "+Queue_Id+ ", Queue_Direction: "+Queue_Direction+", Prev_Queue_Direction:" +Prev_Queue_Direction + ", Queue_Date:" +Queue_Date + ", OutQueue_Id: "+OutQueue_Id+", Msg_Date:" +Msg_Date + "\n" +
@@ -33,4 +35,5 @@ public class MonitoringQueueVO {
                 ", Req_Dt: "+Req_Dt+", Resp_Dt:" +Resp_Dt + " }"
                 ;
     }
+    */
 }

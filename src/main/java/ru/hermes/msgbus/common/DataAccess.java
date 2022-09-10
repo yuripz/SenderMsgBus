@@ -15,7 +15,7 @@ public  class DataAccess {
     public  static Date InitDate;
     public static DateFormat dateFormat;
 
-    @Autowired
+    //@Autowired
     /*
     static JdbcTemplate jdbcTemplate;
     static DriverManagerDataSource dataSource;
@@ -74,6 +74,7 @@ public  class DataAccess {
             rs.close();
             // stmtInitTimeDateRead.close();
         } catch (Exception e) {
+            dataAccess_log.error( "Hermes getConnection fault: " + e.toString());
             e.printStackTrace();
             return ( (Connection) null );
         }

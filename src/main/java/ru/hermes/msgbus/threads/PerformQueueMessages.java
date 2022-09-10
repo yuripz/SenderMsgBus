@@ -398,7 +398,7 @@ public class PerformQueueMessages {
                 // шаблон MsgAnswXSLT заполнен
                 if ( Message.MessageTemplate4Perform.getMsgAnswXSLT() != null) {
                     if ( Message.MessageTemplate4Perform.getIsDebugged() == true ) {
-                        MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] MsgAnswXSLT:\n" + Message.MessageTemplate4Perform.getMsgAnswXSLT() );
+                        MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] MsgAnswXSLT: " + Message.MessageTemplate4Perform.getMsgAnswXSLT() );
                     }
                     try {
                     Message.XML_MsgRESOUT.append(
@@ -424,7 +424,7 @@ public class PerformQueueMessages {
                     }
                     // MessegeSend_Log.info(Queue_Direction +" ["+ Queue_Id +"] Message.MessageTemplate4Perform.getIsDebugged()=" + Message.MessageTemplate4Perform.getIsDebugged() );
                     if ( Message.MessageTemplate4Perform.getIsDebugged() )
-                    MessegeSend_Log.info(Queue_Direction +" ["+ Queue_Id +"] преобразовали XML-ответ в:\n" + Message.XML_MsgRESOUT.toString() );
+                    MessegeSend_Log.info(Queue_Direction +" ["+ Queue_Id +"] преобразовали XML-ответ в: " + Message.XML_MsgRESOUT.toString() );
                 }
                 else // берем как есть без преобразования
                 {
