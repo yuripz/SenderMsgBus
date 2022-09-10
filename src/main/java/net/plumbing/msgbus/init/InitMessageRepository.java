@@ -18,122 +18,8 @@ import java.sql.*;
 public class InitMessageRepository {
 
     private static PreparedStatement stmtMsgTypeReRead;
-    private static PreparedStatement stmtMsgDirectionReRead;
     private static PreparedStatement stmtMsgTemplateReRead;
-    private static final String SQLMsgDirectionReRead= "SELECT sysdate as DB_DATE, " +
-            " f.msgdirection_id," +
-            " f.msgdirection_cod," +
-            " f.msgdirection_desc," +
-            " f.app_server," +
-            " f.wsdl_name," +
-            " f.msgdir_own," +
-            " f.operator_id," +
-            " f.type_connect," +
-            " f.db_name," +
-            " f.db_user," +
-            " f.db_pswd," +
-            " f.subsys_cod," +
-            " f.base_thread_id," +
-            " f.num_thread," +
-            " COALESCE(f.Short_retry_count,0) as Short_retry_count, " +
-            " COALESCE(f.Short_retry_interval,0) as Short_retry_interval," +
-            " COALESCE(f.Long_retry_count,0) asLong_retry_count, " +
-            " COALESCE(f.Long_retry_interval,0) as Long_retry_interval," +
-            " COALESCE(f.Num_Helpers_Thread,0) as Num_Helpers_Thread, List_Lame_Threads" +
-            " FROM " + DataAccess.HrmsSchema + ".Message_Directions F" +
-            " where F.LAST_UPDATE_DT >= ?" +
-            " order by f.msgdirection_iD,  f.subsys_cod,  f.msgdirection_cod";
-    private static final String SQLMsgTypesReRead= "";
 
-
-    /* Перечитывать перечень систем бессмысленно, потоки и их конфигурация уже сформированы
-        public static  int ReReadMsgDirections( Long CurrentTime,
-                int ShortRetryCount, int ShortRetryInterval, int LongRetryCount, int LongRetryInterval,
-                Logger AppThead_log )
-        {
-            if ( DataAccess.Hermes_Connection == null )
-            {  AppThead_log.error("DataAccess.Hermes_Connection == null");
-                return -3;
-            }
-
-            ResultSet rs = null;
-            Date CurrentDateTime = new Date(CurrentTime);
-            try {
-                AppThead_log.info(" CurrentDateTime=" +  DataAccess.dateFormat.format( CurrentDateTime ) +" :SELECT * FROM ARTX_PROJ.Message_Directions F where F.LAST_UPDATE_DT >= '" + DataAccess.dateFormat.format( DataAccess.InitDate )  +"'" );
-                stmtMsgDirectionReRead.setDate(1, DataAccess.InitDate );
-                rs = stmtMsgDirectionReRead.executeQuery();
-                while (rs.next()) {
-                    // String msgdirection_cod = rs.getString("msgdirection_cod");
-
-                    int MsgDirectionVO_Key = MessageRepositoryHelper.look4MessageDirectionsVO_2_Perform( rs.getInt("msgdirection_id"),rs.getString("subsys_cod"), AppThead_log   );
-                    if ( MsgDirectionVO_Key < 0) {
-                        MessageDirectionsVO messageDirectionsVO = new MessageDirectionsVO();
-                        messageDirectionsVO.setMessageDirectionsVO(
-                                rs.getInt("msgdirection_id"),
-                                rs.getString("msgdirection_cod"),
-                                rs.getString("Msgdirection_Desc"),
-                                rs.getString("app_server"),
-                                rs.getString("wsdl_name"),
-                                rs.getString("msgdir_own"),
-                                rs.getString("operator_id"),
-                                rs.getInt("type_connect"),
-                                rs.getString("db_name"),
-                                rs.getString("db_user"),
-                                rs.getString("db_pswd"),
-                                rs.getString("subsys_cod"),
-                                rs.getInt("base_thread_id"),
-                                rs.getInt("num_thread"),
-                                rs.getInt("short_retry_count"),
-                                rs.getInt("short_retry_interval"),
-                                rs.getInt("long_retry_count"),
-                                rs.getInt("long_retry_interval"),
-                                rs.getInt("Num_Helpers_Thread"),
-                                rs.getString("List_Lame_Threads")
-                        );
-                        // messageDirectionsVO.LogMessageDirections( log );
-                        if ( messageDirectionsVO.getShort_retry_count() == 0 )
-                            messageDirectionsVO.setShort_retry_count(ShortRetryCount);
-
-                        if ( messageDirectionsVO.getShort_retry_interval() == 0 )
-                            messageDirectionsVO.setShort_retry_interval(ShortRetryInterval);
-
-                        if ( messageDirectionsVO.getLong_retry_count() == 0 )
-                            messageDirectionsVO.setLong_retry_count(LongRetryCount);
-
-                        if ( messageDirectionsVO.getLong_retry_interval() == 0 )
-                            messageDirectionsVO.setLong_retry_interval(LongRetryInterval);
-
-                        MessageDirections.AllMessageDirections.put(MessageDirections.RowNum, messageDirectionsVO);
-                        AppThead_log.info("Add system to AllMessageDirections: (MessageDirections.AllMessageDirections.size()) RowNum[" + MessageDirections.RowNum + "] =" + messageDirectionsVO.LogMessageDirections());
-
-                        MessageDirections.RowNum += 1;
-                    }
-                    else {
-                        AppThead_log.info("Update MessageDirections[" +   MsgDirectionVO_Key + "]: msgdirection_cod=" + rs.getString("msgdirection_cod") + ", "+ rs.getString("Msgdirection_Desc") );
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setWSDL_Name( rs.getString("wsdl_name"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setDb_pswd( rs.getString("db_pswd") );
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setDb_user(rs.getString("db_user"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setShort_retry_count(rs.getInt("short_retry_count"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setShort_retry_interval(rs.getInt("short_retry_interval"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setLong_retry_count(rs.getInt("long_retry_count"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setLong_retry_interval(rs.getInt("long_retry_interval"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setType_Connect(rs.getInt("type_connect"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setBase_Thread_Id(rs.getInt("base_thread_id"));
-                        MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setNum_Thread(rs.getInt("num_thread"));
-                    }
-                    // log.info(" MessageDirections[" +   MessageDirections.AllMessageDirections.size() + "]: longRetryInterval=" + messageDirectionsVO.getLong_retry_interval() + ", "+ messageDirectionsVO.getMsgDirection_Desc() );
-
-                }
-                rs.close();
-                DataAccess.Hermes_Connection.commit();
-            } catch (Exception e) {
-                AppThead_log.error("ReReadMsgDirections fault: " + sStackTracе.strInterruptedException(e));
-                // e.printStackTrace();
-                return -2;
-            }
-            return MessageDirections.RowNum;
-        }
-    */
     public static  int ReReadMsgTypes(Logger AppThead_log )  {
         PreparedStatement stmtMsgType = stmtMsgTypeReRead;
         int MessageTypeVOkey;
@@ -170,7 +56,8 @@ public class InitMessageRepository {
                             rs.getString("url_soap_send"),
                             rs.getString("url_soap_ack"),
                             rs.getInt("max_retry_count"),
-                            rs.getInt("max_retry_time")
+                            rs.getInt("max_retry_time"),
+                            rs.getTimestamp( "Last_Update_Dt")
                     );
                     //messageTypeVO.LogMessageDirections( log );
                     // log.info(" messageTypeVO :", messageTypeVO );
@@ -291,8 +178,6 @@ public class InitMessageRepository {
 
         if ( DataAccess.Hermes_Connection != null )
             try {
-                stmtMsgDirectionReRead = DataAccess.Hermes_Connection.prepareStatement(SQLMsgDirectionReRead );
-                
                 stmtMsgDirection = DataAccess.Hermes_Connection.prepareStatement("SELECT f.msgdirection_id," +
                         " f.msgdirection_cod," +
                         " f.msgdirection_desc," +
@@ -417,7 +302,7 @@ public class InitMessageRepository {
                         "t.url_soap_send,\n" +
                         "t.url_soap_ack,\n" +
                         "t.max_retry_count,\n" +
-                        "t.max_retry_time\n" +
+                        "t.max_retry_time, t.Last_Update_Dt\n" +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t\n" +
                         "where (1=1) and t.msg_direction like '%OUT%'\n" +
                         "and t.operation_id !=0 order by t.interface_id, t.operation_id");
@@ -446,7 +331,8 @@ public class InitMessageRepository {
                         rs.getString("url_soap_send"),
                         rs.getString("url_soap_ack"),
                         rs.getInt("max_retry_count"),
-                        rs.getInt("max_retry_time")
+                        rs.getInt("max_retry_time"),
+                        rs.getTimestamp( "Last_Update_Dt")
                 );
                 //messageTypeVO.LogMessageDirections( log );
                 // log.info(" messageTypeVO :", messageTypeVO );

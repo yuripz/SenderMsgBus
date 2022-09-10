@@ -101,7 +101,8 @@ public class MessageHttpSend {
         int  ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
 
-        RowId ROWID_QUEUElog=null;
+        // TODO : for Ora RowId ROWID_QUEUElog=null;
+        String ROWID_QUEUElog=null;
         String RestResponse=null;
         InputStream Response;
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -225,7 +226,8 @@ public class MessageHttpSend {
 //            сохраняем в XML_MsgResponse SOAP-конверт уже в UTF_8
             messageDetails.XML_MsgResponse.append( RestResponse ); // cj,cn
 
-            messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
+            // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
+            // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
             MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
@@ -293,7 +295,7 @@ public class MessageHttpSend {
             }
 
         } catch (Exception e) {
-            MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTracе.strInterruptedException(e));
+            MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Retry_Count=" + messageQueueVO.getRetry_Count() + "SendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTracе.strInterruptedException(e));
             messageDetails.MsgReason.append(" sendSoapMessage.getResponseBody fault: " + sStackTracе.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
@@ -303,7 +305,8 @@ public class MessageHttpSend {
             //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e),monitoringQueueVO, MessegeSend_Log);
             return -3;
         }
-
+        // когда всё хорошо, увеличивать счётчик нет смысла
+        // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
         return 0;
     }
 
@@ -479,7 +482,9 @@ public class MessageHttpSend {
                     "HttpGetMessage.setHttpGetParams() [не содержит параметров для HtthGet]", true,  null ,  MessegeSend_Log);
             return -1;
         }
-        RowId ROWID_QUEUElog=null;
+        //  TODO for Oracle ROWID, в случае Postgree String :
+        // RowId ROWID_QUEUElog=null;
+        String ROWID_QUEUElog=null;
 		try {
             Unirest.setHttpClient( messageDetails.SimpleHttpClient);
 

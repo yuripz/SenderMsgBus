@@ -48,7 +48,7 @@ public  class DataAccess {
         else rdbmsVendor="postgresql";
         HrmsSchema =  DbSchema;
 
-        dataAccess_log.info( "Try DataBase getConnection: " + connectionUrl + " as " + db_userid + " to RDBMS " + rdbmsVendor + " DbSchema:" + DbSchema);
+        dataAccess_log.info( "Try DataBase getConnection: [" + connectionUrl + "] as " + db_userid + " to RDBMS (" + rdbmsVendor + ") DbSchema:" + DbSchema);
 
         try {
             // Establish the connection.
@@ -58,6 +58,11 @@ public  class DataAccess {
             Target_Connection = DriverManager.getConnection(connectionUrl, db_userid, db_password);
             // Handle any errors that may have occurred.
             Target_Connection.setAutoCommit(false);
+            if ( !rdbmsVendor.equals("oracle") ) {
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
+                stmt_SetTimeZone.execute();
+                stmt_SetTimeZone.close();
+            }
 
             /*dataSource = new DriverManagerDataSource(connectionUrl);
             dataSource.setDriverClassName("oracle.jdbc.OracleDriver");

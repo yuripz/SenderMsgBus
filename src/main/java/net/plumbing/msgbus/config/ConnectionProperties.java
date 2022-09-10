@@ -178,7 +178,7 @@ public class ConnectionProperties {
                 + "\n" +
                 "numMessageInScan=" + numMessageInScan +", waitTimeScan=" + this.waitTimeScan
                 + "\n" +
-                "intervalReInit=" + intervalReInit + ", firstInfoStreamId=" +this.firstInfoStreamId
+                "intervalReInit=" + intervalReInit + ", firstInfoStreamId=" +this.firstInfoStreamId + ", " + this.connectMsgBus
                 ;
     }
 

@@ -13,6 +13,7 @@ public class MessageTypeVO {
     private String URL_SOAP_Ack;
     private int Max_Retry_Count;
     private int Max_Retry_Time;
+    private java.sql.Timestamp Last_Update_Dt;
 
     public void setMessageTypeVO( int Interface_Id,
                                         int Operation_Id,
@@ -24,7 +25,9 @@ public class MessageTypeVO {
                                         String URL_SOAP_Send,
                                         String URL_SOAP_Ack,
                                         int Max_Retry_Count,
-                                        int Max_Retry_Time) {
+                                        int Max_Retry_Time,
+                                        java.sql.Timestamp Last_Update_Dt
+    ) {
         this.Interface_Id=   Interface_Id ;
         this.Operation_Id= Operation_Id  ;
         this. Msg_Type= Msg_Type  ;
@@ -36,7 +39,7 @@ public class MessageTypeVO {
         this. URL_SOAP_Ack=  URL_SOAP_Ack  ;
         this.Max_Retry_Count= Max_Retry_Count ;
         this.Max_Retry_Time = Max_Retry_Time;
-
+        this.Last_Update_Dt = Last_Update_Dt;
     }
 
     public int getInterface_Id(){ return this.Interface_Id; }

@@ -244,6 +244,7 @@ public class MessageSendTask  implements Runnable
         PreparedStatement stmtQueueLock4JMSconsumer;
         PreparedStatement stmtGetMessage4RowId;
         // PreparedStatement stmtUpdateMessage4RowId; - вместо этого TheadDataAccess.doUPDATE_QUEUE_InfoStreamId()
+        String rdbmsVendor = TheadDataAccess.getRdbmsVendor();
 
         if ( TheadDataAccess.Hermes_Connection != null )
             // Готовим набор SQL
@@ -251,11 +252,11 @@ public class MessageSendTask  implements Runnable
                 String selectMessage4RowIdSQL= "select q.ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute) as Queue_Date," +
                         " Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id, Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid," +
                         " Q.msg_type_own,Q.msg_result, Q.subsys_cod, COALESCE(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date," +
-                        " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute )) as Queue_Create_Date, Q.Perform_Object_Id" +
+                        " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp at time zone '+03:00' - Interval '1' Minute )) as Queue_Create_Date, Q.Perform_Object_Id" +
                         " from " + HrmsSchema + ".MESSAGE_QUEUE q where q.ROWID=?";
                 stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessage4RowIdSQL );
                 //stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update ARTX_PROJ.MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
-                String selectMessageSQL =
+                String PreSelectMessageSQL =
                         "select * from ( select q.ROWID, " +
                                 " Q.queue_id," +
                                 " Q.queue_direction," +
@@ -274,15 +275,18 @@ public class MessageSendTask  implements Runnable
                                 " COALESCE(Q.retry_count, 0) as Retry_Count," +
                                 " Q.prev_queue_direction," +
                                 " Q.prev_msg_date Prev_Msg_Date, " +
-                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute  )) as Queue_Create_Date, " +
+                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp at time zone '+03:00' - Interval '1' Minute  )) as Queue_Create_Date, " +
                                 " Q.Perform_Object_Id " +
                                 "from " + HrmsSchema + ".MESSAGE_QUEUE Q" +
                                 " Where 1=1" +
                                 " and Q.msg_infostreamid = ? "  +
                                 " and Q.queue_direction in( 'OUT','SEND')" +  // ",'RESOUT','DELOUT')"
-                                " and Q.msg_date < Current_TimeStamp " +
-                                // TODO Oracle " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan ;
-                " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit " + NumMessageInScan ;
+                                " and Q.msg_date < Current_TimeStamp at time zone '+03:00' " ;
+                String selectMessageSQL;
+                if (rdbmsVendor.equals("oracle") ) // TODO Oracle
+                    selectMessageSQL = PreSelectMessageSQL +" order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan ;
+                else
+                    selectMessageSQL = PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit " + NumMessageInScan ;
                 MessegeSend_Log.info( "Main_MESSAGE_QueueSelect:{" + selectMessageSQL  + "} Q.Msg_InfostreamId ="  + (this.FirstInfoStreamId + theadNum ) ) ;
                 stmtMsgQueue = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
 
@@ -292,7 +296,7 @@ public class MessageSendTask  implements Runnable
                 // Получеем перечень потоков, которым надо помогать ДАННОМУ потоку
                 String List_Lame_Threads =  MessageRepositoryHelper.look4List_Lame_Threads_4_Num_Thread( theadNum + this.FirstInfoStreamId  , MessegeSend_Log );
                 if ( List_Lame_Threads != null)
-                {   selectMessageSQL =
+                {   PreSelectMessageSQL =
                         "select * from ( select q.ROWID, " +
                                 " Q.queue_id," +
                                 " Q.queue_direction," +
@@ -311,14 +315,18 @@ public class MessageSendTask  implements Runnable
                                 " COALESCE(Q.retry_count, 0) as Retry_Count," +
                                 " Q.prev_queue_direction," +
                                 " Q.prev_msg_date Prev_Msg_Date, " +
-                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute  )) as Queue_Create_Date, " +
+                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp at time zone '+03:00' - Interval '1' Minute  )) as Queue_Create_Date, " +
                                 " Q.Perform_Object_Id " +
                                 "from " + HrmsSchema + ".MESSAGE_QUEUE Q" +
                                 " Where 1=1" +
                                 " and Q.msg_infostreamid in (" + List_Lame_Threads + ")" +
                                 " and Q.queue_direction='OUT'" +  // in( 'OUT')",'SEND','RESOUT','DELOUT')"
-                                " and Q.msg_date < Current_TimeStamp " +
-                                " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum =1 " ;
+                                " and Q.msg_date < Current_TimeStamp at time zone '+03:00' ";
+                    if (rdbmsVendor.equals("oracle") ) // TODO Oracle
+                        selectMessageSQL = PreSelectMessageSQL +" order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum =1 " ;
+                    else
+                        selectMessageSQL = PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit 1"  ;
+
                     MessegeSend_Log.info( "Helper_MESSAGE_QueueSelect: " + selectMessageSQL );
                     stmtHelperMsgQueue = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
                 }
@@ -388,12 +396,14 @@ public class MessageSendTask  implements Runnable
                         );
 
                         MessegeSend_Log.info( "messageQueueVO.Queue_Id:" + rs.getLong("Queue_Id") + " [Msg_InfoStreamId=" + rs.getInt("Msg_InfoStreamId") + "]" +
-                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getRowId("ROWID"));
+                                // TODO Oracle " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getRowId("ROWID"));
+                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getString("ROWID"));
                         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
                         // пробуем захватить запись
                         boolean isNoLock = true;
                         try {
-                            stmtQueueLock.setRowId(1, rs.getRowId("ROWID") );
+                            // TODO Oracle stmtQueueLock.setRowId(1, rs.getRowId("ROWID") );
+                            stmtQueueLock.setString(1, rs.getString("ROWID") );
                             int LockedMsg_InfoStreamId=0;
                             Long LockedQueue_Id=0L;
                             String LockedQueue_Direction;

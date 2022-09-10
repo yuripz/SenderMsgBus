@@ -222,15 +222,14 @@ public class SenderApplication implements CommandLineRunner {
 				{
 					Runtime r = Runtime.getRuntime();
 					long freeMemory = r.maxMemory() - r.totalMemory() + r.freeMemory();
-					AppThead_log.info(" \"free memory\"( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process before GC is : " + freeMemory );
+					AppThead_log.info(" `free memory`( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process before GC is : " + freeMemory );
 					Runtime.getRuntime().gc();
 					Thread.sleep(1000);
 					freeMemory = r.maxMemory() - r.totalMemory() + r.freeMemory();
-					AppThead_log.info(" \"free memory\"( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process after GC is : " + freeMemory );
+					AppThead_log.info(" `free memory`( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process after GC is : " + freeMemory );
 
 					if ( count != TotalNumTasks )
 						NotifyByChannel.Telegram_sendMessage( "*Количество потоков=*" + count +" !=" + TotalNumTasks +" у Sender Application on " + InetAddress.getLocalHost().getHostAddress(), AppThead_log );
-					;
 
 					CurrentTimeString = DataAccess.getCurrentTimeString(AppThead_log);
 
@@ -263,21 +262,21 @@ public class SenderApplication implements CommandLineRunner {
 			}
 		}
 		taskExecutor.shutdown();
-		this.monitorWriterPool.shutdown();
+		monitorWriterPool.shutdown();
 		 NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", AppThead_log );
 		System.exit(-22);
 		return;
 	}
 
 	private void monitorWriter() {
-		this.monitorWriterPool = new ThreadPoolTaskExecutor();
-		this.monitorWriterPool.initialize();
+		monitorWriterPool = new ThreadPoolTaskExecutor();
+		monitorWriterPool.initialize();
 //        pool.setCorePoolSize(taskPollProperties.getcorePoolSize());
 //        pool.setMaxPoolSize(taskPollProperties.getmaxPoolSize());
-		this.monitorWriterPool.setCorePoolSize(203);
-		this.monitorWriterPool.setMaxPoolSize(204);
-		this.monitorWriterPool.setWaitForTasksToCompleteOnShutdown(true);
-		this.monitorWriterPool.setThreadNamePrefix("Monitor-");
+		monitorWriterPool.setCorePoolSize(23);
+		monitorWriterPool.setMaxPoolSize(24);
+		monitorWriterPool.setWaitForTasksToCompleteOnShutdown(true);
+		monitorWriterPool.setThreadNamePrefix("Monitor-");
 		AppThead_log.info("ThreadPoolTaskExecutor for monitorWriter prepared: CorePoolSize(203), MaxPoolSize(204); ");
 	}
 }
