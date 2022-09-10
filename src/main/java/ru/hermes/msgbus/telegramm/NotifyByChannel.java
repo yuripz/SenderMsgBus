@@ -42,8 +42,16 @@ public class NotifyByChannel {
     private static HttpClientBuilder httpClientBuilder  = null;
     private static CloseableHttpClient ApiRestHttpClient = null;
     private static PoolingHttpClientConnectionManager syncConnectionManager = null;
-
+    private static String ChatBotUrl= null;
+    public static void Telegram_setChatBotUrl( String ChatBotUrlProperties, Logger sendMessage_log) {
+        ChatBotUrl= ChatBotUrlProperties;
+        sendMessage_log.warn("Telegram_setChatBotUrl to `"+ ChatBotUrlProperties + "`");
+    }
     public static boolean Telegram_sendMessage( String message4telegramm, Logger sendMessage_log) {
+        if ( ChatBotUrl == null) {
+            sendMessage_log.warn( "Telegram_SendMessage ChatBotUrl => NULL !" );
+            return false;
+        }
        if ( false) {
 //           httpClient = HttpClient.newBuilder()
 //                   .sslContext(ru.hermes.msgbus.threads.utils.MessageHttpSend.getSSLContext())
@@ -93,9 +101,9 @@ public class NotifyByChannel {
         //
         try {
         // URI_Sring = "https://jsonplaceholder.typicode.com/users/2";
-            URI_Sring =
-                    "https://api.telegram.org/bot1450268713:AAGMgWJ1ET91dvY5KofxNfXJBRJ_iFpTqZo/sendMessage" +
-                            "?chat_id=-1001328897633&text=" +
+            URI_Sring = ChatBotUrl +
+                    //"https://api.telegram.org/bot1450268713:AAGMgWJ1ET91dvY5KofxNfXJBRJ_iFpTqZo/sendMessage" +
+                    //        "?chat_id=-1001328897633&text=" +
                             URLEncoder.encode( message4telegramm, StandardCharsets.UTF_8.toString()) + "&parse_mode=Markdown";
          //   URI_Sring="http://httpbin.org/get";
          //  URI_Sring = "https://172.64.200.15:443/users/2";

@@ -12,22 +12,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import org.springframework.boot.CommandLineRunner;
-import ru.hermes.msgbus.config.ConnectionProperties;
-import ru.hermes.msgbus.config.TaskPollProperties;
-import ru.hermes.msgbus.config.DBLoggingProperties;
+import ru.hermes.msgbus.config.*;
 import ru.hermes.msgbus.model.MessageDirections;
 import ru.hermes.msgbus.monitoring.МonitoringWriterTask;
 import ru.hermes.msgbus.monitoring.ConcurrentQueue;
 //import ru.hermes.msgbus.monitoring.MonitoringConfig;
 import ru.hermes.msgbus.mq.ActiveMQService;
 import ru.hermes.msgbus.telegramm.NotifyByChannel;
+import ru.hermes.msgbus.telegramm.ShutdownHook;
 import ru.hermes.msgbus.threads.MessageSendTask;
-import ru.hermes.msgbus.config.Sender_AppConfig;
 import ru.hermes.msgbus.init.InitMessageRepository;
 
 import ru.hermes.msgbus.common.DataAccess;
 
 import java.net.InetAddress;
+
 import java.sql.SQLException;
 import java.util.Properties;
 import org.apache.activemq.broker.BrokerService;
@@ -49,6 +48,8 @@ public class SenderApplication implements CommandLineRunner {
     public DBLoggingProperties dbLoggingProperties;
     @Autowired
     public  TaskPollProperties taskPollProperties ;
+    @Autowired
+    public TelegramProperties telegramProperties;
 
 
     public static void main(String[] args) {
@@ -68,6 +69,7 @@ public class SenderApplication implements CommandLineRunner {
 
         AppThead_log.info("Hellow for SenderApplication ");
         // ru.hermes.msgbus.telegramm.NotifyByChannel.testSyncGet();
+        ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
         isNotifyOk = ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostAddress(), AppThead_log );
         if (! isNotifyOk )  System.exit(-33);
         String propConnectMsgBus = connectionProperties.getconnectMsgBus();
@@ -82,6 +84,8 @@ public class SenderApplication implements CommandLineRunner {
         props.setProperty("com.sun.net.ssl.checkRevocation","false");
 
         ThreadPoolTaskExecutor taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
+        // ShutdownHook myHook = (ShutdownHook) context.getBean("onExit");
+        //context.registerShutdownHook();
 
 
         // ThreadPoolTaskExecutor MonitorExecutor = (ThreadPoolTaskExecutor) MntrContext.getBean("monitorWriter");
@@ -260,7 +264,7 @@ public class SenderApplication implements CommandLineRunner {
         }
         taskExecutor.shutdown();
         this.monitorWriterPool.shutdown();
-        isNotifyOk = ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_SendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", AppThead_log );
+        isNotifyOk = ru.hermes.msgbus.telegramm.NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", AppThead_log );
         System.exit(-22);
         return;
 /*****************
@@ -277,6 +281,7 @@ public class SenderApplication implements CommandLineRunner {
         this.monitorWriterPool.setWaitForTasksToCompleteOnShutdown(true);
         this.monitorWriterPool.setThreadNamePrefix("Monitor-");
         AppThead_log.info("ThreadPoolTaskExecutor for monitorWriter prepared: CorePoolSize(203), MaxPoolSize(204); ");
-
     }
+
+
 }

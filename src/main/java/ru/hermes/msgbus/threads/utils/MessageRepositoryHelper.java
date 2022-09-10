@@ -189,9 +189,9 @@ public static String look4List_Lame_Threads_4_Num_Thread( Integer Num_Thread, Lo
             }
         }
         // уточняем точность находки в порядке широты применения
-        if ( Template_All_Id > 0 ) Template_Id = Template_All_Id;
-        if ( Template_4_Direction_Id > 0 ) Template_Id = Template_4_Direction_Id;
-        if ( Template_4_Direction_SubSys_Id > 0 ) Template_Id = Template_4_Direction_SubSys_Id;
+        if ( Template_All_Id >= 0 ) Template_Id = Template_All_Id;
+        if ( Template_4_Direction_Id >= 0 ) Template_Id = Template_4_Direction_Id;
+        if ( Template_4_Direction_SubSys_Id >= 0 ) Template_Id = Template_4_Direction_SubSys_Id;
         if ( Template_Id >= 0 )
             MessegeSend_Log.info("Итого, используем [" + Template_Id +"]: Template_Id=" + MessageTemplate.AllMessageTemplate.get(Template_Id).getTemplate_Id());
         else
