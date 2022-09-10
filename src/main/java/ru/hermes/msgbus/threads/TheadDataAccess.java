@@ -1,9 +1,11 @@
 package ru.hermes.msgbus.threads;
 
-import oracle.jdbc.internal.OraclePreparedStatement;
-import oracle.jdbc.internal.OracleTypes;
-import oracle.jdbc.internal.OracleRowId;
-import oracle.sql.NUMBER;
+//import oracle.jdbc.internal.PreparedStatement;
+import java.sql.*;
+
+//import oracle.jdbc.internal.OracleTypes;
+//import oracle.jdbc.internal.OracleRowId;
+//import oracle.sql.NUMBER;
 import org.slf4j.Logger;
 
 import javax.validation.constraints.NotNull;
@@ -12,22 +14,18 @@ import java.math.BigDecimal;
 import ru.hermes.msgbus.common.XMLchars;
 import ru.hermes.msgbus.model.MessageQueueVO;
 import java.math.BigInteger;
-import java.sql.Connection;
 // import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.DriverManager;
-import java.sql.Savepoint;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 public class TheadDataAccess {
     private final int maxReasonLen =1996;
     public  Connection  Hermes_Connection;
-    public OraclePreparedStatement stmtMsgQueueDet=null;
-    private OraclePreparedStatement stmtMsgQueueConfirmationTag = null;
-    private OraclePreparedStatement stmtMsgQueueBody = null;
-    private OraclePreparedStatement stmtMsgLastBodyTag = null;
-    private OraclePreparedStatement stmtMsgQueueConfirmation = null;
+    public PreparedStatement stmtMsgQueueDet=null;
+    private PreparedStatement stmtMsgQueueConfirmationTag = null;
+    private PreparedStatement stmtMsgQueueBody = null;
+    private PreparedStatement stmtMsgLastBodyTag = null;
+    private PreparedStatement stmtMsgQueueConfirmation = null;
 
     public final String selectMESSAGE_QUEUE =
             "select " +
@@ -50,103 +48,102 @@ public class TheadDataAccess {
                     " Q.Perform_Object_Id " +
                     "from ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "where 1=1 and q.Queue_Id = ?  ";
-    private OraclePreparedStatement stmtSelectMESSAGE_QUEUE;
+    private PreparedStatement stmtSelectMESSAGE_QUEUE;
 
-    private OraclePreparedStatement stmtUPDATE_MessageQueue_Queue_Date4Send;
+    private PreparedStatement stmtUPDATE_MessageQueue_Queue_Date4Send;
     // HE-5481  q.Queue_Date = sysdate -> надо отображать дату первой попытки отправки
     private final String UPDATE_MessageQueue_Queue_Date4Send =
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
-                    "set q.Queue_Date = sysdate, q.Queue_Direction = 'SEND'" +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = 0, q.Retry_Count=1 " +
-                    ", q.Prev_Queue_Direction='OUT', q.Prev_Msg_Date=sysdate " +
+                    "set q.Queue_Date = current_timestamp, q.Queue_Direction = 'SEND'" +
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = 0, q.Retry_Count=1 " +
+                    ", q.Prev_Queue_Direction='OUT', q.Prev_Msg_Date=current_timestamp " +
                     "where 1=1 and q.Queue_Id = ?  ";
 
-    private OraclePreparedStatement stmtUPDATE_MessageQueue_Out2Send;
+    private PreparedStatement stmtUPDATE_MessageQueue_Out2Send;
     // HE-5481  q.Queue_Date = sysdate -> надо отображать дату первой попытки отправки
     private final String UPDATE_MessageQueue_Out2Send =
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
-            "set q.Queue_Date = sysdate, q.Queue_Direction = 'SEND', q.Msg_Reason = ?" +
-            ", q.Msg_Date= sysdate,  q.Msg_Status = 0, q.Retry_Count=1 " +
-            ", q.Prev_Queue_Direction='OUT', q.Prev_Msg_Date=sysdate " +
+            "set q.Queue_Date = current_timestamp, q.Queue_Direction = 'SEND', q.Msg_Reason = ?" +
+            ", q.Msg_Date= current_timestamp,  q.Msg_Status = 0, q.Retry_Count=1 " +
+            ", q.Prev_Queue_Direction='OUT', q.Prev_Msg_Date=current_timestamp " +
             "where 1=1 and q.Queue_Id = ?  ";
-    private OraclePreparedStatement stmtUPDATE_MessageQueue_Out2ErrorOUT;
+    private PreparedStatement stmtUPDATE_MessageQueue_Out2ErrorOUT;
     private final String UPDATE_MessageQueue_Out2ErrorOUT=
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "set q.Queue_Direction = 'ERROUT', q.Msg_Reason = ?" +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = 1030, q.Retry_Count=1 " + // 1030 = Ошибка преобразования из OUT в SEND
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = 1030, q.Retry_Count=1 " + // 1030 = Ошибка преобразования из OUT в SEND
                     ", q.Prev_Queue_Direction='OUT', q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = ?  ";
 
-    private OraclePreparedStatement stmtUPDATE_MessageQueue_Send2ErrorOUT;
+    private PreparedStatement stmtUPDATE_MessageQueue_Send2ErrorOUT;
     private final String UPDATE_MessageQueue_Send2ErrorOUT=
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "set q.Queue_Direction = 'ERROUT', q.Msg_Reason = ?" +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = ?, q.Retry_Count= ? " +
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = ?, q.Retry_Count= ? " +
                     ", q.Prev_Queue_Direction='SEND', q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = ?  ";
 
     private final String UPDATE_MessageQueue_SetMsg_Reason=
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "set q.Queue_Direction = 'RESOUT', q.Msg_Reason = ?" +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = ?, q.Retry_Count= ? " +
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = ?, q.Retry_Count= ? " +
                     ", q.Prev_Queue_Direction='SEND', q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = ? ";
-    private OraclePreparedStatement stmtUPDATE_MessageQueue_SetMsg_Reason;
+    private PreparedStatement stmtUPDATE_MessageQueue_SetMsg_Reason;
 
-    private OraclePreparedStatement stmtUPDATE_MessageQueue_Send2AttOUT;
+    private PreparedStatement stmtUPDATE_MessageQueue_Send2AttOUT;
     private final String UPDATE_MessageQueue_Send2AttOUT=
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "set q.Queue_Direction = 'ATTOUT', q.Msg_Result = ?" +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = ?, q.Retry_Count= ? " +
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = ?, q.Retry_Count= ? " +
                     ", q.Prev_Queue_Direction='SEND', q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = ?  ";
 
-    private OraclePreparedStatement stmt_UPDATE_MessageQueue_Send2finishedOUT;
+    private PreparedStatement stmt_UPDATE_MessageQueue_Send2finishedOUT;
     private final String UPDATE_MessageQueue_Send2finishedOUT=
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "set q.Queue_Direction = ?, q.Msg_Reason = ?" +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = ?, q.Retry_Count= ? " +
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = ?, q.Retry_Count= ? " +
                     ", q.Prev_Queue_Direction='SEND', q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = ?  ";
 
-    private OraclePreparedStatement stmt_UPDATE_MessageQueue_DirectionAsIS;
+    private PreparedStatement stmt_UPDATE_MessageQueue_DirectionAsIS;
     private final String UPDATE_MessageQueue_DirectionAsIS=
             "update ARTX_PROJ.MESSAGE_QUEUE Q " +
-                    "set q.Msg_Date= sysdate + (?/(24*3600)), q.Msg_Reason = ?, q.Msg_Status = ?, q.Retry_Count= ?, " +
-                    " q.Prev_Msg_Date=q.Msg_Date " +
+                    "set q.Msg_Date= (current_timestamp + ? * interval '1' second) , q.Msg_Reason = ?, q.Msg_Status = ?, q.Retry_Count= ?, q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = ?";
 
 
-    private OraclePreparedStatement stmt_UPDATE_MessageQueue_after_FaultResponse;
-    private OraclePreparedStatement stmt_UPDATE_after_FaultGet;
+    private PreparedStatement stmt_UPDATE_MessageQueue_after_FaultResponse;
+    private PreparedStatement stmt_UPDATE_after_FaultGet;
 
     private final String UPDATE_QUEUE_InfoStreamId="update ARTX_PROJ.MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID = ?";
-    private OraclePreparedStatement stmt_UPDATE_QUEUE_InfoStreamId;
-    private final String UPDATE_QUEUElog_Response="update ARTX_PROJ.MESSAGE_QUEUElog L set l.Resp_DT = systimestamp, l.Response = ? where l.QUEUE_ID= ? and l.ROWID = ?";
-    private OraclePreparedStatement stmt_UPDATE_QUEUElog;
-    private final String INSERT_QUEUElog_Request="insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, systimestamp, ?) returning ROWID into ?";
-    private OraclePreparedStatement stmt_INSERT_QUEUElog;
-    //public final String INSERT_QUEUElog_Request="{call insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, sysdate, ?) returning ROWID into ? }";
+    private PreparedStatement stmt_UPDATE_QUEUE_InfoStreamId;
+    private final String UPDATE_QUEUElog_Response="update ARTX_PROJ.MESSAGE_QUEUElog L set l.Resp_DT = current_timestamp, l.Response = ? where l.QUEUE_ID= ? and l.ROWID = ?";
+    private PreparedStatement stmt_UPDATE_QUEUElog;
+    private final String INSERT_QUEUElog_Request="{call insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, systimestamp, ?) returning ROWID into ? }";
+    private CallableStatement stmt_INSERT_QUEUElog;
+    //public final String INSERT_QUEUElog_Request="{call insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, current_timestamp, ?) returning ROWID into ? }";
     // public CallableStatement stmt_INSERT_QUEUElog;
-    public OraclePreparedStatement stmt_DELETE_Message_Details;
+    public PreparedStatement stmt_DELETE_Message_Details;
     public final String DELETE_Message_Details= "delete from ARTX_PROJ.MESSAGE_QueueDET D where D.queue_id =?";
 
-    public OraclePreparedStatement stmt_DELETE_Message_Confirmation;
+    public PreparedStatement stmt_DELETE_Message_Confirmation;
     public final String DELETE_Message_Confirmation= "delete from ARTX_PROJ.MESSAGE_QUEUEDET d where d.queue_id = ?  and d.tag_par_num >=" +
             "(select min(d.tag_num) from ARTX_PROJ.MESSAGE_QUEUEDET d where d.queue_id = ? and d.tag_id='Confirmation')";
-    public OraclePreparedStatement stmt_DELETE_Message_ConfirmationH;
+    public PreparedStatement stmt_DELETE_Message_ConfirmationH;
     public final String DELETE_Message_ConfirmationH= "delete from ARTX_PROJ.MESSAGE_QUEUEDET d where d.queue_id = ?  and d.tag_id='Confirmation'";
 
-    public OraclePreparedStatement stmt_Query_Message_Confirmation;
+    public PreparedStatement stmt_Query_Message_Confirmation;
     public final String SELECT_Message_Confirmation= "select from ARTX_PROJ.MESSAGE_QueueDET D where D.queue_id =? and d.Tag_num >= ?";
 
 
-    public OraclePreparedStatement stmt_INSERT_Message_Details;
+    public PreparedStatement stmt_INSERT_Message_Details;
     public final String INSERT_Message_Details= "INSERT into ARTX_PROJ.MESSAGE_QueueDET (QUEUE_ID, TAG_ID, TAG_VALUE, TAG_NUM, TAG_PAR_NUM) " +
                                                                                 "values (?, ?, ?, ?, ?)";
 
 
-    // public OraclePreparedStatement stmt_COMMIT;
+    // public PreparedStatement stmt_COMMIT;
 
 
     public void close_Hermes_Connection() {
@@ -164,16 +161,23 @@ public class TheadDataAccess {
             //connectionUrl = "jdbc:oracle:thin:@//10.32.245.4:1521/hermes"; // Бой !!!
         }
         else {
-            connectionUrl = "jdbc:oracle:thin:@"+dst_point;
+            //connectionUrl = "jdbc:oracle:thin:@"+dst_point;
+            connectionUrl = dst_point;
         }
         // попробуй ARTX_PROJ / rIYmcN38St5P
         // hermes / uthvtc
         //String db_userid = "HERMES";
         //String db_password = "uthvtc";
-        dataAccess_log.info( "Try(thead) Hermes getConnection: " + connectionUrl + " as " + db_userid );
+        String ClassforName;
+        if ( connectionUrl.indexOf("oracle") > 0 )
+            ClassforName = "oracle.jdbc.driver.OracleDriver";
+        else ClassforName = "org.postgresql.Driver";
+
+        dataAccess_log.info( "Try(thead) Hermes getConnection: " + connectionUrl + " as " + db_userid + " , Class.forName:" + ClassforName);
         try {
             // Establish the connection.
-            Class.forName("oracle.jdbc.driver.OracleDriver");
+            // Class.forName("oracle.jdbc.driver.OracleDriver");
+            Class.forName(ClassforName);
             Target_Connection = DriverManager.getConnection(connectionUrl, db_userid, db_password);
             Target_Connection.setAutoCommit(false);
             // Handle any errors that may have occurred.
@@ -281,11 +285,11 @@ public class TheadDataAccess {
         return Target_Connection;
     }
 
-    public OraclePreparedStatement  make_UPDATE_QUEUElog( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_UPDATE_QUEUElog( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_QUEUElog_Response );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_QUEUElog_Response );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
@@ -297,11 +301,11 @@ public class TheadDataAccess {
     }
 
 
-    public OraclePreparedStatement  make_UPDATE_QUEUE_InfoStreamId( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_UPDATE_QUEUE_InfoStreamId( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_QUEUE_InfoStreamId );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_QUEUE_InfoStreamId );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
@@ -311,9 +315,9 @@ public class TheadDataAccess {
         this.stmt_UPDATE_QUEUE_InfoStreamId = StmtMsg_Queue;
         return  StmtMsg_Queue ;
     }
-    //public final String UPDATE_QUEUElog_Response="update ARTX_PROJ.MESSAGE_QUEUElog L set l.Resp_DT = sysdate, l.Response = ? where l.Queue_Id = ?";
+    //public final String UPDATE_QUEUElog_Response="update ARTX_PROJ.MESSAGE_QUEUElog L set l.Resp_DT = current_timestamp, l.Response = ? where l.Queue_Id = ?";
     //public PreparedStatement stmt_UPDATE_QUEUElog;
-    public  int doUPDATE_QUEUElog(@NotNull OracleRowId ROWID_QUEUElog, @NotNull long Queue_Id, String sResponse,
+    public  int doUPDATE_QUEUElog(@NotNull RowId ROWID_QUEUElog, @NotNull long Queue_Id, String sResponse,
                                                        Logger dataAccess_log ) {
 
         try {
@@ -355,48 +359,50 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public OraclePreparedStatement  make_INSERT_QUEUElog( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
-        try {
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( INSERT_QUEUElog_Request );
-        } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
-            e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
-        }
-        //this.stmt_INSERT_QUEUElog = (OracleOraclePreparedStatement)StmtMsg_Queue;
-        this.stmt_INSERT_QUEUElog = StmtMsg_Queue;
-        return  StmtMsg_Queue ;
+
+    private CallableStatement  make_INSERT_QUEUElog( Logger dataAccess_log ) {
+    CallableStatement StmtMsg_Queue;
+    try {
+
+        StmtMsg_Queue = this.Hermes_Connection.prepareCall( INSERT_QUEUElog_Request );
+    } catch (Exception e) {
+        dataAccess_log.error( e.getMessage() );
+        e.printStackTrace();
+        return ( (CallableStatement) null );
     }
-    //public final String INSERT_QUEUElog_Request="insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, sysdate, ?)";
-    // public OraclePreparedStatement stmt_INSERT_QUEUElog;
-    public  OracleRowId doINSERT_QUEUElog(@NotNull long Queue_Id, String sRequest,
-                                  Logger dataAccess_log ) {
-        dataAccess_log.info( "[" + Queue_Id + "] do {call insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values(" + Queue_Id + ", systimestamp, '"+sRequest+ "' ) returning ROWID into ? };" );
+    //this.stmt_INSERT_QUEUElog = (OraclePreparedStatement)StmtMsg_Queue;
+    this.stmt_INSERT_QUEUElog = StmtMsg_Queue;
+    return  StmtMsg_Queue ;
+}
+
+    //public final String INSERT_QUEUElog_Request="insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, current_timestamp, ?)";
+    // public PreparedStatement stmt_INSERT_QUEUElog;
+    public  RowId doINSERT_QUEUElog(long Queue_Id, String sRequest,
+                                    Logger dataAccess_log ) {
+        //dataAccess_log.info( "[" + Queue_Id + "] do {call insert into ARTX_PROJ.MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values(" + Queue_Id + ", current_timestamp, '"+sRequest+ "' ) returning ROWID into ? };" );
         int count ;
-        OracleRowId ROWID_QUEUElog=null;
+        RowId ROWID_QUEUElog=null;
         try {
             stmt_INSERT_QUEUElog.setLong( 1, Queue_Id );
             stmt_INSERT_QUEUElog.setString( 2, sRequest );
-            stmt_INSERT_QUEUElog.registerReturnParameter(3, OracleTypes.ROWID);
+            stmt_INSERT_QUEUElog.registerOutParameter( 3, Types.ROWID );
+            // stmt_INSERT_QUEUElog.re  // .registerReturnParameter(3, OracleTypes.ROWID);
             count = stmt_INSERT_QUEUElog.executeUpdate();
             if (count>0)
-            { String forROWID;
-              //  ROWID_QUEUElog = stmt_INSERT_QUEUElog.getRowId(4);
-                ResultSet rset = stmt_INSERT_QUEUElog.getReturnResultSet(); //rest is not null and not empty
-                while(rset.next())
-                {
-                    ROWID_QUEUElog = (OracleRowId)rset.getRowId(1);
-
-                }
-                rset.close();
+            {
+                //  ROWID_QUEUElog = stmt_INSERT_QUEUElog.getRowId(4);
+                ROWID_QUEUElog  = stmt_INSERT_QUEUElog.getRowId(3); //rest is not null and not empty
             }
-            dataAccess_log.info( " [" + Queue_Id+  "] commit: (" + INSERT_QUEUElog_Request + ") "  );
             Hermes_Connection.commit();
+            // dataAccess.do_Commit();
 
         } catch (Exception e) {
-
             dataAccess_log.error( "insert into ARTX_PROJ.MESSAGE_QUEUElog for [" + Queue_Id+  "]: " + INSERT_QUEUElog_Request + ") fault: " + e.getMessage() );
+            try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error( "[" + Queue_Id + "] rollback(" + INSERT_QUEUElog_Request + ") fault: " + SQLe.getMessage() );
+                System.err.println( "[" + Queue_Id + "] rollback (" + INSERT_QUEUElog_Request + ") fault: " + SQLe.getMessage()  );
+            }
             e.printStackTrace();
             return ROWID_QUEUElog;
         }
@@ -405,29 +411,29 @@ public class TheadDataAccess {
 
 
 
-    public OraclePreparedStatement  make_insert_Message_Details( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_insert_Message_Details( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( INSERT_Message_Details );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( INSERT_Message_Details );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmt_INSERT_Message_Details = StmtMsg_Queue;
         return  StmtMsg_Queue ;
     }
 
-    public OraclePreparedStatement  make_UPDATE_MessageQueue_Send2finishedOUT( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_UPDATE_MessageQueue_Send2finishedOUT( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_MessageQueue_Send2finishedOUT );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_MessageQueue_Send2finishedOUT );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmt_UPDATE_MessageQueue_Send2finishedOUT = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -448,7 +454,7 @@ public class TheadDataAccess {
             Hermes_Connection.commit();
             dataAccess_log.info( "[" + Queue_Id + "] commit: doUPDATE_MessageQueue_Send2finishedOUT: \"update ARTX_PROJ.MESSAGE_QUEUE Q " +
                     "set q.Queue_Direction = '"+Queue_Direction+ "', q.Msg_Reason = '"+ pMsg_Reason+ "' " +
-                    ", q.Msg_Date= sysdate,  q.Msg_Status = "+ Msg_Status + ", q.Retry_Count= ? " +
+                    ", q.Msg_Date= current_timestamp,  q.Msg_Status = "+ Msg_Status + ", q.Retry_Count= ? " +
                     ", q.Prev_Queue_Direction='SEND', q.Prev_Msg_Date=q.Msg_Date " +
                     "where 1=1 and q.Queue_Id = "+ Queue_Id +"  ;" );
 
@@ -462,14 +468,14 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public OraclePreparedStatement  make_UPDATE_MessageQueue_DirectionAsIS( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_UPDATE_MessageQueue_DirectionAsIS( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_MessageQueue_DirectionAsIS );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( UPDATE_MessageQueue_DirectionAsIS );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmt_UPDATE_MessageQueue_DirectionAsIS = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -481,9 +487,9 @@ public class TheadDataAccess {
                                                        Logger dataAccess_log ) {
         try {
             BigDecimal queueId = new BigDecimal( Queue_Id.toString() );
-            dataAccess_log.info("[" + Queue_Id + "] try UPDATE_MessageQueue_DirectionAsIS : ["+ UPDATE_MessageQueue_DirectionAsIS + "]" );
-            dataAccess_log.info("[" + Queue_Id + "] BigDecimal queueId =" + queueId.toString() );
-            stmt_UPDATE_MessageQueue_DirectionAsIS.setInt( 1, Retry_interval );
+            //dataAccess_log.info("[" + Queue_Id + "] try UPDATE_MessageQueue_DirectionAsIS : ["+ UPDATE_MessageQueue_DirectionAsIS + "]" );
+            //dataAccess_log.info("[" + Queue_Id + "] BigDecimal queueId =" + queueId.toString() );
+            stmt_UPDATE_MessageQueue_DirectionAsIS.setInt( 1,  Retry_interval );
             stmt_UPDATE_MessageQueue_DirectionAsIS.setString( 2, pMsg_Reason.length() > maxReasonLen ? pMsg_Reason.substring(0, maxReasonLen) : pMsg_Reason );
             stmt_UPDATE_MessageQueue_DirectionAsIS.setInt( 3, Msg_Status );
             stmt_UPDATE_MessageQueue_DirectionAsIS.setInt( 4, Retry_Count );
@@ -492,9 +498,7 @@ public class TheadDataAccess {
             stmt_UPDATE_MessageQueue_DirectionAsIS.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info("[" + Queue_Id + "] commit: update ARTX_PROJ.MESSAGE_QUEUE Q " +
-                    "set q.Msg_Date= sysdate + ("+Retry_interval+"/(24*3600)), q.Msg_Reason = ?, q.Msg_Status = "+ Msg_Status +" , q.Retry_Count= "+ Retry_Count +", " +
-                    "q.Prev_Msg_Date=q.Msg_Date where 1=1 and q.Queue_Id = " + Queue_Id.toString());
+            dataAccess_log.info("[" + Queue_Id + "] commit:" + UPDATE_MessageQueue_DirectionAsIS + " = " + Queue_Id.toString());
 
         } catch (Exception e) {
 
@@ -507,17 +511,17 @@ public class TheadDataAccess {
     }
 
 
-    public OraclePreparedStatement  make_DELETE_Message_Confirmation( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
-        OraclePreparedStatement StmtMsg_QueueH;
+    public PreparedStatement  make_DELETE_Message_Confirmation( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
+        PreparedStatement StmtMsg_QueueH;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( DELETE_Message_Confirmation );
-            StmtMsg_QueueH = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( DELETE_Message_ConfirmationH );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( DELETE_Message_Confirmation );
+            StmtMsg_QueueH = (PreparedStatement)this.Hermes_Connection.prepareStatement( DELETE_Message_ConfirmationH );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmt_DELETE_Message_Confirmation = StmtMsg_Queue;
         this.stmt_DELETE_Message_ConfirmationH = StmtMsg_QueueH;
@@ -547,15 +551,15 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public OraclePreparedStatement  make_delete_Message_Details( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_delete_Message_Details( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement( DELETE_Message_Details );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( DELETE_Message_Details );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmt_DELETE_Message_Details = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -563,29 +567,29 @@ public class TheadDataAccess {
 
 
 
-    public OraclePreparedStatement  make_Message_Update_Queue_Queue_Date4Send( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_Message_Update_Queue_Queue_Date4Send( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Queue_Date4Send );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Queue_Date4Send );
         } catch (Exception e) {
             dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Queue_Date4Send + ") fault: " + e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtUPDATE_MessageQueue_Queue_Date4Send = StmtMsg_Queue;
         return  StmtMsg_Queue ;
     }
 
-    public OraclePreparedStatement  make_Message_Update_Out2Send( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_Message_Update_Out2Send( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2Send );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2Send );
         } catch (Exception e) {
             dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Out2Send + ") fault: " + e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtUPDATE_MessageQueue_Out2Send = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -646,15 +650,15 @@ public class TheadDataAccess {
         }
         return 0;
     }
-    public OraclePreparedStatement  make_Message_Update_Send2ErrorOUT( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_Message_Update_Send2ErrorOUT( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Send2ErrorOUT );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Send2ErrorOUT );
         } catch (Exception e) {
             dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " + e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtUPDATE_MessageQueue_Send2ErrorOUT = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -690,15 +694,15 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public OraclePreparedStatement  make_UPDATE_MessageQueue_Send2AttOUT( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_UPDATE_MessageQueue_Send2AttOUT( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Send2AttOUT );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Send2AttOUT );
         } catch (Exception e) {
             dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " + e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtUPDATE_MessageQueue_Send2AttOUT = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -734,15 +738,15 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public OraclePreparedStatement  make_UPDATE_MessageQueue_SetMsg_Reason( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_UPDATE_MessageQueue_SetMsg_Reason( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_SetMsg_Reason );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_SetMsg_Reason );
         } catch (Exception e) {
             dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " + e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtUPDATE_MessageQueue_SetMsg_Reason = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -777,15 +781,15 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public OraclePreparedStatement  make_Message_Update_Out2ErrorOUT( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsg_Queue;
+    public PreparedStatement  make_Message_Update_Out2ErrorOUT( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
         try {
 
-            StmtMsg_Queue = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2ErrorOUT );
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2ErrorOUT );
         } catch (Exception e) {
             dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " + e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtUPDATE_MessageQueue_Out2ErrorOUT = StmtMsg_Queue;
         return  StmtMsg_Queue ;
@@ -845,11 +849,11 @@ public class TheadDataAccess {
         return  0;
     }
 
-    public OraclePreparedStatement make_SelectMESSAGE_QUEUE( Logger dataAccess_log ) {
-        OraclePreparedStatement stmtSelectMESSAGE_QUEUE;
+    public PreparedStatement make_SelectMESSAGE_QUEUE( Logger dataAccess_log ) {
+        PreparedStatement stmtSelectMESSAGE_QUEUE;
         try {
 
-            stmtSelectMESSAGE_QUEUE = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(
+            stmtSelectMESSAGE_QUEUE = (PreparedStatement)this.Hermes_Connection.prepareStatement(
                     this.selectMESSAGE_QUEUE
             );
         } catch (Exception e) {
@@ -861,11 +865,11 @@ public class TheadDataAccess {
         return  stmtSelectMESSAGE_QUEUE ;
     }
 
-    public OraclePreparedStatement  make_Message_Query( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsgQueueDet;
+    public PreparedStatement  make_Message_Query( Logger dataAccess_log ) {
+        PreparedStatement StmtMsgQueueDet;
         try {
 
-        StmtMsgQueueDet = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(
+        StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
         "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num" +
         " from artx_proj.message_queuedet D" +
         " where (1=1)" +
@@ -881,10 +885,10 @@ public class TheadDataAccess {
         return  StmtMsgQueueDet ;
     }
 
-    public OraclePreparedStatement  make_Message_LastBodyTag_Query( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsgQueueDet;
+    public PreparedStatement  make_Message_LastBodyTag_Query( Logger dataAccess_log ) {
+        PreparedStatement StmtMsgQueueDet;
         try {
-            StmtMsgQueueDet = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(
+            StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
                     "select Tag_Num from (" +
                             " select Tag_Num from (" +
                                     " select Tag_Num from  artx_proj.message_queuedet  WHERE QUEUE_ID = ? and Tag_Par_Num = 0 and tag_Id ='Confirmation'" +
@@ -896,32 +900,32 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtMsgLastBodyTag = StmtMsgQueueDet;
         return  StmtMsgQueueDet ;
     }
 
-    public OraclePreparedStatement  make_Message_ConfirmationTag_Query( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsgQueueDet;
+    public PreparedStatement  make_Message_ConfirmationTag_Query( Logger dataAccess_log ) {
+        PreparedStatement StmtMsgQueueDet;
         try {
-            StmtMsgQueueDet = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(
+            StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
                             "select Tag_Num from ( select Tag_Num from  artx_proj.message_queuedet  WHERE QUEUE_ID = ? and Tag_Par_Num = 0 and tag_Id ='Confirmation' order by Tag_Num ) where rownum=1"
             );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtMsgQueueConfirmationTag = StmtMsgQueueDet;
         return  StmtMsgQueueDet ;
     }
 
-    public OraclePreparedStatement  make_MessageBody_Query( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsgQueueDet;
+    public PreparedStatement  make_MessageBody_Query( Logger dataAccess_log ) {
+        PreparedStatement StmtMsgQueueDet;
         try {
 
-            StmtMsgQueueDet = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(
+            StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
                     "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num" +
                             " from artx_proj.message_queuedet D" +
                             " where (1=1)" +
@@ -931,17 +935,17 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtMsgQueueBody = StmtMsgQueueDet;
         return  StmtMsgQueueDet ;
     }
 
-    public OraclePreparedStatement  make_MessageConfirmation_Query( Logger dataAccess_log ) {
-        OraclePreparedStatement StmtMsgQueueDet;
+    public PreparedStatement  make_MessageConfirmation_Query( Logger dataAccess_log ) {
+        PreparedStatement StmtMsgQueueDet;
         try {
 
-            StmtMsgQueueDet = (OraclePreparedStatement)this.Hermes_Connection.prepareStatement(
+            StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
                     "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num" +
                             " from artx_proj.message_queuedet D" +
                             " where (1=1)" +
@@ -951,7 +955,7 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();
-            return ( (OraclePreparedStatement) null );
+            return ( (PreparedStatement) null );
         }
         this.stmtMsgQueueConfirmation = StmtMsgQueueDet;
         return  StmtMsgQueueDet ;

@@ -239,11 +239,12 @@ public class MessageUtils {
                             try {
                                 iMsgStaus = Integer.parseInt(emtResultCode.getText());
                             } catch (NumberFormatException e) {
-                                iMsgStaus = 1233;
+                                iMsgStaus = 12345;
+                                messageDetails.MsgReason.append("Не не получили числового значения Статуса " + xpathResultCodeExpression + " в результате XSLT преобразования Response");
                             }
                         else {
-                            messageDetails.MsgReason.append("Не нашли " + xpathResultCodeExpression + " в результате XSLT прообразования Response");
-                            iMsgStaus = 1233;
+                            messageDetails.MsgReason.append("Не нашли " + xpathResultCodeExpression + " в результате XSLT преобразования Response");
+                            iMsgStaus = 12346;
                         }
 
                         XPathExpression<Element> xpathMessage = XPathFactory.instance().compile(xpathMessageExpression, Filters.element());

@@ -214,7 +214,9 @@ public class PerfotmQueueMessages {
                                 null ,  MessegeSend_Log);
 //                        try {  SimpleHttpClient.close(); } catch ( IOException e) {
 //                            MessegeSend_Log.error("и еще ошибка SimpleHttpClient.close(): " + e.getMessage() );
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgOUT.toString(), Message.MessageTemplate4Perform.getMessageXSD(),  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, // Message.XML_MsgOUT.toString(),
+                                null, // Message.MessageTemplate4Perform.getMessageXSD(),
+                                 monitoringQueueVO, MessegeSend_Log);
                         return -1L;
                     }
                 }
@@ -248,8 +250,9 @@ public class PerfotmQueueMessages {
                         MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO,   Message,  theadDataAccess,
                                 "XSLT fault message: " + ConvXMLuseXSLTerr + XML_4_XSLT+ " on " + MessageXSLT_4_OUT_2_SEND ,
                                 null ,  MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, XML_4_XSLT, // Message.XML_MsgOUT.toString(),
-                                MessageXSLT_4_OUT_2_SEND,  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //XML_4_XSLT, // Message.XML_MsgOUT.toString(),
+                                null, //MessageXSLT_4_OUT_2_SEND,
+                                  monitoringQueueVO, MessegeSend_Log);
                         return -2L;
                     }
                     if ( Message.XML_MsgSEND.equals(XMLchars.nanXSLT_Result) ) {
@@ -258,8 +261,9 @@ public class PerfotmQueueMessages {
                         MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO,   Message,  theadDataAccess,
                                 "XSLT fault message: " + ConvXMLuseXSLTerr + XML_4_XSLT + " on " + MessageXSLT_4_OUT_2_SEND ,
                                 null ,  MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, XML_4_XSLT, MessageXSLT_4_OUT_2_SEND,  monitoringQueueVO, MessegeSend_Log);
-                        return -2L;
+                       // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, XML_4_XSLT, MessageXSLT_4_OUT_2_SEND,  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                        return -201L;
                     }
 
                      // сохраняем результат XSLT-преобразования( body ) распарсенный по-строчно <Tag><VALUE>
@@ -267,8 +271,9 @@ public class PerfotmQueueMessages {
                     { // Результат преобразования не получилось записать в БД
                         //HE-5864 Спец.символ UTF-16 или любой другой invalid XML character . Ошибка при отправке - удаляет и не записывант сообщение по
                        // Внутри ReplaceMessage4SEND вызов MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO,   Message,  theadDataAccess, "ReplaceMessage4SEND fault" + Message.XML_MsgSEND  ,ex,  MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, XML_4_XSLT, Message.XML_MsgSEND,  monitoringQueueVO, MessegeSend_Log);
-                        return -2L;
+                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, XML_4_XSLT, Message.XML_MsgSEND,  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                        return -202L;
                     }
                 }       //   MessageXSLT_4_OUT_2_SEND != null
                 else
@@ -290,11 +295,13 @@ public class PerfotmQueueMessages {
                 // устанавливаем признак "SEND" & COMMIT
                 if ( theadDataAccess.doUPDATE_MessageQueue_Out2Send( messageQueueVO, "XSLT (OUT) -> (SEND) ok",  MessegeSend_Log) < 0 )
                 {
-                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgOUT.toString(), messageQueueVO.getMsg_Reason(),  monitoringQueueVO, MessegeSend_Log);
-                    return -2L;
+                    // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgOUT.toString(), messageQueueVO.getMsg_Reason(),  monitoringQueueVO, MessegeSend_Log);
+                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                    return -203L;
                 }
                 else
-                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgOUT.toString(), Message.XML_MsgSEND,  monitoringQueueVO, MessegeSend_Log);
+                    // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgOUT.toString(), Message.XML_MsgSEND,  monitoringQueueVO, MessegeSend_Log);
+                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
 
             case XMLchars.DirectSEND:
                 if ( !Queue_Direction.equals("OUT") ) {
@@ -306,7 +313,8 @@ public class PerfotmQueueMessages {
                         MessageUtils.ProcessingOutError(  messageQueueVO,   Message,  theadDataAccess,
                                 Queue_Direction +"-> SEND ["+ Queue_Id +"] тело XML для SEND в БД пустое !" ,
                                 null ,  MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, Queue_Direction +"-> SEND ["+ Queue_Id +"] тело XML для SEND в БД пустое !",  monitoringQueueVO, MessegeSend_Log);
+                        // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, Queue_Direction +"-> SEND ["+ Queue_Id +"] тело XML для SEND в БД пустое !",  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
                         return -3L;
                     }
 
@@ -347,8 +355,9 @@ public class PerfotmQueueMessages {
                         MessageUtils.ProcessingSendError(  messageQueueVO,   Message,  theadDataAccess,
                                 "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'", true,
                                 null ,  MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessegeSend_Log);
-                        return -4L;
+                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                        return -401L;
                     }
                 }
                 else {
@@ -372,8 +381,9 @@ public class PerfotmQueueMessages {
                                 "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(), 1244,
                                 messageQueueVO.getRetry_Count(), MessegeSend_Log);
 
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key),
-                                "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(),  monitoringQueueVO, MessegeSend_Log);
+                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key),
+                        //        "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(),  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
                         return -5L;
                     }
                     else Message.Soap_HeaderRequest.append( MessageUtils.MakeEntryOutHeader( messageQueueVO, MsgDirectionVO_Key) );
@@ -410,9 +420,10 @@ public class PerfotmQueueMessages {
                                 "Answer XSLT fault: " + ConvXMLuseXSLTerr  + " on " + Message.MessageTemplate4Perform.getMsgAnswXSLT(), 1243,
                                 messageQueueVO.getRetry_Count(), MessegeSend_Log);
 
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO,Message.XML_ClearBodyResponse.toString(),
-                                "Answer XSLT fault: " + ConvXMLuseXSLTerr  + " on " + Message.MessageTemplate4Perform.getMsgAnswXSLT(),  monitoringQueueVO, MessegeSend_Log);
-                        return -5L;
+                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO,Message.XML_ClearBodyResponse.toString(),
+                        //        "Answer XSLT fault: " + ConvXMLuseXSLTerr  + " on " + Message.MessageTemplate4Perform.getMsgAnswXSLT(),  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                        return -501L;
                     }
                     // MessegeSend_Log.info(Queue_Direction +" ["+ Queue_Id +"] Message.MessageTemplate4Perform.getIsDebugged()=" + Message.MessageTemplate4Perform.getIsDebugged() );
                     if ( Message.MessageTemplate4Perform.getIsDebugged() )
@@ -426,16 +437,20 @@ public class PerfotmQueueMessages {
                 }
                     // Проверяем наличие TagNext ="Next" в XML_MsgRESOUT
                 AnswXSLTQueue_Direction = MessageUtils.PrepareConfirmation(  theadDataAccess,  messageQueueVO,  Message, MessegeSend_Log );
+                messageQueueVO.setQueue_Direction(AnswXSLTQueue_Direction);
 
                 if ( !AnswXSLTQueue_Direction.equals(XMLchars.DirectRESOUT))
                     // TODO Надо бы всзести переменную - что c XSLT всё плохо, но пост-обработчик надо всё же вызвать хоть раз.
+                { theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log );
                     break;
+                }
 
                 messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
                 messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
                 messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
-                messageQueueVO.setQueue_Direction(XMLchars.DirectRESOUT);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_ClearBodyResponse.toString(), Message.XML_MsgRESOUT.toString(),  monitoringQueueVO, MessegeSend_Log);
+
+                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_ClearBodyResponse.toString(), Message.XML_MsgRESOUT.toString(),  monitoringQueueVO, MessegeSend_Log);
+                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
 
                 // получение и преобразование результатов
             case XMLchars.DirectRESOUT : //"RESOUT"
@@ -451,8 +466,9 @@ public class PerfotmQueueMessages {
                         theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                 "Этот код для повторнй обработки Ответв на Исходяе событие ещё не написан. Сделано от защиты зацикливания", 1232,
                                 messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND,
-                                "Этот код для повторнй обработки Ответв на Исходяе событие ещё не написан. Сделано от защиты зацикливания",  monitoringQueueVO, MessegeSend_Log);
+                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND,
+                        //        "Этот код для повторнй обработки Ответв на Исходяе событие ещё не написан. Сделано от защиты зацикливания",  monitoringQueueVO, MessegeSend_Log);
+                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
                         return -11L;
                     }
                     // TODO Надо бы всзести переменную - что  пост-обработчик  всё же вызвался хоть раз и если ошибка, то больше не надо.
@@ -477,9 +493,10 @@ public class PerfotmQueueMessages {
                                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                             "Ошибка преобразования XSLT для пост-обработки " + ConvXMLuseXSLTerr + " :" + Message.MessageTemplate4Perform.getEnvelopeXSLTPost(), 1235,
                                             messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.PrepareEnvelope4XSLTPost( messageQueueVO,  Message, MessegeSend_Log),
-                                            "Ошибка преобразования XSLT для пост-обработки " + ConvXMLuseXSLTerr + " :" + Message.MessageTemplate4Perform.getEnvelopeXSLTPost(),  monitoringQueueVO, MessegeSend_Log);
-                                    return -11L;
+                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.PrepareEnvelope4XSLTPost( messageQueueVO,  Message, MessegeSend_Log),
+                                    //        "Ошибка преобразования XSLT для пост-обработки " + ConvXMLuseXSLTerr + " :" + Message.MessageTemplate4Perform.getEnvelopeXSLTPost(),  monitoringQueueVO, MessegeSend_Log);
+                                    return -101L;
                                 }
                                 if ( Passed_Envelope4XSLTPost.equals(XMLchars.EmptyXSLT_Result))
                                 {   MessegeSend_Log.error("["+ Queue_Id +"] Шаблон для пост-обработки(" + Message.MessageTemplate4Perform.getEnvelopeXSLTPost() + ")");
@@ -488,8 +505,9 @@ public class PerfotmQueueMessages {
                                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                             "Ошибка преобразования XSLT для пост-обработки " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(), 1232,
                                             messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Passed_Envelope4XSLTPost,
-                                            "Ошибка преобразования XSLT для пост-обработки " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(),  monitoringQueueVO, MessegeSend_Log);
+                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Passed_Envelope4XSLTPost,
+                                    //        "Ошибка преобразования XSLT для пост-обработки " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(),  monitoringQueueVO, MessegeSend_Log);
                                     return -12L;
 
                                 }
@@ -501,19 +519,22 @@ public class PerfotmQueueMessages {
                                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                             "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), 1232,
                                             messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Passed_Envelope4XSLTPost,
-                                            "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(),  monitoringQueueVO, MessegeSend_Log);
+                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Passed_Envelope4XSLTPost,
+                                    //        "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(),  monitoringQueueVO, MessegeSend_Log);
                                     return -13L;
                                 }
                                 else
                                 {if ( Message.MessageTemplate4Perform.getIsDebugged() )
                                     MessegeSend_Log.info("["+ Queue_Id +"] Исполнение ExecuteSQLinXML:" + Message.MsgReason.toString() );
-                                    if ( theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log ) == 0 )
+                                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                                    /*if ( theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log ) == 0 )
                                         ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, "Исполнение ExecuteSQLinXML:" + Passed_Envelope4XSLTPost,
                                                 "ExecuteSQLinXML: " + Message.MsgReason.toString(),  monitoringQueueVO, MessegeSend_Log);
                                     else
                                         ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, "Исполнение ExecuteSQLinXML:" + Passed_Envelope4XSLTPost,
                                                 "do_SelectMESSAGE_QUEUE fault " ,  monitoringQueueVO, MessegeSend_Log);
+                                     */
                                 }
                             }
                             else
@@ -532,8 +553,9 @@ public class PerfotmQueueMessages {
                             theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                     "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет EnvelopeXSLTPost", 1232,
                                     messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
-                                    "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет EnvelopeXSLTPost",  monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
+                            //        "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет EnvelopeXSLTPost",  monitoringQueueVO, MessegeSend_Log);
                             return -15L;
                         }
                     }
@@ -550,8 +572,9 @@ public class PerfotmQueueMessages {
                             theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                     "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet включая логин/пароль", 1232,
                                     messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
-                                    "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet включая логин/пароль",  monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
+                            //        "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet включая логин/пароль",  monitoringQueueVO, MessegeSend_Log);
                             return -16L;
                         }
                         String EndPointUrl= null;
@@ -574,22 +597,25 @@ public class PerfotmQueueMessages {
                                     .asString().getBody();
                             if ( Message.MessageTemplate4Perform.getIsDebugged() )
                                 MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"MetodPostExec.Unirest.get(" + EndPointUrl + ") RestResponse=(" + RestResponse + ")");
-
-                            if ( theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log ) == 0 )
+                            theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log );
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            /*if ( theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log ) == 0 )
                                 ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
                                         RestResponse,  monitoringQueueVO, MessegeSend_Log);
                             else
                                 ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
                                         RestResponse,  monitoringQueueVO, MessegeSend_Log);
+                            */
 
                         } catch ( UnirestException e) {
                             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
                             MessegeSend_Log.error("["+ Queue_Id +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + e.toString() );
                             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
-                                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e), 135698,
+                                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e), 123567,
                                     messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+                            //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
                             return -17L;
                         }
                     }
@@ -611,7 +637,7 @@ public class PerfotmQueueMessages {
         }
 
         if ( Message.MessageTemplate4Perform.getIsDebugged() ) {
-            MessegeSend_Log.info("[" + Queue_Id + "] stping 500:" );
+            MessegeSend_Log.info("[" + Queue_Id + "] string 664:" );
             MessegeSend_Log.info("[" + Queue_Id + "] AnswXSLTQueue_Direction='" + AnswXSLTQueue_Direction + "'");
             MessegeSend_Log.info("[" + Queue_Id + "] messageQueueVO.getQueue_Direction()='" + messageQueueVO.getQueue_Direction() + "'");
         }
@@ -635,9 +661,10 @@ public class PerfotmQueueMessages {
                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                             "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль", 1232,
                             messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
-                            "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль",  monitoringQueueVO, MessegeSend_Log);
-                    return -16L;
+                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
+                    //        "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль",  monitoringQueueVO, MessegeSend_Log);
+                    return -161L;
                 }
                 String EndPointUrl= null;
                 try {
@@ -651,14 +678,15 @@ public class PerfotmQueueMessages {
                                 Message.MessageTemplate4Perform.getPropUrlPostExec();
                     // Ставим своенго клиента ! ?
                     Unirest.setHttpClient( Message.RestHermesAPIHttpClient);
-                    String RestResponse =
+                    //String RestResponse =
                             Unirest.get(EndPointUrl)
                                     .queryString("queue_id", Queue_Id.toString())
                                     .basicAuth(Message.MessageTemplate4Perform.getPropUserPostExec(),
                                             Message.MessageTemplate4Perform.getPropPswdPostExec())
                                     .asString().getBody();
-                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                            RestResponse,  monitoringQueueVO, MessegeSend_Log);
+                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+                    //        RestResponse,  monitoringQueueVO, MessegeSend_Log);
+                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
 
                 } catch ( UnirestException e) {
                     // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
@@ -666,9 +694,10 @@ public class PerfotmQueueMessages {
                     theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
                             "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e), 135699,
                             messageQueueVO.getRetry_Count(),  MessegeSend_Log);
-                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                            "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
-                    return -17L;
+                    ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+                    //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
+                    return -171L;
                 }
             }
             //---------------------
@@ -693,8 +722,9 @@ public class PerfotmQueueMessages {
                             theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                     "Ошибка преобразования XSLT для обработки ERROUT" + ConvXMLuseXSLTerr + " :" + Message.MessageTemplate4Perform.getErrTransXSLT(), 1295,
                                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
-                            ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, MessageUtils.PrepareEnvelope4ErrTransXSLT(messageQueueVO, Message, MessegeSend_Log),
-                                    "Ошибка преобразования XSLT для обработки ERROUT " + ConvXMLuseXSLTerr + " :" + Message.MessageTemplate4Perform.getErrTransXSLT(), monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, MessageUtils.PrepareEnvelope4ErrTransXSLT(messageQueueVO, Message, MessegeSend_Log),
+                            //        "Ошибка преобразования XSLT для обработки ERROUT " + ConvXMLuseXSLTerr + " :" + Message.MessageTemplate4Perform.getErrTransXSLT(), monitoringQueueVO, MessegeSend_Log);
                             return -18L;
                         }
                         if (Passed_Envelope4ErrTransXSLT.equals(XMLchars.EmptyXSLT_Result)) {
@@ -704,8 +734,9 @@ public class PerfotmQueueMessages {
                             theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                     "Ошибка преобразования XSLT для обработки ERROUT " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(), 1292,
                                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
-                            ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, Passed_Envelope4ErrTransXSLT,
-                                    "Ошибка преобразования XSLT для обработки ERROUT " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(), monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, Passed_Envelope4ErrTransXSLT,
+                            //        "Ошибка преобразования XSLT для обработки ERROUT " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(), monitoringQueueVO, MessegeSend_Log);
                             return -19L;
 
                         }
@@ -717,18 +748,21 @@ public class PerfotmQueueMessages {
                             theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                     "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), 1292,
                                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
-                            ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, Passed_Envelope4ErrTransXSLT,
-                                    "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, Passed_Envelope4ErrTransXSLT,
+                            //        "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), monitoringQueueVO, MessegeSend_Log);
                             return -20L;
                         } else {
                             if (Message.MessageTemplate4Perform.getIsDebugged())
                                 MessegeSend_Log.info("[" + Queue_Id + "] Исполнение ExecuteSQLinXML:" + Message.MsgReason.toString());
-                            if (theadDataAccess.do_SelectMESSAGE_QUEUE(messageQueueVO, MessegeSend_Log) == 0)
+                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                            /*if (theadDataAccess.do_SelectMESSAGE_QUEUE(messageQueueVO, MessegeSend_Log) == 0)
                                 ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, "Исполнение ExecuteSQLinXML:" + Passed_Envelope4ErrTransXSLT,
                                         "ExecuteSQLinXML: " + Message.MsgReason.toString(), monitoringQueueVO, MessegeSend_Log);
                             else
                                 ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, "Исполнение ExecuteSQLinXML:" + Passed_Envelope4ErrTransXSLT,
                                         "do_SelectMESSAGE_QUEUE fault ", monitoringQueueVO, MessegeSend_Log);
+                            */
                         }
                     } else {   // Нет EnvelopeXSLTPost - надо орать! прописан Java класс, а EnvelopeXSLTPost нет
                         MessegeSend_Log.error("[" + Queue_Id + "] В шаблоне для обработки ERROUT " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет ErrTransXSLT");

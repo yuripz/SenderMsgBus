@@ -32,17 +32,25 @@ public  class DataAccess {
             //connectionUrl = "jdbc:oracle:thin:@//10.32.245.4:1521/hermes"; // Бой !!!
         }
         else {
-            connectionUrl = "jdbc:oracle:thin:@"+dst_point;
+            //connectionUrl = "jdbc:oracle:thin:@"+dst_point;
+            //connectionUrl = "jdbc:postgresql:"+dst_point;
+            connectionUrl = dst_point;
         }
         // попробуй ARTX_PROJ / rIYmcN38St5P
         // hermes / uthvtc
         //String db_userid = "HERMES";
         //String db_password = "uthvtc";
+        String ClassforName;
+        if ( connectionUrl.indexOf("oracle") > 0 )
+            ClassforName = "oracle.jdbc.driver.OracleDriver";
+        else ClassforName = "org.postgresql.Driver";
 
-        dataAccess_log.info( "Try Hermes getConnection: " + connectionUrl + " as " + db_userid );
+        dataAccess_log.info( "Try Hermes getConnection: " + connectionUrl + " as " + db_userid + " , Class.forName:" + ClassforName);
         try {
             // Establish the connection.
-            Class.forName("oracle.jdbc.driver.OracleDriver");
+            // Class.forName("oracle.jdbc.driver.OracleDriver");
+            // Class.forName("org.postgresql.Driver");
+            Class.forName(ClassforName);
             Target_Connection = DriverManager.getConnection(connectionUrl, db_userid, db_password);
             // Handle any errors that may have occurred.
             Target_Connection.setAutoCommit(false);
@@ -74,18 +82,18 @@ public  class DataAccess {
         /*
         jdbcTemplate = new JdbcTemplate( dataSource );
         InitDate = jdbcTemplate.queryForObject(
-                "SELECT sysdate FROM dual", Date.class);
+                "SELECT current_timestamp FROM dual", Date.class);
         */
       if ( InitDate != null)
-        dataAccess_log.info( "Hermes sysdate: LocalDate ="+ InitDate.toLocalDate().toString() + " getTime=" + InitDate.getTime() + " mSec., " + dateFormat.format( InitDate )  );
+        dataAccess_log.info( "Hermes current_timestamp: LocalDate ="+ InitDate.toLocalDate().toString() + " getTime=" + InitDate.getTime() + " mSec., " + dateFormat.format( InitDate )  );
 
 
         return Target_Connection;
     }
 
 
-    private static final String SQLCurrentTimeStringRead= "SELECT to_char(sysdate, 'YYYYMMDDHHMISS') as InitTime FROM dual";
-    private static final String SQLCurrentTimeDateRead= "SELECT sysdate as InitTime FROM dual";
+    private static final String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYYMMDDHHMISS') as InitTime FROM dual";
+    private static final String SQLCurrentTimeDateRead= "SELECT current_timestamp as InitTime FROM dual";
 
 
     public static String getCurrentTimeString(@NotNull Logger dataAccess_log ) {
@@ -174,7 +182,7 @@ public  class DataAccess {
     public static String getCurrentTimeString(@NotNull Logger dataAccess_log ) {
         if ( jdbcTemplate !=null ) {
             String CurrentTime = jdbcTemplate.queryForObject(
-                    "SELECT to_char(sysdate, 'YYYYMMDDHHMISS' ) FROM dual", String.class);
+                    "SELECT to_char(current_timestamp, 'YYYYMMDDHHMISS' ) FROM dual", String.class);
             if ( CurrentTime != null)
                 dataAccess_log.info( "Hermes CurrentTime: LocalDate ="+ CurrentTime );
             return CurrentTime;
@@ -186,7 +194,7 @@ public  class DataAccess {
     public static Long getCurrentTime(@NotNull Logger dataAccess_log ) {
         if ( jdbcTemplate !=null ) {
             Date CurrentTime = jdbcTemplate.queryForObject(
-                    "SELECT sysdate FROM dual", Date.class);
+                    "SELECT current_timestamp FROM dual", Date.class);
             if ( CurrentTime != null)
                 dataAccess_log.info( "Hermes CurrentTime: LocalDate ="+ CurrentTime.toLocalDate().toString() + " getTime=" + CurrentTime.getTime()  + " mSec., " + dateFormat.format( CurrentTime )  );
             return CurrentTime.getTime();

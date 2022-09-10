@@ -52,13 +52,17 @@ public static String look4List_Lame_Threads_4_Num_Thread( Integer Num_Thread, Lo
     public static  int look4MessageDirectionsVO_2_MsgDirection_Cod( String MsgDirection_Cod, Logger messegeSend_log) {
         int MsgDirectionVO_Key=-1;
         int MsgDirectionVO_4_Direction_Key=-1;
-
+        // messegeSend_log.warn("look4MessageDirectionsVO_2_MsgDirection_Cod(`"+ MsgDirection_Cod +  "`): MessageDirections.AllMessageDirections.size()= " + MessageDirections.AllMessageDirections.size() );
         for (int j = 0; j < MessageDirections.AllMessageDirections.size(); j++) {
             MessageDirectionsVO messageDirectionsVO = MessageDirections.AllMessageDirections.get(j);
+            // messegeSend_log.warn("look4MessageDirectionsVO_2_MsgDirection_Cod: messageDirectionsVO.getMsgDirection_Cod()=`" + messageDirectionsVO.getMsgDirection_Cod() + "`" );
             if ( messageDirectionsVO.getMsgDirection_Cod().equalsIgnoreCase( MsgDirection_Cod ))
+            { // messegeSend_log.warn("equalsIgnoreCase: messageDirectionsVO.getMsgDirection_Cod()=`" + messageDirectionsVO.getMsgDirection_Cod() + "` == `"+ MsgDirection_Cod + "`" );
                 MsgDirectionVO_4_Direction_Key = j;
+            }
+            // else messegeSend_log.warn("equalsIgnoreCase: messageDirectionsVO.getMsgDirection_Cod()=`" + messageDirectionsVO.getMsgDirection_Cod() + "` != `"+ MsgDirection_Cod + "`" );
         }
-        if (MsgDirectionVO_4_Direction_Key > 0 ) MsgDirectionVO_Key = MsgDirectionVO_4_Direction_Key;
+        if (MsgDirectionVO_4_Direction_Key >= 0 ) MsgDirectionVO_Key = MsgDirectionVO_4_Direction_Key;
         return  MsgDirectionVO_Key;
     }
 

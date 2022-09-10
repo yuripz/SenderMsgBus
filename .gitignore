@@ -3,4 +3,5 @@
 /.mvn
 /_Logz
 /target
+mvn*
 Sender.HE-4349.lo*

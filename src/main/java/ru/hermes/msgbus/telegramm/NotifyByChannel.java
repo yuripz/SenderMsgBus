@@ -5,23 +5,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
 import org.slf4j.Logger;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -34,68 +29,24 @@ public class NotifyByChannel {
     // ?chat_id=-1001328897633
     // &text=*bold text* normal-text _italic text_ ```pre-formatted Ext-fixed-width code block```
     // &parse_mode=Markdown
-    private static final HttpClient httpClient = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
 
-    private static HttpClientBuilder httpClientBuilder  = null;
-    private static CloseableHttpClient ApiRestHttpClient = null;
-    private static PoolingHttpClientConnectionManager syncConnectionManager = null;
+
     private static String ChatBotUrl= null;
     public static void Telegram_setChatBotUrl( String ChatBotUrlProperties, Logger sendMessage_log) {
         ChatBotUrl= ChatBotUrlProperties;
         sendMessage_log.warn("Telegram_setChatBotUrl to `"+ ChatBotUrlProperties + "`");
     }
-    public static boolean Telegram_sendMessage( String message4telegramm, Logger sendMessage_log) {
+
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    public static void Telegram_sendMessage( String message4telegramm, Logger sendMessage_log) {
         if ( ChatBotUrl == null) {
             sendMessage_log.warn( "Telegram_SendMessage ChatBotUrl => NULL !" );
-            return false;
+            return ;
         }
-       if ( false) {
-//           httpClient = HttpClient.newBuilder()
-//                   .sslContext(ru.hermes.msgbus.threads.utils.MessageHttpSend.getSSLContext())
-//                   .followRedirects(HttpClient.Redirect.ALWAYS)
-//                   .connectTimeout(Duration.ofSeconds(10))
-//                   .version(HttpClient.Version.HTTP_1_1)
-//                   .build();
-
-           // Create a trust manager that does not validate certificate chains
-           TrustManager[] trustAllCerts = new TrustManager[]{
-                   new X509TrustManager() {
-                       public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                           return null;
-                       }
-                       public void checkClientTrusted(
-                               java.security.cert.X509Certificate[] certs, String authType) {
-                       }
-                       public void checkServerTrusted(
-                               java.security.cert.X509Certificate[] certs, String authType) {
-                       }
-                   }
-           };
-
-// Install the all-trusting trust manager
-           SSLContext sc = null;
-
-           try {
-               sc = SSLContext.getInstance("SSL");
-               sc.init(null, trustAllCerts, new java.security.SecureRandom());
-               HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-               SSLContext.setDefault( sc );
-           } catch (Exception e) {
-           }
-           //SSLParameters sslParams = SSLParameters();
-           // This should prevent host validation
-           //sslParams.endpointIdentificationAlgorithm = "";
-
-//           httpClient = HttpClient.newBuilder()
-//                   .connectTimeout(Duration.ofMillis( 12 * 1000))
-//                    .sslContext(sc) // SSL context 'sc' initialised as earlier
-//                   //.sslParameters(parameters) // ssl parameters if overriden
-//                   .build();
-           sendMessage_log.warn( "Telegram_SendMessage httpClient version=> " + httpClient.version() + " " + httpClient.sslContext());
-       }
 
         String URI_Sring=null;
         //
@@ -126,80 +77,9 @@ public class NotifyByChannel {
         catch ( InterruptedException | IOException | IllegalArgumentException  e) {
                 e.printStackTrace();
                 sendMessage_log.error( "URI_Sring:[" + URI_Sring + "] fault" + e.toString() );
-                return false;
+                return ;
         }
-        return true;
+        return ;
     }
 
-    public static boolean Telegram_SendMessage( String message4telegramm, Logger sendMessage_log) {
-  /*
-        if ( ApiRestHttpClient == null) {
-            int ConnectTimeoutInMillis = 5 * 1000;
-            int ReadTimeoutInMillis = 40 * 1000;
-            int ApiRestWaitTime = 50;
-            syncConnectionManager = new PoolingHttpClientConnectionManager();
-            syncConnectionManager.setMaxTotal( 4);
-            syncConnectionManager.setDefaultMaxPerRoute(2);
-
-            RequestConfig rc;
-            rc = RequestConfig.custom()
-                    .setConnectionRequestTimeout(ConnectTimeoutInMillis)
-                    .setConnectTimeout(ConnectTimeoutInMillis)
-                    .setSocketTimeout( ReadTimeoutInMillis)
-                    .build();
-            httpClientBuilder = HttpClientBuilder.create()
-                    .disableDefaultUserAgent()
-                    .disableRedirectHandling()
-                    .disableAutomaticRetries()
-                    .setUserAgent("Mozilla/5.0")
-                    .setSSLContext( ru.hermes.msgbus.threads.utils.MessageHttpSend.getSSLContext() )
-                    .disableAuthCaching()
-                    .disableConnectionState()
-                    .disableCookieManagement()
-                    // .useSystemProperties() // HE-5663  https://stackoverflow.com/questions/5165126/without-changing-code-how-to-force-httpclient-to-use-proxy-by-environment-varia
-                    .setConnectionManager(syncConnectionManager)
-                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                    .setConnectionTimeToLive( ApiRestWaitTime + 5, TimeUnit.SECONDS)
-                    .evictIdleConnections((long) (ApiRestWaitTime + 5)*2, TimeUnit.SECONDS);
-            httpClientBuilder.setDefaultRequestConfig(rc);
-            ApiRestHttpClient = httpClientBuilder.build();
-
-        }
-        String xURI_Sring = "https://api.telegram.org/bot1450268713:AAGMgWJ1ET91dvY5KofxNfXJBRJ_iFpTqZo/sendMessage?chat_id=-1001328897633&text=" +
-                "*bold text* normal-text  _italic text_ ```pre-formatted Ext-fixed-width code block```" + "&parse_mode=Markdown";
-        String URI_Sring=null;
-        try {
-            URI_Sring =
-                    "https://api.telegram.org/bot1450268713:AAGMgWJ1ET91dvY5KofxNfXJBRJ_iFpTqZo/sendMessage" +
-                            "?chat_id=-1001328897633&text=" +
-                            URLEncoder.encode( message4telegramm, StandardCharsets.UTF_8.toString()) + "&parse_mode=Markdown"
-            ;
-            Unirest.setHttpClient( ApiRestHttpClient);
-
-            String RestResponse = Unirest.get(URI_Sring)
-                            //.queryString("chat_id", "-1001328897633")
-                    .asString().getBody();
-            sendMessage_log.warn( "Telegram_SendMessage Response=> " + RestResponse);
-
-        }
-        catch (  IOException | IllegalArgumentException | UnirestException e) {
-            e.printStackTrace();
-            sendMessage_log.error( "URI_Sring:[" + URI_Sring + "] fault" + e.toString() );
-            return false;
-        }
-
-   */
-        return true;
-    }
-//    public static void testSyncGet() throws IOException, InterruptedException {
-//        HttpClient client = HttpClient.newHttpClient();
-//        HttpRequest request = HttpRequest.newBuilder()
-//                .uri(URI.create("https://www.baidu.com"))
-//                .build();
-//
-//        HttpResponse<String> response =
-//                client.send(request, HttpResponse.BodyHandlers.ofString());
-//
-//        System.out.println(response.body());
-//    }
 }

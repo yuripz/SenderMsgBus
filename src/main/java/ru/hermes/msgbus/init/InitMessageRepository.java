@@ -430,7 +430,7 @@ public class InitMessageRepository {
         {
             return -3;
         }
-
+    try {
         try {
             rs = stmtMsgType.executeQuery();
             while (rs.next()) {
@@ -457,10 +457,16 @@ public class InitMessageRepository {
 
                 log.info(" Types.size=" +   MessageType.AllMessageType.size() + ", MessageRowNum[" + MessageType.RowNum + "] :" + messageTypeVO.getMsg_Type() );
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return -2;
+        } finally {
+            DataAccess.Hermes_Connection.rollback();
         }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return -2;
+    }
         return MessageType.RowNum;
     }
 

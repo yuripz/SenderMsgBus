@@ -14,7 +14,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 */
-import oracle.jdbc.internal.OracleRowId;
+//import oracle.jdbc.internal.OracleRowId;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -47,6 +47,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.RowId;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -100,7 +101,7 @@ public class MessageHttpSend {
         int  ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
 
-        OracleRowId ROWID_QUEUElog=null;
+        RowId ROWID_QUEUElog=null;
         String RestResponse=null;
         InputStream Response;
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -119,8 +120,9 @@ public class MessageHttpSend {
                 messageDetails.MsgReason.append(" HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTracе.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "HttpGetMessage.Unirest.post", true, e, MessegeSend_Log);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                        " HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: ", monitoringQueueVO, MessegeSend_Log);
+                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(),
+                        null, //" HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: ",
+                        monitoringQueueVO, MessegeSend_Log);
                 return -1;
             }
         }
@@ -151,7 +153,8 @@ public class MessageHttpSend {
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog( messageQueueVO.getQueue_Id(), SoapEnvelope.toString(), MessegeSend_Log );
 
-            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), null, monitoringQueueVO, MessegeSend_Log);
+            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(),
+                    null, monitoringQueueVO, MessegeSend_Log);
 
             if ( PropUser != null  ) {
                 if ( SOAPAction != null)
@@ -213,8 +216,9 @@ public class MessageHttpSend {
                 messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: " + sStackTracе.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "HttpGetMessage.Unirest.post", true,  e ,  MessegeSend_Log);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                        "HttpGetMessage.post.to_UTF_8 fault: " + sStackTracе.strInterruptedException(e), monitoringQueueVO, MessegeSend_Log);
+                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
+                //        "HttpGetMessage.post.to_UTF_8 fault: " + sStackTracе.strInterruptedException(e), monitoringQueueVO, MessegeSend_Log);
                 return -1;
             }
 
@@ -254,20 +258,23 @@ public class MessageHttpSend {
 
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "sendSoapMessage.Unirest.post (" + EndPointUrl + ") ", false,  e ,  MessegeSend_Log);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), messageDetails.XML_MsgResponse.toString(), monitoringQueueVO, MessegeSend_Log);
+                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), messageDetails.XML_MsgResponse.toString(), monitoringQueueVO, MessegeSend_Log);
             }
             else {
                 // HE-4892 Если транспорт отвалился , то Шина выставляет RESOUT - коммент ProcessingSendError & return -1;
                  MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "sendSoapMessage.Unirest.post (" + EndPointUrl + ") ", true,  e ,  MessegeSend_Log);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e), monitoringQueueVO, MessegeSend_Log);
+                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
+                //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e), monitoringQueueVO, MessegeSend_Log);
                  return -1;
             }
         }
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), messageDetails.XML_MsgResponse.toString(), monitoringQueueVO, MessegeSend_Log);
+        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), messageDetails.XML_MsgResponse.toString(), monitoringQueueVO, MessegeSend_Log);
+        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
 
         try {
             // Получили ответ от сервиса, инициируем обработку SOAP getResponseBody()
@@ -275,7 +282,13 @@ public class MessageHttpSend {
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
             MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
             else // HE-9187
-                MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[100 char]=(" + messageDetails.XML_ClearBodyResponse.substring(0, 100) + "...)");
+             if ( messageDetails.XML_ClearBodyResponse.length() > 101 )
+                 MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[100 char]=(" +
+                                     messageDetails.XML_ClearBodyResponse.substring(0, 100)
+                         + "...)");
+                 else
+                MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[100 char]=(" +
+                                messageDetails.XML_ClearBodyResponse.toString() + "...)");
             // client.wait(100);
 
         } catch (Exception e) {
@@ -284,8 +297,9 @@ public class MessageHttpSend {
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "sendSoapMessage.getResponseBody" , true,  e ,  MessegeSend_Log);
-            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                    "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e),monitoringQueueVO, MessegeSend_Log);
+            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
+            //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e),monitoringQueueVO, MessegeSend_Log);
             return -3;
         }
 
@@ -464,7 +478,7 @@ public class MessageHttpSend {
                     "HttpGetMessage.setHttpGetParams() [не содержит параметров для HtthGet]", true,  null ,  MessegeSend_Log);
             return -1;
         }
-        OracleRowId ROWID_QUEUElog=null;
+        RowId ROWID_QUEUElog=null;
 		try {
             Unirest.setHttpClient( messageDetails.SimpleHttpClient);
 
