@@ -731,7 +731,7 @@ public class PerformQueueMessages {
                         }
                         if (Passed_Envelope4ErrTransXSLT.equals(XMLchars.EmptyXSLT_Result)) {
                             MessegeSend_Log.error("[" + Queue_Id + "] Шаблон для обработки ERROUT(" + Message.MessageTemplate4Perform.getErrTransXSLT() + ")");
-                            MessegeSend_Log.error("[" + Queue_Id + "] Envelope4XSLTPost:" + MessageUtils.PrepareEnvelope4ErrTransXSLT(messageQueueVO, Message, MessegeSend_Log));
+                            MessegeSend_Log.error("[" + Queue_Id + "] Envelope4ErrTransXSLT:" + MessageUtils.PrepareEnvelope4ErrTransXSLT(messageQueueVO, Message, MessegeSend_Log));
                             MessegeSend_Log.error("[" + Queue_Id + "] Ошибка преобразования XSLT для обработки ERROUT " + Message.MsgReason.toString());
                             theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                     "Ошибка преобразования XSLT для обработки ERROUT " + ConvXMLuseXSLTerr + " :" + Message.MsgReason.toString(), 1292,
