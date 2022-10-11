@@ -35,7 +35,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLContext;
-import javax.security.cert.CertificateException;
+import javax.security.cert. CertificateException;
 import javax.security.cert.X509Certificate;
 
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -316,6 +316,7 @@ public class MessageHttpSend {
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
 
         String EndPointUrl;
+        String ROWID_QUEUElog=null;
         if ( StringUtils.substring(messageTemplate4Perform.getEndPointUrl(),0,"http".length()).equalsIgnoreCase("http") )
             EndPointUrl = messageTemplate4Perform.getEndPointUrl();
         else
@@ -352,17 +353,21 @@ public class MessageHttpSend {
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
             String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
+                ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog( messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.toString(), MessageSend_Log );
 
             if ( PropUser != null  )
                Response =
                     Unirest.post(EndPointUrl)
                             .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
+                            .header("Content-Type", "text/xml;charset=UTF-8")
                             .body( RequestBody )
                             .asBinary()
                             .getRawBody();
             else
                 Response =
                         Unirest.post(EndPointUrl)
+                                .header("Content-Type", "text/xml;charset=UTF-8")
                                 .body( RequestBody )
                                 .asBinary()
                                 .getRawBody(); //.asString() //.getBody();
@@ -385,6 +390,10 @@ public class MessageHttpSend {
              RestResponse = IOUtils.toString(Response, messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
         }
         else RestResponse = IOUtils.toString(Response, StandardCharsets.UTF_8);
+
+            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
+                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
+
         }
         catch (Exception e) {
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
@@ -395,6 +404,9 @@ public class MessageHttpSend {
             messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: " ).append( sStackTracе.strInterruptedException(e));
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "HttpGetMessage.Unirest.post", true,  e ,  MessageSend_Log);
+            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
+                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTracе.strInterruptedException(e), MessageSend_Log );
+
             return -1;
         }
 
@@ -412,21 +424,26 @@ public class MessageHttpSend {
                 messageDetails.XML_MsgResponse.append(RestResponse.substring( index2 + 2 ) );
             }
             else {
-                if ( RestResponse.startsWith("{") ) { // Разбираем Json
-                    JSONObject RestResponseJSON = new JSONObject( RestResponse );
-                    messageDetails.XML_MsgResponse.append( XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse ) );
-
-                } else { // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]</MsgData>
-                    messageDetails.XML_MsgResponse.append(XMLchars.OpenTag ).append( XMLchars.NameRootTagContentJsonResponse ).append( XMLchars.CloseTag ).append( XMLchars.CDATAopen );
+                if ( RestResponse.startsWith("<") ) { // чтитаем, что в ответе XML
                     messageDetails.XML_MsgResponse.append(RestResponse);
-                    messageDetails.XML_MsgResponse.append(XMLchars.OpenTag ).append( XMLchars.EndTag ).append( XMLchars.NameRootTagContentJsonResponse ).append( XMLchars.CloseTag ).append( XMLchars.CDATAclose );
+                }
+                else { // возможно, Json
+                    if (RestResponse.startsWith("{")) { // Разбираем Json
+                        JSONObject RestResponseJSON = new JSONObject(RestResponse);
+                        messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
+
+                    } else { // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]</MsgData>
+                        messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag).append(XMLchars.CDATAopen);
+                        messageDetails.XML_MsgResponse.append(RestResponse);
+                        messageDetails.XML_MsgResponse.append(XMLchars.CDATAclose).append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+                    }
                 }
             }
 
             messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post=(" + messageDetails.XML_MsgResponse.toString() + ")");
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post Envelope_MsgResponse=(" + messageDetails.XML_MsgResponse.toString() + ")");
             // Получили ответ от сервиса, инициируем обработку getResponseBody()
             getResponseBody(messageDetails, MessageSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
