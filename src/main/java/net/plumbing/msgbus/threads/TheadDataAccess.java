@@ -54,6 +54,9 @@ public class TheadDataAccess {
     private  String UPDATE_MessageQueue_SetMsg_Reason ;
     private PreparedStatement stmtUPDATE_MessageQueue_SetMsg_Reason;
 
+    private  String UPDATE_MessageQueue_SetMsg_Result ;
+    private PreparedStatement stmtUPDATE_MessageQueue_SetMsg_Result;
+
     private PreparedStatement stmtUPDATE_MessageQueue_Send2AttOUT;
     private  String UPDATE_MessageQueue_Send2AttOUT;
 
@@ -229,6 +232,10 @@ public class TheadDataAccess {
         }
 
         if (make_UPDATE_MessageQueue_SetMsg_Reason(dataAccess_log) == null) {
+            dataAccess_log.error("make_UPDATE_MessageQueue_SetMsg_Reason() fault");
+            return null;
+        }
+        if (make_UPDATE_MessageQueue_SetMsg_Result(dataAccess_log) == null) {
             dataAccess_log.error("make_UPDATE_MessageQueue_SetMsg_Reason() fault");
             return null;
         }
@@ -769,6 +776,49 @@ public class TheadDataAccess {
         return 0;
     }
 
+    public PreparedStatement  make_UPDATE_MessageQueue_SetMsg_Result( Logger dataAccess_log ) {
+        PreparedStatement StmtMsg_Queue;
+        UPDATE_MessageQueue_SetMsg_Result =
+                "update " + dbSchema + ".MESSAGE_QUEUE Q " +
+                        "set Queue_Direction = ?, Msg_Status = ?, Msg_Result = ? " +
+                        "where 1=1 and q.Queue_Id = ? ";
+        try {
+            StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_SetMsg_Result );
+        } catch (Exception e) {
+            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " + e.getMessage() );
+            e.printStackTrace();
+            return ( (PreparedStatement) null );
+        }
+        this.stmtUPDATE_MessageQueue_SetMsg_Result = StmtMsg_Queue;
+        return  StmtMsg_Queue ;
+    }
+
+    public int doUPDATE_MessageQueue_SetMsg_Result(MessageQueueVO messageQueueVO, String pQueue_Direction, int pMsgStatus, String pMsg_Result, Logger dataAccess_log) {
+        // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
+        long Queue_Id = messageQueueVO.getQueue_Id();
+        dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Result()" );
+
+        messageQueueVO.setMsg_Result( pMsg_Result );
+
+        try {
+            stmtUPDATE_MessageQueue_SetMsg_Result.setString( 1, pQueue_Direction );
+            stmtUPDATE_MessageQueue_SetMsg_Result.setInt( 2, pMsgStatus );
+            stmtUPDATE_MessageQueue_SetMsg_Result.setString( 3, pMsg_Result.length() > maxReasonLen ? pMsg_Result.substring(0, maxReasonLen) : pMsg_Result );
+            stmtUPDATE_MessageQueue_SetMsg_Result.setLong( 4, Queue_Id );
+            stmtUPDATE_MessageQueue_SetMsg_Result.executeUpdate();
+
+            Hermes_Connection.commit();
+            dataAccess_log.info( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") commit "+ " Msg_Result=" + pMsg_Result );
+
+        } catch (Exception e) {
+            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " + e.getMessage() );
+            System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " );
+            e.printStackTrace();
+            return -1;
+        }
+        return 0;
+    }
+
     public PreparedStatement  make_UPDATE_MessageQueue_SetMsg_Reason( Logger dataAccess_log ) {
         PreparedStatement StmtMsg_Queue;
         UPDATE_MessageQueue_SetMsg_Reason =
@@ -791,7 +841,7 @@ public class TheadDataAccess {
     public int doUPDATE_MessageQueue_SetMsg_Reason(MessageQueueVO messageQueueVO, String pMsg_Reason, int pMsgStatus, int pMsgRetryCount,  Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
         long Queue_Id = messageQueueVO.getQueue_Id();
-        dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_Queue_Date4Send()" );
+        dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Reason()" );
 
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );

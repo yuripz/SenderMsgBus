@@ -54,7 +54,9 @@ public class MessageTemplateVO {
     private String PropMaxRetryCnt;
     private String PropMaxRetryTime;
 
-
+    public static final String  PropMsgStatus  = "msgStatus";
+    public static final String  PropQueueDirection  = "queueDirection";
+    public static final String  PropMsgResult  = "msgResult";
 
     public static final String  PropNameWebHost  = "host";
     public static final String  PropNameWebUser  = "user";

@@ -443,7 +443,8 @@ public class PerformQueueMessages {
 
                 if ( !AnswXSLTQueue_Direction.equals(XMLchars.DirectRESOUT))
                     // TODO Надо бы всзести переменную - что c XSLT всё плохо, но пост-обработчик надо всё же вызвать хоть раз.
-                { theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log );
+                {  // перечитываем состояние заголовка сообщения из БД
+                    theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log );
                     break;
                 }
 
@@ -579,6 +580,11 @@ public class PerformQueueMessages {
                             //        "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet включая логин/пароль",  monitoringQueueVO, MessegeSend_Log);
                             return -16L;
                         }
+                       long result_WebRestExePostExec =
+                        MessageHttpSend.WebRestExePostExec(messageQueueVO, Message.MessageTemplate4Perform, Message.RestHermesAPIHttpClient, theadDataAccess, MessegeSend_Log );
+                        if ( result_WebRestExePostExec < 0L )
+                            return result_WebRestExePostExec;
+                        /* -- ушло в WebRestExePostExec()
                         String EndPointUrl= null;
                         try {
 
@@ -598,16 +604,11 @@ public class PerformQueueMessages {
                                                 Message.MessageTemplate4Perform.getPropPswdPostExec())
                                     .asString().getBody();
                             if ( Message.MessageTemplate4Perform.getIsDebugged() )
-                                MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"MetodPostExec.Unirest.get(" + EndPointUrl + ") RestResponse=(" + RestResponse + ")");
+                                MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] MetodPostExec.Unirest.get(" + EndPointUrl + ") RestResponse=(" + RestResponse + ")");
+
                             theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log );
                             ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
-                            /*if ( theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log ) == 0 )
-                                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                                        RestResponse,  monitoringQueueVO, MessegeSend_Log);
-                            else
-                                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                                        RestResponse,  monitoringQueueVO, MessegeSend_Log);
-                            */
+
 
                         } catch ( UnirestException e) {
                             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
@@ -620,6 +621,7 @@ public class PerformQueueMessages {
                             //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
                             return -17L;
                         }
+                        */
                     }
 
                 }

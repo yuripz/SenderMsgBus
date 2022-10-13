@@ -1,8 +1,11 @@
 package net.plumbing.msgbus.threads.utils;
 
+import com.jayway.jsonpath.*;
 import com.google.common.collect.ImmutableMap;
 import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import net.plumbing.msgbus.common.json.JSONException;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.TheadDataAccess;
 import org.apache.commons.io.IOUtils;
@@ -16,6 +19,7 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 */
 //import oracle.jdbc.internal.OracleRowId;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -685,6 +689,107 @@ public class MessageHttpSend {
         }
         return BodyListSize;
 
+    }
+
+    public static long WebRestExePostExec(MessageQueueVO messageQueueVO, MessageTemplate4Perform MessageTemplate4Perform,
+                           CloseableHttpClient RestHermesAPIHttpClient, TheadDataAccess theadDataAccess, Logger MessageSend_Log ) {
+        String EndPointUrl= null;
+        String RestResponse = null;
+        int restResponseStatus=0;
+        long Queue_Id =  messageQueueVO.getQueue_Id();
+        try {
+
+            if ( StringUtils.substring(MessageTemplate4Perform.getPropHostPostExec(),0,"http".length()).equalsIgnoreCase("http") )
+                EndPointUrl =
+                        MessageTemplate4Perform.getPropHostPostExec() +
+                                MessageTemplate4Perform.getPropUrlPostExec();
+            else
+                EndPointUrl = "http://" + MessageTemplate4Perform.getPropHostPostExec() +
+                        MessageTemplate4Perform.getPropUrlPostExec();
+            // Ставим своенго клиента ! ?
+            Unirest.setHttpClient( RestHermesAPIHttpClient);
+            HttpResponse RestResponseGet =
+                    Unirest.get(EndPointUrl)
+                            .queryString("queue_id", String.valueOf( Queue_Id  ))
+                            .basicAuth(MessageTemplate4Perform.getPropUserPostExec(),
+                                    MessageTemplate4Perform.getPropPswdPostExec())
+                            .asString();
+            RestResponse = RestResponseGet.getBody().toString();
+            restResponseStatus = RestResponseGet.getStatus();
+
+            if ( MessageTemplate4Perform.getIsDebugged() )
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] MetodPostExec.Unirest.get(" + EndPointUrl + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
+
+            //theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log );
+            // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+            /**/
+
+                            /*if ( theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessegeSend_Log ) == 0 )
+                                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+                                        RestResponse,  monitoringQueueVO, MessegeSend_Log);
+                            else
+                                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+                                        RestResponse,  monitoringQueueVO, MessegeSend_Log);
+                            */
+
+        } catch ( UnirestException e) {
+            // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
+            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + e.toString() );
+            theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
+                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e), 123567,
+                    messageQueueVO.getRetry_Count(),  MessageSend_Log);
+            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+            //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
+            return -17L;
+        }
+        try {
+            JSONObject RestResponseJSON = new JSONObject( RestResponse );
+            MessageSend_Log.info("["+ messageQueueVO.getQueue_Id() + "] WebRestExePostExec=(`" + RestResponseJSON.toString() + "`)");
+            ReadContext jsonContext = JsonPath.parse(RestResponse);
+            Object msgStatus;
+            Object queueDirection;
+            String msgResult;
+            String sQueueDirection= XMLchars.DirectATTNOUT;
+
+            try {
+
+                msgStatus = jsonContext.read("$.msgStatus");
+                queueDirection = jsonContext.read("$.queueDirection");
+                if
+                (queueDirection.toString().equalsIgnoreCase(XMLchars.DirectDELOUT))
+                    sQueueDirection = XMLchars.DirectDELOUT;
+
+                msgResult = jsonContext.read("$.msgResult");
+            }
+            catch ( ClassCastException | InvalidPathException exc) {
+                //resultMessage = "-x-x-";
+                //resultCode = "-x-";
+                theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, sQueueDirection, 0 + restResponseStatus,
+                        "Пост-обработчик HttpGet (http="+restResponseStatus + ") вернул по url(" + EndPointUrl + "): JSon `" + RestResponse + "` в котором нет $.msgStatus или $.msgResult" ,
+                        MessageSend_Log);
+                return -13L;
+            }
+
+            theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, sQueueDirection, 0 + restResponseStatus,
+                    "Пост-обработчик HttpGet (http="+restResponseStatus + ") вернул JSon(" + EndPointUrl + "):" + msgStatus.toString() + " Message:" + msgResult,
+                    MessageSend_Log);
+            // client.wait(100);
+
+        } catch (JSONException | InvalidJsonException  e) {
+            // System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.JSONObject Exception" );
+            // e.printStackTrace();
+            // System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.RestResponse[" + RestResponse + "]" );
+            // MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTracе.strInterruptedException(e));
+
+            MessageSend_Log.warn("["+ messageQueueVO.getQueue_Id() +"] Пост-обработчик HttpGet не вернул JSon(" + EndPointUrl + "):" + e.toString() );
+            theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessageSend_Log );
+            theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, messageQueueVO.getQueue_Direction(), 0 + restResponseStatus,
+                    "Пост-обработчик HttpGet (http="+restResponseStatus + ") не вернул JSon(" + EndPointUrl + "):`" + RestResponse + "`",
+                     MessageSend_Log);
+            return -3L;
+        }
+        return 0L;
     }
 
 

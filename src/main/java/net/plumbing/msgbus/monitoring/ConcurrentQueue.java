@@ -34,8 +34,8 @@ public class ConcurrentQueue {
 
     public static boolean addMessageQueueVO2queue( @NotNull MessageQueueVO messageQueueVO, String pRequest, String pResponse, MonitoringQueueVO pmonitoringQueueVO, Logger MessegeSend_Log)
     {
-        //return false;
-
+        return false;
+/*
         MonitoringQueueVO monitoringQueueVO= new MonitoringQueueVO();
 
         boolean is_added2queue;
@@ -68,7 +68,7 @@ public class ConcurrentQueue {
         // MessegeSend_Log.warn("Queue_Id[" + monitoringQueueVO.Queue_Id + "]: after ConcurrentQueue.add2queue()->" + is_added2queue + ";  MonitoringQueueSize= "+ MonitoringQueue.size() + "; Msg_Type=" + monitoringQueueVO.Msg_Type );
 
         return is_added2queue;
-
+*/
 
     }
 }
