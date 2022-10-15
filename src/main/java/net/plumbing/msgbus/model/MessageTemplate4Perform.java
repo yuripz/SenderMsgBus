@@ -85,6 +85,12 @@ public class MessageTemplate4Perform {
 //    Integer PropLongRetryCount;
 //    Integer PropLongRetryInterval;
 
+    private String PropMsgStatus  = "msgStatus";
+    private String  PropQueueDirection  = "queueDirection";
+    private String  PropMsgResult  = "msgResult";
+    public static final String  PropNameMsgStatus  = "msgStatus";
+    public static final String  PropNameQueueDirection  = "queueDirection";
+    public static final String  PropNameMsgResult  = "msgResult";
 
     private final String  PropNameShortRetryCount  = "shortRetryCount";
     private final String  PropNameShortRetryInterval  = "shortRetryInterval";
@@ -197,6 +203,10 @@ public class MessageTemplate4Perform {
                         if ( key.equals(PropNameLongRetryCount)) this.LongRetryCount = Integer.valueOf(properties.getProperty(key).trim() );
                         if ( key.equals(PropNameLongRetryInterval)) this.LongRetryInterval = Integer.valueOf(properties.getProperty(key).trim() );
 
+                        if ( key.equals(PropNameMsgStatus)) this.PropMsgStatus = properties.getProperty(key).trim();
+                        if ( key.equals(PropNameQueueDirection)) this.PropQueueDirection = properties.getProperty(key).trim();
+                        if ( key.equals(PropNameMsgResult)) this.PropMsgResult = properties.getProperty(key).trim();
+
                         if ( key.equals(PropNameWebHost)) this.PropHost = properties.getProperty(key).trim();
                         if ( key.equals(PropNameWebUrl)) this.PropUrl = properties.getProperty(key).trim();
 
@@ -266,8 +276,6 @@ public class MessageTemplate4Perform {
         if ( Type_Connect == 4 ) // HTTP-GET/POST
             Type_Connection = "REST";
 
-
-
             this.MessageXSLT = messageTemplateVO.getMessageXSLT();
             this.EnvelopeNS = messageTemplateVO.getEnvelopeNS();
             this.ConfigPostExec = messageTemplateVO.getConfigPostExec();
@@ -307,6 +315,10 @@ public class MessageTemplate4Perform {
     public  String getPropSearchString() { return this.PropSearchString; }
     public  String getSOAPAction() { return this.SOAPAction; }
     public  String getEndPointUrl() { return this.EndPointUrl; }
+    public  String getPropMsgStatus() { return this. PropMsgStatus; }
+    public  String getPropQueueDirection() { return this. PropQueueDirection; }
+    public  String getPropMsgResult() { return this. PropMsgResult; }
+
     public boolean getIsDebugged() { return this.isDebugged; }
     public  Integer getPropTimeout_Conn() { return  this.PropTimeout_Conn;}
     public  Integer getPropTimeout_Read() { return  this.PropTimeout_Read;}

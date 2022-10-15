@@ -84,7 +84,6 @@ public class InitMessageRepository {
         int MessageTemplateVOkey;
         PreparedStatement stmtMsgTemplate = stmtMsgTemplateReRead;
         ResultSet rs;
-        Logger log = AppThead_log;
 
         if ( DataAccess.Hermes_Connection == null )
         {  AppThead_log.error("ReReadMsgTypes: DataAccess.Hermes_Connection == null");
@@ -117,7 +116,7 @@ public class InitMessageRepository {
                     MessageTemplate.AllMessageTemplate.get( MessageTemplateVOkey ).setConf_Text(rs.getString("Conf_Text"));
                     MessageTemplate.AllMessageTemplate.get( MessageTemplateVOkey ).setLastMaker(rs.getString("LastMaker"));
                     MessageTemplate.AllMessageTemplate.get( MessageTemplateVOkey ).setLastDate(rs.getString("LastDate"));
-                    parseResult = ConfigMsgTemplates.performConfig(MessageTemplate.AllMessageTemplate.get( MessageTemplateVOkey ), log);
+                    parseResult = ConfigMsgTemplates.performConfig(MessageTemplate.AllMessageTemplate.get( MessageTemplateVOkey ), AppThead_log);
                 }
                 else {
 
@@ -146,10 +145,10 @@ public class InitMessageRepository {
 
                     // log.info(" Directions.size :" +  MessageTemplate.AllMessageTemplate.size() );
 
-                    parseResult = ConfigMsgTemplates.performConfig(messageTemplateVO, log);
+                    parseResult = ConfigMsgTemplates.performConfig(messageTemplateVO, AppThead_log);
                     MessageTemplate.AllMessageTemplate.put(MessageTemplate.RowNum, messageTemplateVO);
 
-                    log.info(" AllMessageTemplate.size :" + MessageTemplate.AllMessageTemplate.size() + " MessageRowNum =" + MessageTemplate.RowNum +
+                    AppThead_log.info(" AllMessageTemplate.size :" + MessageTemplate.AllMessageTemplate.size() + " MessageRowNum =" + MessageTemplate.RowNum +
                             " Template_name:" + MessageTemplate.AllMessageTemplate.get(MessageTemplate.RowNum).getTemplate_name() + " parseConfigResult=" + parseResult);
 
                     MessageTemplate.RowNum += 1;
@@ -172,7 +171,7 @@ public class InitMessageRepository {
             Logger AppThead_log )  {
         PreparedStatement stmtMsgDirection = null;
         ResultSet rs = null;
-        Logger log = AppThead_log;
+        //Logger log = AppThead_log;
 
         MessageDirections.AllMessageDirections.clear();
 
@@ -249,7 +248,7 @@ public class InitMessageRepository {
                     messageDirectionsVO.setLong_retry_interval( LongRetryInterval );
 
                 MessageDirections.AllMessageDirections.put( MessageDirections.RowNum, messageDirectionsVO );
-                log.info( "RowNum[" + MessageDirections.RowNum + "] =" + messageDirectionsVO.LogMessageDirections() );
+                AppThead_log.info( "RowNum[" + MessageDirections.RowNum + "] =" + messageDirectionsVO.LogMessageDirections() );
 
                 MessageDirections.RowNum += 1;
 
@@ -268,7 +267,6 @@ public class InitMessageRepository {
     public static  int SelectMsgTypes(Logger AppThead_log )  {
         PreparedStatement stmtMsgType = null;
         ResultSet rs = null;
-        Logger log = AppThead_log;
 
         MessageType.AllMessageType.clear();
         MessageType.RowNum = 0;
@@ -341,7 +339,7 @@ public class InitMessageRepository {
                     MessageType.AllMessageType.put( MessageType.RowNum, messageTypeVO );
                     MessageType.RowNum += 1;
 
-                log.info(" Types.size=" +   MessageType.AllMessageType.size() + ", MessageRowNum[" + MessageType.RowNum + "] :" + messageTypeVO.getMsg_Type() );
+                AppThead_log.info(" Types.size=" +   MessageType.AllMessageType.size() + ", MessageRowNum[" + MessageType.RowNum + "] :" + messageTypeVO.getMsg_Type() );
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -360,7 +358,7 @@ public class InitMessageRepository {
         int parseResult;
         PreparedStatement stmtMsgTemplate;
         ResultSet rs;
-        Logger log = AppThead_log;
+
         //MessageTemplateVO messageTemplateVO = new MessageTemplateVO();
         MessageTemplate.AllMessageTemplate.clear();
         MessageTemplate.RowNum = 0;
@@ -446,10 +444,10 @@ public class InitMessageRepository {
 
                 // log.info(" Directions.size :" +  MessageTemplate.AllMessageTemplate.size() );
 
-                parseResult = ConfigMsgTemplates.performConfig(messageTemplateVO, log);
+                parseResult = ConfigMsgTemplates.performConfig(messageTemplateVO, AppThead_log);
                 MessageTemplate.AllMessageTemplate.put(MessageTemplate.RowNum, messageTemplateVO);
 
-                log.info(" AllMessageTemplate.size :" + MessageTemplate.AllMessageTemplate.size() + " MessageRowNum =" + MessageTemplate.RowNum +
+                AppThead_log.info(" AllMessageTemplate.size :" + MessageTemplate.AllMessageTemplate.size() + " MessageRowNum =" + MessageTemplate.RowNum +
                         " Template_name:" + MessageTemplate.AllMessageTemplate.get(MessageTemplate.RowNum).getTemplate_name() +" parseConfigResult=" + parseResult);
 
                 MessageTemplate.RowNum += 1;
