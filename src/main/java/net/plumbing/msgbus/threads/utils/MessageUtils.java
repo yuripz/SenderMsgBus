@@ -341,6 +341,7 @@ public class MessageUtils {
         messageDetails.Message_Tag_Num = 0;
 
         Pattern pattern = Pattern.compile("\\d+");
+        int total_Elm_Length=0;
         try {
             theadDataAccess.stmtMsgQueueDet.setLong(1, Queue_Id);
             ResultSet rs = theadDataAccess.stmtMsgQueueDet.executeQuery();
@@ -350,6 +351,8 @@ public class MessageUtils {
             int PrevTag_Par_Num=-102030405;
             int rTag_Num;
             int rTag_Par_Num;
+
+            int rTag_ValueLength;
             ArrayList<Integer> ChildVO_ArrayList= new ArrayList<Integer>();
 
             while (rs.next()) {
@@ -362,12 +365,17 @@ public class MessageUtils {
                     xmlTag_Id = "Element" + rTag_Id;
                 else
                     xmlTag_Id = rTag_Id;
-                if ( rTag_Value == null )
-                    messageDetailVO.setMessageQueue( xmlTag_Id, null, rTag_Num,rTag_Par_Num);
-                else
-                    messageDetailVO.setMessageQueue( xmlTag_Id,
+                if ( rTag_Value == null ) {
+                    messageDetailVO.setMessageQueue(xmlTag_Id, null, rTag_Num, rTag_Par_Num);
+                    rTag_ValueLength = 0;
+                }
+                else {
+                    messageDetailVO.setMessageQueue(xmlTag_Id,
                             StringEscapeUtils.escapeXml10(stripNonValidXMLCharacters(rTag_Value)),
-                            rTag_Num,rTag_Par_Num);
+                            rTag_Num, rTag_Par_Num);
+                    rTag_ValueLength = messageDetailVO.getTag_Value().length();
+                }
+                total_Elm_Length = total_Elm_Length + rTag_Id.length() * 2  + rTag_ValueLength + 24;
 
                 messageDetails.Message.put(messageDetails.MessageRowNum, messageDetailVO);
 
@@ -398,10 +406,12 @@ public class MessageUtils {
             e.printStackTrace();
             return messageDetails.MessageRowNum;
         }
-        MessegeSend_Log.info( "["+ Queue_Id +"] считали из БД фрагменты XML, " + messageDetails.MessageRowNum + " записей" );
+        MessegeSend_Log.info( "["+ Queue_Id +"] считали из БД фрагменты XML, " + messageDetails.MessageRowNum + " записей, предполагаемый объём XML" + total_Elm_Length + " символов" );
 
         if ( messageDetails.MessageRowNum > 0 )
             try {
+                messageDetails.XML_MsgOUT = null;
+                messageDetails.XML_MsgOUT = new StringBuilder( total_Elm_Length );
                 XML_Current_Tags( messageDetails, 0);
             } catch ( NullPointerException e ) {
                 // NPE случилось, печатаем диагностику

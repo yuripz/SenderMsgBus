@@ -41,11 +41,11 @@ public class MessageDetails {
         this.Message.clear();
         this.MessageIndex_by_Tag_Par_Num.clear();
         this.Confirmation.clear();
-        this.XML_MsgOUT.setLength(0);
-        this.XML_ClearBodyResponse.setLength(0);
-        this.XML_MsgResponse.setLength(0);
-        this.XML_MsgRESOUT.setLength(0);
-        this.MsgReason.setLength(0);
+        this.XML_MsgOUT.setLength(0); this.XML_MsgOUT.trimToSize();
+        this.XML_ClearBodyResponse.setLength(0); this.XML_ClearBodyResponse.trimToSize();
+        this.XML_MsgResponse.setLength(0); this.XML_MsgResponse.trimToSize();
+        this.XML_MsgRESOUT.setLength(0); this.XML_MsgRESOUT.trimToSize();
+        this.MsgReason.setLength(0); this.MsgReason.trimToSize();
         this.XML_MsgConfirmation.setLength(0);
     }
     public void SetHttpClient( CloseableHttpClient simpleHttpClient ) {
@@ -55,12 +55,12 @@ public class MessageDetails {
         this.Message.clear();
         this.MessageIndex_by_Tag_Par_Num.clear();
         this.Confirmation.clear();
-        this.XML_MsgOUT.setLength(0);
-        this.XML_ClearBodyResponse.setLength(0);
-        this.XML_MsgResponse.setLength(0);
-        this.XML_MsgRESOUT.setLength(0);
-        this.MsgReason.setLength(0);
-        this.XML_MsgConfirmation.setLength(0);
+        this.XML_MsgOUT.setLength(0); this.XML_MsgOUT.trimToSize();
+        this.XML_ClearBodyResponse.setLength(0); this.XML_ClearBodyResponse.trimToSize();
+        this.XML_MsgResponse.setLength(0); this.XML_MsgResponse.trimToSize();
+        this.XML_MsgRESOUT.setLength(0); this.XML_MsgRESOUT.trimToSize();
+        this.MsgReason.setLength(0); this.MsgReason.trimToSize();
+        this.XML_MsgConfirmation.setLength(0); this.XML_MsgConfirmation.trimToSize();
         this.sslContext = sslContext;
         this.httpClientBuilder = httpClientBuilder;
         this.SimpleHttpClient= simpleHttpClient; //  парметры соединения есть только в щаблоне

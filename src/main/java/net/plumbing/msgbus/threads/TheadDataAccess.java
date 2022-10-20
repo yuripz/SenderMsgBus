@@ -986,7 +986,8 @@ public class TheadDataAccess {
             e.printStackTrace();
             return ( null );
         }
-        this.stmtMsgQueueDet = StmtMsgQueueDet;
+        this.
+                stmtMsgQueueDet = StmtMsgQueueDet;
         return  StmtMsgQueueDet ;
     }
 
