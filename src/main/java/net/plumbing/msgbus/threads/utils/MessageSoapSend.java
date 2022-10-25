@@ -163,6 +163,7 @@ public class MessageSoapSend {
 		}
 
 		Element SoapEnvelope = document.getRootElement();
+		int XML_MsgResponseLen = messageDetails.XML_MsgResponse.length();
 		boolean isSoapBodyFinded = false;
 		if ( SoapEnvelope.getName().equals(XMLchars.Envelope) ) {
 			// MessegeSend_Log.error("debug HE-5865: SoapEnvelope.getName()= (" + SoapEnvelope.getName() + ")"  );
@@ -178,7 +179,8 @@ public class MessageSoapSend {
 
 					// надо подготовить очищенный от ns: содержимое Body.
 					messageDetails.Confirmation.clear();
-					messageDetails.XML_ClearBodyResponse.setLength(0);
+					messageDetails.XML_ClearBodyResponse.setLength(0); messageDetails.XML_ClearBodyResponse.trimToSize(); // messageDetails.XML_ClearBodyResponse= null;
+					messageDetails.XML_ClearBodyResponse= new StringBuilder( XML_MsgResponseLen );
 					SoapBody2XML_String(messageDetails, SoapElmnt, MessegeSend_Log);
 				}
 			}

@@ -88,8 +88,8 @@ public class TheadDataAccess {
     public PreparedStatement stmt_DELETE_Message_ConfirmationH;
     public  String DELETE_Message_ConfirmationH;
 
-    public PreparedStatement stmt_Query_Message_Confirmation;
-    public String SELECT_Message_Confirmation = "select from " + dbSchema + ".MESSAGE_QueueDET D where D.queue_id =? and d.Tag_num >= ?";
+    // public PreparedStatement stmt_Query_Message_Confirmation;
+    // public String SELECT_Message_Confirmation = "select from " + dbSchema + ".MESSAGE_QueueDET D where D.queue_id =? and d.Tag_num >= ?";
 
     public PreparedStatement stmt_INSERT_Message_Details;
     public String INSERT_Message_Details ;

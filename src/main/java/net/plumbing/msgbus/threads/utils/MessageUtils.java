@@ -406,7 +406,7 @@ public class MessageUtils {
             e.printStackTrace();
             return messageDetails.MessageRowNum;
         }
-        MessegeSend_Log.info( "["+ Queue_Id +"] считали из БД фрагменты XML, " + messageDetails.MessageRowNum + " записей, предполагаемый объём XML" + total_Elm_Length + " символов" );
+        MessegeSend_Log.info( "["+ Queue_Id +"] считали из БД фрагменты XML, " + messageDetails.MessageRowNum + " записей, предполагаемый объём XML " + total_Elm_Length + " символов" );
 
         if ( messageDetails.MessageRowNum > 0 )
             try {
