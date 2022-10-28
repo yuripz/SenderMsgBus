@@ -58,6 +58,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
+import com.google.common.escape.Escaper;
+import com.google.common.net.UrlEscapers;
 
 import static net.plumbing.msgbus.common.XMLchars.OpenTag;
 
@@ -473,7 +475,7 @@ public class MessageHttpSend {
 
         int numOfParams;
         try {
-            numOfParams = setHttpGetParams(messageDetails.XML_MsgSEND, HttpGetParams, messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), MessageSend_Log );
+            numOfParams = setHttpGetParams( messageQueueVO.getQueue_Id() , messageDetails.XML_MsgSEND, HttpGetParams, messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), MessageSend_Log );
         }
         catch ( Exception e) {
             if (e instanceof UnsupportedEncodingException ) {
@@ -589,7 +591,7 @@ public class MessageHttpSend {
 		return 0;
 	}
 
-    private static int setHttpGetParams(String xml_msgSEND, HashMap<String, String> papamsInXml, String Encoding_Out, Logger MessageSend_Log)
+    private static int setHttpGetParams(long Queue_Id, String xml_msgSEND, HashMap<String, String> paramsInXml, String Encoding_Out, Logger MessageSend_Log)
             throws JDOMException, IOException, XPathExpressionException {
         SAXBuilder documentBuilder = new SAXBuilder();
         //DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -597,8 +599,9 @@ public class MessageHttpSend {
         Document document =  documentBuilder.build(parsedConfigStream); // .parse(parsedConfigStream);
 
         Element RestParams = document.getRootElement();
-        papamsInXml.clear();
+        paramsInXml.clear();
         int nOfParams=0;
+        Escaper restElmntEscaper = UrlEscapers.urlFragmentEscaper();
 
             // String deftarget = Envelope.getAttributeValue("default", "all");
             List<Element> list = RestParams.getChildren();
@@ -609,12 +612,20 @@ public class MessageHttpSend {
                 if ( RestElmntText != null && RestElmntText.length() > 0 ) {
                     nOfParams += 1;
                     if (( Encoding_Out != null) && ( !Encoding_Out.equals( "UTF-8" )) )
-                        papamsInXml.put(RestElmnt.getName(), XML.from_UTF_8( XML.escape( RestElmnt.getText()), Encoding_Out ) );
-                        else
-                         papamsInXml.put(RestElmnt.getName(), URLEncoder.encode( RestElmnt.getText() , StandardCharsets.UTF_8.toString() )
-                            // XML.escape( RestElmnt.getText() )
-                              );
-                    MessageSend_Log.info("setHttpGetParams=(" + RestElmnt.getName() + "=>=" + URLEncoder.encode( RestElmnt.getText() , StandardCharsets.UTF_8.toString() )+ ")");
+                        paramsInXml.put(RestElmnt.getName(), XML.from_UTF_8( XML.escape( RestElmnt.getText()), Encoding_Out ) );
+                        else {
+                            String RestElmntTest = RestElmnt.getText().replace(" ","%20")
+                                                                      .replace("?", "%3F")
+                                                                      .replace("&", "%26");
+                            paramsInXml.put(RestElmnt.getName(), RestElmntTest
+                                // restElmntEscaper.escape( RestElmnt.getText() )
+                                //URLEncoder.encode(RestElmnt.getText(), StandardCharsets.UTF_8.toString())
+                                // XML.escape( RestElmnt.getText() )
+                             );
+                        }
+                    MessageSend_Log.info( "["+ Queue_Id + "] setHttpGetParams=(" + RestElmnt.getName() + "=>`" + paramsInXml.toString() +
+                            //URLEncoder.encode( RestElmnt.getText() , StandardCharsets.UTF_8.toString() ) +
+                            "`");
                 }
             }
         return nOfParams;
