@@ -58,8 +58,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
-import com.google.common.escape.Escaper;
-import com.google.common.net.UrlEscapers;
+// import com.google.common.escape.Escaper;
+// import com.google.common.net.UrlEscapers;
 
 import static net.plumbing.msgbus.common.XMLchars.OpenTag;
 
@@ -601,7 +601,7 @@ public class MessageHttpSend {
         Element RestParams = document.getRootElement();
         paramsInXml.clear();
         int nOfParams=0;
-        Escaper restElmntEscaper = UrlEscapers.urlFragmentEscaper();
+        // Escaper restElmntEscaper = UrlEscapers.urlFragmentEscaper();
 
             // String deftarget = Envelope.getAttributeValue("default", "all");
             List<Element> list = RestParams.getChildren();
@@ -614,10 +614,10 @@ public class MessageHttpSend {
                     if (( Encoding_Out != null) && ( !Encoding_Out.equals( "UTF-8" )) )
                         paramsInXml.put(RestElmnt.getName(), XML.from_UTF_8( XML.escape( RestElmnt.getText()), Encoding_Out ) );
                         else {
-                            String RestElmntTest = RestElmnt.getText().replace(" ","%20")
-                                                                      .replace("?", "%3F")
-                                                                      .replace("&", "%26");
-                            paramsInXml.put(RestElmnt.getName(), RestElmntTest
+                            //String RestElmntTest = RestElmnt.getText().replace(" ","%20")
+                            //                                          .replace("?", "%3F")
+                            //                                          .replace("&", "%26");
+                            paramsInXml.put(RestElmnt.getName(), RestElmnt.getText()
                                 // restElmntEscaper.escape( RestElmnt.getText() )
                                 //URLEncoder.encode(RestElmnt.getText(), StandardCharsets.UTF_8.toString())
                                 // XML.escape( RestElmnt.getText() )
