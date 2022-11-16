@@ -378,7 +378,7 @@ public class MessageHttpSend {
         // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8
         try {
         if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
-                (messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8") )) {
+                (! messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8") )) {
              RestResponse = IOUtils.toString(Response, messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
         }
         else RestResponse = IOUtils.toString(Response, StandardCharsets.UTF_8);
@@ -388,17 +388,17 @@ public class MessageHttpSend {
 
         }
         catch (Exception e) {
-            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
+            String PropEncoding_Out;
+            if ( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null)  PropEncoding_Out = "UTF_8";
+            else PropEncoding_Out = messageDetails.MessageTemplate4Perform.getPropEncoding_Out();
+            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException: Encoding `" + PropEncoding_Out +"`");
             e.printStackTrace();
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from " +
-                    messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out()
-                    + " to_UTF_8 fault:" + e);
-            messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: " ).append( sStackTracе.strInterruptedException(e));
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from `" + PropEncoding_Out + "` to_UTF_8 fault:" + e);
+            messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `" + PropEncoding_Out +"` :" ).append( sStackTracе.strInterruptedException(e));
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "HttpGetMessage.Unirest.post", true,  e ,  MessageSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTracе.strInterruptedException(e), MessageSend_Log );
-
             return -1;
         }
 
