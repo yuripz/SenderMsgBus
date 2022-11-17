@@ -321,7 +321,7 @@ public class MessageHttpSend {
         byte[] RequestBody;
 
         if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
-                (messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8" ) )) {
+                ( !messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8" ) )) {
             try {
                 RequestBody = messageDetails.XML_MsgSEND.getBytes( messageDetails.MessageTemplate4Perform.getPropEncoding_Out());
             } catch (UnsupportedEncodingException e) {
@@ -532,10 +532,10 @@ public class MessageHttpSend {
             // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.get escapeXml.RestResponse=(" + XML.escape(RestResponse) + ")");
 
 		} catch ( UnirestException e) {
-            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.Get Exception" );
+            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.Get `"+ EndPointUrl + "` Exception" );
             e.printStackTrace();
 			MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage fault:" + e);
-			messageDetails.MsgReason.append(" HttpGetMessage.Unirest.get fault: ").append( sStackTracе.strInterruptedException(e));
+			messageDetails.MsgReason.append(" HttpGetMessage.Unirest.get `"+ EndPointUrl + "` fault: ").append( sStackTracе.strInterruptedException(e));
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "HttpGetMessage.Unirest.get", true,  e ,  MessageSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
