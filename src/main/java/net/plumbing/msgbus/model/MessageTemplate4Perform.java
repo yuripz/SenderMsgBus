@@ -109,11 +109,14 @@ public class MessageTemplate4Perform {
 
     private final String  PropNameExeMetod     = "ExeMetod";
     private final String  PropNameJavaJndiConn  = "jndi_conn";
-    private final String  PropNameShName        = "script";
     private final String  PropNameParamPref     = "ParamList";
     private final String  PropNameWebMetod     = "WebMetod";
     public final String  WebRestExeMetod="web-rest";
-    public final String  JavaClassExeMetod="java-class";
+    public final String  JavaClassExeMetod = "java-class";
+    private String ShellScriptExeFullPathName;
+    public final String  ShellScriptMethod     = "ShellScript";
+    private final String  XPathParamsName ="XPathParams";
+    private String XPathParams;
 
     private final String  PropDebug  = "debug";
     private final String  PropNameSearchString  = "SearchString";
@@ -207,6 +210,8 @@ public class MessageTemplate4Perform {
                         if ( key.equals(PropNameQueueDirection)) this.PropQueueDirection = properties.getProperty(key).trim();
                         if ( key.equals(PropNameMsgResult)) this.PropMsgResult = properties.getProperty(key).trim();
 
+                        if ( key.equals(ShellScriptMethod)) this.ShellScriptExeFullPathName = properties.getProperty(key).trim();
+                        if ( key.equals(XPathParamsName)) this.XPathParams = properties.getProperty(key).trim();
                         if ( key.equals(PropNameWebHost)) this.PropHost = properties.getProperty(key).trim();
                         if ( key.equals(PropNameWebUrl)) this.PropUrl = properties.getProperty(key).trim();
 
@@ -386,6 +391,8 @@ public class MessageTemplate4Perform {
     public String getMsgAnswXSLT() {  return this.MsgAnswXSLT ; }
     public String getEnvelopeNS () { return this.EnvelopeNS ; }
 
+    public String getPropShellScriptExeFullPathName() {  return this.ShellScriptExeFullPathName ; }
+    public String getPropXPathParams() {  return this. XPathParams; }
     public String getPropWebMetod() {  return this.PropWebMetod ; }
     public String getPropExeMetodPostExec() {  return this.PropExeMetodPostExec; }
 

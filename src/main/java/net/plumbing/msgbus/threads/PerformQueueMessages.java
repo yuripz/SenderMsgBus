@@ -7,6 +7,8 @@ import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.utils.MessageHttpSend;
 import net.plumbing.msgbus.threads.utils.MessageUtils;
 import net.plumbing.msgbus.threads.utils.XmlSQLStatement;
+import net.plumbing.msgbus.threads.utils.ShellScripExecutor;
+import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
 import org.apache.commons.lang3.StringUtils;
 //import org.apache.http.HttpClientConnection;
 import org.apache.http.HttpHost;
@@ -39,7 +41,6 @@ import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 //import net.msgbus.ws.client.SoapClientException;
 //import net.msgbus.ws.client.core.Security;
 //import net.msgbus.ws.client.ssl.SSLUtils;
-import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
 
 import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
@@ -54,6 +55,7 @@ import java.io.*;
 //import java.net.URI;
 //import java.net.URISyntaxException;
 //import java.security.GeneralSecurityException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
@@ -156,7 +158,7 @@ public class PerformQueueMessages {
         );
         MessegeSend_Log.info("[" + Queue_Id + "] MessageTemplate4Perform[" + Message.MessageTemplate4Perform.printMessageTemplate4Perform() );
 
-        CloseableHttpClient SimpleHttpClient = null; // Message.SimpleHttpClient;
+        CloseableHttpClient SimpleHttpClient; // Message.SimpleHttpClient;
 /*        if ( SimpleHttpClient != null ) {
             try {
                 SimpleHttpClient.close();
@@ -320,10 +322,12 @@ public class PerformQueueMessages {
                         return -3L;
                     }
 
-                    // Если дата согздания до секунд совпала с датой 1-го SEND, значит её ещё не установливали
+                    // Если дата создания до секунд совпала с датой 1-го SEND, значит её ещё не установливали
                     if ( messageQueueVO.getQueue_Create_Date().equals( messageQueueVO.getQueue_Date() ) ) {
-                        if ( theadDataAccess.doUPDATE_MessageQueue_Queue_Date4Send(messageQueueVO, MessegeSend_Log) < 0 )
+                        if ( theadDataAccess.doUPDATE_MessageQueue_Queue_Date4Send(messageQueueVO, MessegeSend_Log) < 0 ) {
+                            MessegeSend_Log.error(Queue_Direction +"-> SEND ["+ Queue_Id +"] дата создания до секунд совпала с датой 1-го SEND, значит её ещё не установливали!" );
                             return -4L;
+                        }
                     }
 
                     Message.XML_MsgSEND = Message.XML_MsgOUT.toString();
@@ -343,55 +347,61 @@ public class PerformQueueMessages {
                         " ShortRetryCount=" + Message.MessageTemplate4Perform.getShortRetryCount() +
                         " LongRetryCount=" + Message.MessageTemplate4Perform.getLongRetryCount());
 
-
-                if ( Message.MessageTemplate4Perform.getPropWebMetod() != null ) {
-                    if ( Message.MessageTemplate4Perform.getPropWebMetod().equals("get")) {
-                        Function_Result = MessageHttpSend.HttpGetMessage(messageQueueVO, Message, theadDataAccess,  MessegeSend_Log);
-                    }
-                    if ( Message.MessageTemplate4Perform.getPropWebMetod().equals("post")) {
-                        Function_Result = MessageHttpSend.sendPostMessage(messageQueueVO, Message, theadDataAccess,  MessegeSend_Log);
-                    }
-                    if ( ( !Message.MessageTemplate4Perform.getPropWebMetod().equals("get") ) &&
-                         ( !Message.MessageTemplate4Perform.getPropWebMetod().equals("post")) )
-                    {
-                        MessageUtils.ProcessingSendError(  messageQueueVO,   Message,  theadDataAccess,
-                                "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'", true,
-                                null ,  MessegeSend_Log);
-                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
-                        return -401L;
-                    }
+                if ( Message.MessageTemplate4Perform.getPropShellScriptExeFullPathName() != null ) {
+                    // если указан ShellScript="bash /home/oracle/HE-3997_Hermes_APD_Integration/runDocument2DWH.sh"
+                    // TODO
+                    Function_Result = ShellScripExecutor.execShell( messageQueueVO, Message, theadDataAccess,
+                                                                    MessegeSend_Log  );
                 }
-                else {
-                    // готовим заголовок
+                else { // http : SOAP или Rest ( post| get)  если getPropWebMetod() != null
+                    if (Message.MessageTemplate4Perform.getPropWebMetod() != null) {
+                        if (Message.MessageTemplate4Perform.getPropWebMetod().equals("get")) {
+                            Function_Result = MessageHttpSend.HttpGetMessage(messageQueueVO, Message, theadDataAccess, MessegeSend_Log);
+                        }
+                        if (Message.MessageTemplate4Perform.getPropWebMetod().equals("post")) {
+                            Function_Result = MessageHttpSend.sendPostMessage(messageQueueVO, Message, theadDataAccess, MessegeSend_Log);
+                        }
+                        if ((!Message.MessageTemplate4Perform.getPropWebMetod().equals("get")) &&
+                                (!Message.MessageTemplate4Perform.getPropWebMetod().equals("post"))) {
+                            MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
+                                    "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'", true,
+                                    null, MessegeSend_Log);
+                            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessegeSend_Log);
+                            ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessegeSend_Log);
+                            return -401L;
+                        }
+                    } else {
+                        // готовим заголовок
 
-                    Message.Soap_HeaderRequest.setLength(0);
-                    if ( Message.MessageTemplate4Perform.getHeaderXSLT() != null && Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10 ) // Есть чем преобразовывать HeaderXSLT
-                    try {
-                        Message.Soap_HeaderRequest.append(
-                                ConvXMLuseXSLT(messageQueueVO.getQueue_Id(), MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key), // стандартный заголовок c учетом системы-получателя
-                                        Message.MessageTemplate4Perform.getHeaderXSLT(),  // через HeaderXSLT
-                                        Message.MsgReason, MessegeSend_Log,
-                                        Message.MessageTemplate4Perform.getIsDebugged()
-                                )
-                                        .substring(XMLchars.xml_xml.length()) // берем после <?xml version="1.0" encoding="UTF-8"?>
-                        );
-                    } catch ( TransformerException exception ) {
-                        MessegeSend_Log.error(Queue_Direction + " [" + Queue_Id + "] XSLT-преобразователь заголовка:{" + Message.MessageTemplate4Perform.getHeaderXSLT() +"}");
+                        Message.Soap_HeaderRequest.setLength(0);
+                        if (Message.MessageTemplate4Perform.getHeaderXSLT() != null && Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10) // Есть чем преобразовывать HeaderXSLT
+                            try {
+                                Message.Soap_HeaderRequest.append(
+                                        ConvXMLuseXSLT(messageQueueVO.getQueue_Id(), MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key), // стандартный заголовок c учетом системы-получателя
+                                                Message.MessageTemplate4Perform.getHeaderXSLT(),  // через HeaderXSLT
+                                                Message.MsgReason, MessegeSend_Log,
+                                                Message.MessageTemplate4Perform.getIsDebugged()
+                                        )
+                                                .substring(XMLchars.xml_xml.length()) // берем после <?xml version="1.0" encoding="UTF-8"?>
+                                );
+                            } catch (TransformerException exception) {
+                                MessegeSend_Log.error(Queue_Direction + " [" + Queue_Id + "] XSLT-преобразователь заголовка:{" + Message.MessageTemplate4Perform.getHeaderXSLT() + "}");
 
-                        theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-                                "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(), 1244,
-                                messageQueueVO.getRetry_Count(), MessegeSend_Log);
+                                theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
+                                        "Header XSLT fault: " + ConvXMLuseXSLTerr + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(), 1244,
+                                        messageQueueVO.getRetry_Count(), MessegeSend_Log);
 
-                        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key),
-                        //        "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(),  monitoringQueueVO, MessegeSend_Log);
-                        ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
-                        return -5L;
+                                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key),
+                                //        "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(),  monitoringQueueVO, MessegeSend_Log);
+                                ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessegeSend_Log);
+                                return -5L;
+                            }
+                        else
+                            Message.Soap_HeaderRequest.append(MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key));
+                        // Собсвенно, ВЫЗОВ!
+                        Function_Result = MessageHttpSend.sendSoapMessage(messageQueueVO, Message, theadDataAccess, monitoringQueueVO, MessegeSend_Log);
+                        // MessegeSend_Log.info("sendSOAPMessage:" + Queue_Direction + " [" + Queue_Id + "] для SOAP=:\n" + Message.XML_MsgSEND);
                     }
-                    else Message.Soap_HeaderRequest.append( MessageUtils.MakeEntryOutHeader( messageQueueVO, MsgDirectionVO_Key) );
-                    // Собсвенно, ВЫЗОВ!
-                    Function_Result = MessageHttpSend.sendSoapMessage( messageQueueVO, Message, theadDataAccess, monitoringQueueVO, MessegeSend_Log);
-                    // MessegeSend_Log.info("sendSOAPMessage:" + Queue_Direction + " [" + Queue_Id + "] для SOAP=:\n" + Message.XML_MsgSEND);
                 }
                 if ( Function_Result <0 ) {
                     // TODO
@@ -402,7 +412,7 @@ public class PerformQueueMessages {
 
                 // шаблон MsgAnswXSLT заполнен
                 if ( Message.MessageTemplate4Perform.getMsgAnswXSLT() != null) {
-                    if ( Message.MessageTemplate4Perform.getIsDebugged() == true ) {
+                    if ( Message.MessageTemplate4Perform.getIsDebugged()  ) {
                         MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] MsgAnswXSLT: " + Message.MessageTemplate4Perform.getMsgAnswXSLT() );
                     }
                     try {
@@ -434,7 +444,7 @@ public class PerformQueueMessages {
                 else // берем как есть без преобразования
                 {
                     Message.XML_MsgRESOUT.append(Message.XML_ClearBodyResponse.toString());
-                    if ( Message.MessageTemplate4Perform.getIsDebugged()  == true )
+                    if ( Message.MessageTemplate4Perform.getIsDebugged() )
                     MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] используем XML-ответ как есть без преобразования:(" + Message.XML_MsgRESOUT.toString() + ")");
                 }
                     // Проверяем наличие TagNext ="Next" в XML_MsgRESOUT
@@ -654,7 +664,7 @@ public class PerformQueueMessages {
             // вызов пост-обработчика ??? - вызов при необходимости, ноавая фича
             if ( Message.MessageTemplate4Perform.getPropExeMetodPostExec().equals(Message.MessageTemplate4Perform.WebRestExeMetod) )
             { // 2.2) Это Rest-HttpGet-вызов
-                ;
+
                 if (( Message.MessageTemplate4Perform.getPropHostPostExec() == null ) ||
                         ( Message.MessageTemplate4Perform.getPropUserPostExec() == null ) ||
                         ( Message.MessageTemplate4Perform.getPropPswdPostExec() == null ) ||
@@ -867,8 +877,6 @@ public class PerformQueueMessages {
                 this.httpClient = null;
                 return null;     }
 
-
-        if ( this.httpClient == null ) {
             RequestConfig rc;
             HttpHost proxyHost;
             String isProxySet = System.getProperty("http.proxySet");
@@ -927,7 +935,6 @@ public class PerformQueueMessages {
 
             this.httpClient = safeHttpClient;
 
-        }
         return safeHttpClient;
 
     }
@@ -973,7 +980,7 @@ public class PerformQueueMessages {
         String res=XMLchars.EmptyXSLT_Result;
         ConvXMLuseXSLTerr="";
         try {
-            xmlInputStream  = new ByteArrayInputStream( xmldata.getBytes("UTF-8") );
+            xmlInputStream  = new ByteArrayInputStream( xmldata.getBytes(StandardCharsets.UTF_8) );
         }
         catch ( Exception exp ) {
             ConvXMLuseXSLTerr = strInterruptedException(exp);
@@ -987,7 +994,7 @@ public class PerformQueueMessages {
 
         source = new StreamSource(xmlInputStream);
         try {
-            srcxslt = new StreamSource(new ByteArrayInputStream(XSLTdata.getBytes("UTF-8")));
+            srcxslt = new StreamSource(new ByteArrayInputStream(XSLTdata.getBytes(StandardCharsets.UTF_8)));
         }
                 catch ( Exception exp ) {
                 ConvXMLuseXSLTerr = strInterruptedException(exp);
