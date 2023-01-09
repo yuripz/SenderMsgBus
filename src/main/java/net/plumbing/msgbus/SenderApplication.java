@@ -1,6 +1,8 @@
 package net.plumbing.msgbus;
 
+import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.DataAccess;
+import net.plumbing.msgbus.common.ExtSystemDataAccess;
 import net.plumbing.msgbus.config.*;
 import net.plumbing.msgbus.init.InitMessageRepository;
 import net.plumbing.msgbus.telegramm.NotifyByChannel;
@@ -148,8 +150,28 @@ public class SenderApplication implements CommandLineRunner {
 			NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Application on " + InetAddress.getLocalHost().getHostAddress() + " , *нет связи с БД*", AppThead_log );
 			System.exit(-22);
 		}
-		// Зачитываем MessageDirection
 
+		try {
+			ApplicationProperties.extSystemDataSource = ExtSystemDataAccess.HiDataSource (connectionProperties.gethrmsPoint(),
+					connectionProperties.gethrmsDbLogin(),
+					connectionProperties.gethrmsDbPasswd()
+			);
+			ApplicationProperties.extSystemDataSourcePoolMetadata = ExtSystemDataAccess.DataSourcePoolMetadata;
+		} catch (Exception e) {
+			AppThead_log.error("НЕ удалось подключится к базе данных внешней системы:" + e.getMessage());
+			System.exit(-20);
+		}
+
+		AppThead_log.info("extSystem DataSource = " + ApplicationProperties.extSystemDataSource );
+		if ( ApplicationProperties.extSystemDataSource != null )
+		{
+			AppThead_log.info("extSystem DataSource = " + ApplicationProperties.extSystemDataSource
+					+ " JdbcUrl:" + ApplicationProperties.extSystemDataSource.getJdbcUrl()
+					+ " isRunning:" + ApplicationProperties.extSystemDataSource.isRunning()
+					+ " 4 dbSchema:" + ApplicationProperties.ExtSysSchema);
+		}
+
+		// Зачитываем MessageDirection
 
 		InitMessageRepository.SelectMsgDirections(ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval,
 				AppThead_log );

@@ -55,6 +55,8 @@ public class MessageTemplate4Perform {
     private String PropUrl;
     private String PropWebMetod;
 
+    private String PropExeMetodExecute;
+
     private String PropExeMetodPostExec; // PropExeMetodPostExec
     private String PropHostPostExec;
     private String PropUserPostExec;
@@ -76,6 +78,7 @@ public class MessageTemplate4Perform {
     private Integer LongRetryIntervalPostExec;
 
     private boolean isDebugged=false;
+    private boolean isExtSystemAccess =false;
     private String  SOAPAction;
     private  String  PropSearchString ;
     private  String  PropReplacement ;
@@ -108,7 +111,7 @@ public class MessageTemplate4Perform {
 
 
     private final String  PropNameExeMetod     = "ExeMetod";
-    private final String  PropNameJavaJndiConn  = "jndi_conn";
+    private final String  PropExtSystemAccess = "extSysDbAccess";
     private final String  PropNameParamPref     = "ParamList";
     private final String  PropNameWebMetod     = "WebMetod";
     public final String  WebRestExeMetod="web-rest";
@@ -200,7 +203,8 @@ public class MessageTemplate4Perform {
                     //проходимся по всем ключам и печатаем все их значения на консоль
 
                     for (String key : properties.stringPropertyNames()) {
-                        //MessageTemplate_Log.info( "[" + Queue_Id + "]" + "ConfigExecute Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                        MessageTemplate_Log.info( "[" + Queue_Id + "]" + "ConfigExecute Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                        if ( key.equals(PropNameExeMetod) ) this.PropExeMetodExecute = properties.getProperty(key);
                         if ( key.equals(PropNameShortRetryCount)) this.ShortRetryCount = Integer.valueOf(properties.getProperty(key).trim() );
                         if ( key.equals(PropNameShortRetryInterval)) this.ShortRetryInterval = Integer.valueOf(properties.getProperty(key).trim() );
                         if ( key.equals(PropNameLongRetryCount)) this.LongRetryCount = Integer.valueOf(properties.getProperty(key).trim() );
@@ -246,6 +250,17 @@ public class MessageTemplate4Perform {
                             {
                                 MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=UPPER[" + properties.getProperty(key) + "]" );
                                 this.isDebugged=true;
+                            }
+                        }
+                        if ( key.equals(PropExtSystemAccess) ) {
+                            if (( properties.getProperty(key).equalsIgnoreCase("on") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("true") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("ON") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
+                            )
+                            {
+                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropExtSystemAccess Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                this.isExtSystemAccess=true;
                             }
                         }
                       /*  else {
@@ -324,7 +339,18 @@ public class MessageTemplate4Perform {
     public  String getPropQueueDirection() { return this. PropQueueDirection; }
     public  String getPropMsgResult() { return this. PropMsgResult; }
 
-    public boolean getIsDebugged() { return this.isDebugged; }
+    public String getPropExeMetodExecute() { return this.PropExeMetodExecute; }
+
+    public boolean getIsDebugged() {
+        // TODO: this.isDebugged=true; -- для Документирования
+        //return true;
+        return this.isDebugged;
+    }
+    public boolean getIsExtSystemAccess() {
+        // TODO: this.isExtSystemAccess=true; -- для Документирования
+        //return true;
+        return this.isExtSystemAccess;
+    }
     public  Integer getPropTimeout_Conn() { return  this.PropTimeout_Conn;}
     public  Integer getPropTimeout_Read() { return  this.PropTimeout_Read;}
 

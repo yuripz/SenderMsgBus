@@ -136,7 +136,14 @@ public class ShellScripExecutor {
 
         process.destroy();
         // checkExec
-        Integer exitValue = process.exitValue();
+        Integer exitValue;
+        try {
+            exitValue= process.exitValue();
+        }
+        catch ( IllegalThreadStateException e) {
+            exitValue = -255;
+        }
+
         MessegeSend_Log.info ( "[" + messageQueueVO.getQueue_Id() + "] Exit value =[" + exitValue + "] for `" + runCmdLine + "`" );
         messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
         messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);

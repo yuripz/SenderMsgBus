@@ -28,6 +28,7 @@ public class MessageDetails {
     public MessageTemplate4Perform MessageTemplate4Perform;
     public int MsgStatus=0;
     public StringBuilder MsgReason = new StringBuilder();
+    public Integer X_Total_Count =0;
 
     public int Message_Tag_Num = 0; // счетчик XML элнментов в Message
     public int Confirmation_Tag_Num = 0; // счетчик XML элнментов в Confirmation

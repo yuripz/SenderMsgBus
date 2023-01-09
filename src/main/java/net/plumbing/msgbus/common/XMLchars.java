@@ -60,6 +60,9 @@ public class XMLchars {
     public static final String NameTagResultCod    = "Cod";
     public static final String NameTagResultText   = "Text";
 
+    public static final String NameTagFaultResult  = "ResultCode";
+    public static final String NameTagFaultTxt     = "Message";
+
 /*    public static final String NameTagFault        = "Fault";
     public static final String NameTagFaultNs      = "FaultNS";
     public static final String NameTagFaultCode    = "FaultCode";
@@ -81,6 +84,8 @@ public class XMLchars {
     public static final String Envelope_noNS_End="</Envelope>";
     public static final String Header_noNS_Begin="<Header>";
     public static final String Header_noNS_End="</Header>";
+    public static final String MsgId_Begin="<MsgId>";
+    public static final String MsgId_End="</MsgId>";
     public static final String Body_noNS_Begin="<Body>";
     public static final String Body_noNS_End="</Body>";
 

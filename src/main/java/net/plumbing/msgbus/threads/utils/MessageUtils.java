@@ -335,6 +335,25 @@ public class MessageUtils {
         return AnswXSLTQueue_Direction;
     }
 
+    public static String PrepareEnvelope4XSLTExt(MessageQueueVO messageQueueVO, String XML_Request_Method, Logger MessegeReceive_Log) {
+        // Искуственный Envelope/Head/Body + XML_Request_Method
+        int nn = XML_Request_Method.length() +
+                2 * (XMLchars.Envelope_noNS_End.length() + XMLchars.Header_noNS_End.length() + XMLchars.MsgId_End.length() + XMLchars.Body_noNS_End.length() )
+                + 24;
+        StringBuilder SoapEnvelope = new StringBuilder( nn );
+        SoapEnvelope.append(XMLchars.Envelope_noNS_Begin);
+        SoapEnvelope.append(XMLchars.Header_noNS_Begin);
+        SoapEnvelope.append(XMLchars.MsgId_Begin + messageQueueVO.getQueue_Id() + XMLchars.MsgId_End);
+        SoapEnvelope.append(XMLchars.Header_noNS_End);
+
+        SoapEnvelope.append(XMLchars.Body_noNS_Begin);
+        SoapEnvelope.append( XML_Request_Method );
+        SoapEnvelope.append(XMLchars.Body_noNS_End);
+        SoapEnvelope.append(XMLchars.Envelope_noNS_End);
+        MessegeReceive_Log.warn( "PrepareEnvelope4XSLTExt: {"+ SoapEnvelope.toString() + "}" );
+        return SoapEnvelope.toString();
+    }
+
     public static int ReadMessage(TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, boolean IsDebugged, Logger MessegeSend_Log) {
         messageDetails.Message.clear();
         messageDetails.MessageRowNum = 0;
