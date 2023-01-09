@@ -30,6 +30,12 @@ public class ShellScripExecutor {
         ;
         String cmdLine = messageDetails.MessageTemplate4Perform.getPropShellScriptExeFullPathName();
         String XPathParams = messageDetails.MessageTemplate4Perform.getPropXPathParams();
+        /* .ConfigExecute.prop:
+        cmdLine =>
+        ShellScript=sh -c /home/oracle/HE-3997_Hermes_APD_Integration/runDocument2DWH.sh OpderId=
+        XPathParams =>
+        XPathParams=/callScript4Document2DWH/payload/orderId
+         */
 
         if (cmdLine == null ) {
             String errorMessage = "В шаблоне не куказано свойство `" + messageDetails.MessageTemplate4Perform.ShellScriptMethod + "`, в котором ожидается получение командной строки на запуск";
