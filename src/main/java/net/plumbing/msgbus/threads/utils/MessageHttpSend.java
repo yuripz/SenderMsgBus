@@ -501,7 +501,8 @@ public class MessageHttpSend {
 			MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.get(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
 					";.readTimeoutInMillis=ReadTimeoutInMillis= " + ReadTimeoutInMillis +
                     "; User=" + messageDetails.MessageTemplate4Perform.getPropUser() +
-                    "; Pswd" + messageDetails.MessageTemplate4Perform.getPropPswd());
+                    "; Pswd" + messageDetails.MessageTemplate4Perform.getPropPswd() +
+                    "; numOfParams=" + numOfParams);
 			messageDetails.Confirmation.clear();
 			messageDetails.XML_MsgResponse.setLength(0);
 
@@ -597,7 +598,7 @@ public class MessageHttpSend {
         //DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         InputStream parsedConfigStream = new ByteArrayInputStream(xml_msgSEND.getBytes(StandardCharsets.UTF_8));
         Document document =  documentBuilder.build(parsedConfigStream); // .parse(parsedConfigStream);
-
+        // MessageSend_Log.info( "["+ Queue_Id + "] setHttpGetParams=( xml_msgSEND =>`" + xml_msgSEND + "`");
         Element RestParams = document.getRootElement();
         paramsInXml.clear();
         int nOfParams=0;
@@ -631,7 +632,7 @@ public class MessageHttpSend {
         return nOfParams;
     }
 
-    private static String getResponseBody(@NotNull MessageDetails messageDetails, Logger MessageSend_Log) throws JDOMException, IOException, XPathExpressionException {
+    public static String getResponseBody(@NotNull MessageDetails messageDetails, Logger MessageSend_Log) throws JDOMException, IOException, XPathExpressionException {
 		SAXBuilder documentBuilder = new SAXBuilder();
 		//DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		InputStream parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
