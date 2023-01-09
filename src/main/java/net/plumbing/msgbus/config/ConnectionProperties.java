@@ -11,6 +11,40 @@ import org.springframework.stereotype.Component;
 
 public class ConnectionProperties {
 
+ // extSystem
+ private String extsysDbSchema;
+    public String getextsysDbSchema() {
+        return extsysDbSchema;
+    }
+    public void setextsysDbSchema(String extsysDbSchema) {this.extsysDbSchema = extsysDbSchema;}
+    //   @Value("${extsysDbLogin")
+    private String extsysDbLogin;
+    public String getextsysDbLogin() {
+        return extsysDbLogin;
+    }
+    public void setextsysDbLogin(String extsysDbLogin) {
+        this.extsysDbLogin = extsysDbLogin;
+    }
+
+    //    @Value("${extsysDbPasswd")
+    private String extsysDbPasswd;
+    public String getextsysDbPasswd() {
+        return hrmsDbPasswd;
+    }
+    public void setextsysDbPasswd(String hrmsDbPasswd) {
+        this.hrmsDbPasswd = hrmsDbPasswd;
+    }
+
+    //    @Value("${extsysPoint")
+    private String extsysPoint;
+    public String getextsysPoint() {
+        return extsysPoint;
+    }
+    public void setextsysPoint(String extsysPoint) {
+        this.extsysPoint = extsysPoint;
+    }
+
+
     private String hrmsDbSchema;
     public String gethrmsDbSchema() {
         return hrmsDbSchema;
@@ -27,23 +61,18 @@ public class ConnectionProperties {
 
 //    @Value("${hrmsDbPasswd")
     private String hrmsDbPasswd;
-
     public String gethrmsDbPasswd() {
         return hrmsDbPasswd;
     }
-
     public void sethrmsDbPasswd(String hrmsDbPasswd) {
         this.hrmsDbPasswd = hrmsDbPasswd;
     }
 
 //    @Value("${hrmsPoint")
     private String hrmsPoint;
-
-
     public String gethrmsPoint() {
         return hrmsPoint;
     }
-
     public void sethrmsPoint(String hrmsPoint) {
         this.hrmsPoint = hrmsPoint;
     }
@@ -64,7 +93,6 @@ public class ConnectionProperties {
     public void setshortRetryInterval(String shortRetryInterval) {
         this.shortRetryInterval = shortRetryInterval;
     }
-
 
    // @Value("${longRetryCount")
     private String longRetryCount;
@@ -155,7 +183,7 @@ public class ConnectionProperties {
     public void setpsqlFunctionRun(String psqlFunctionRun) {
         this.psqlFunctionRun = psqlFunctionRun;
     }
-
+    // connectMsgBus
     private String connectMsgBus;
     public String getconnectMsgBus() {
         return connectMsgBus;
