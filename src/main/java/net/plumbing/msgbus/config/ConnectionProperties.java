@@ -29,10 +29,10 @@ public class ConnectionProperties {
     //    @Value("${extsysDbPasswd")
     private String extsysDbPasswd;
     public String getextsysDbPasswd() {
-        return hrmsDbPasswd;
+        return extsysDbPasswd;
     }
-    public void setextsysDbPasswd(String hrmsDbPasswd) {
-        this.hrmsDbPasswd = hrmsDbPasswd;
+    public void setextsysDbPasswd(String extsysDbPasswd) {
+        this.extsysDbPasswd = extsysDbPasswd;
     }
 
     //    @Value("${extsysPoint")

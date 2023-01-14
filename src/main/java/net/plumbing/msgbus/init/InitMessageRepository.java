@@ -31,7 +31,7 @@ public class InitMessageRepository {
         }
 
         try {
-            AppThead_log.info("SELECT * FROM " + DataAccess.HrmsSchema + ".MESSAGE_typeS F where F.LAST_UPDATE_DT > '" + DataAccess.dateFormat.format( DataAccess.InitDate )  +"'" );
+            AppThead_log.info("SELECT * FROM " + DataAccess.HrmsSchema + ".MESSAGE_typeS F where F.LAST_UPDATE_DT > ( to_date('" + DataAccess.dateFormat.format( DataAccess.InitDate )  +"', 'YYYY-MM-DD HH24:MI:SS' ) - 2/(60*24) );" );
             stmtMsgType.setDate(1, DataAccess.InitDate );
             rs = stmtMsgType.executeQuery();
             while (rs.next()) {

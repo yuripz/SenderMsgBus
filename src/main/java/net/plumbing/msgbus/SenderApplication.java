@@ -1,5 +1,6 @@
 package net.plumbing.msgbus;
 
+import net.plumbing.msgbus.Scheduler.ExternSystemCallTask;
 import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.DataAccess;
 import net.plumbing.msgbus.common.ExtSystemDataAccess;
@@ -11,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +21,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import org.springframework.boot.CommandLineRunner;
 import net.plumbing.msgbus.model.MessageDirections;
-import net.plumbing.msgbus.monitoring.МonitoringWriterTask;
-import net.plumbing.msgbus.monitoring.ConcurrentQueue;
+//import net.plumbing.msgbus.monitoring.МonitoringWriterTask;
+//import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 //import MonitoringConfig;
 import net.plumbing.msgbus.mq.ActiveMQService;
 //import NotifyByChannel;
@@ -42,7 +44,8 @@ import javax.jms.Connection;
 public class SenderApplication implements CommandLineRunner {
 
 	public static final Logger AppThead_log = LoggerFactory.getLogger(SenderApplication.class);
-	static ThreadPoolTaskExecutor monitorWriterPool;
+	// static ThreadPoolTaskExecutor monitorWriterPool; // -- не используется
+	static ThreadPoolTaskExecutor externSystemCallPool;
 
 	@Autowired
 	public ConnectionProperties connectionProperties;
@@ -79,6 +82,9 @@ public class SenderApplication implements CommandLineRunner {
 		props.setProperty("com.sun.net.ssl.checkRevocation","false");
 
 		ThreadPoolTaskExecutor taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
+
+		/* --- monitorWriter для Графаны больше не используется , комментарим */
+		/*
 		this.monitorWriter();
 
 		AppThead_log.warn( dbLoggingProperties.toString() );
@@ -107,20 +113,20 @@ public class SenderApplication implements CommandLineRunner {
 				}
 			}
 		}
-
+*/
 		AppThead_log.info( connectionProperties.toString() );
 		//taskPollProperties.settotalNumTasks("10");
 		//AppThead_log.info( taskPollProperties.toString() );
 
-		String propLongRetryCount = connectionProperties.getlongRetryCount();
-		if (propLongRetryCount == null) propLongRetryCount = "12";
-		String propShortRetryCount = connectionProperties.getshortRetryCount();
-		if (propShortRetryCount == null) propShortRetryCount = "3";
+		//String propLongRetryCount = connectionProperties.getlongRetryCount();
+		//if (propLongRetryCount == null) propLongRetryCount = "12";
+		//String propShortRetryCount = connectionProperties.getshortRetryCount();
+		//if (propShortRetryCount == null) propShortRetryCount = "3";
 
-		String propLongRetryInterval = connectionProperties.getlongRetryInterval();
-		if (propLongRetryInterval == null) propLongRetryInterval = "600";
-		String propShortRetryInterval = connectionProperties.getshortRetryInterval();
-		if (propShortRetryInterval == null) propShortRetryInterval = "30";
+		//String propLongRetryInterval = connectionProperties.getlongRetryInterval();
+		//if (propLongRetryInterval == null) propLongRetryInterval = "600";
+		//String propShortRetryInterval = connectionProperties.getshortRetryInterval();
+		//if (propShortRetryInterval == null) propShortRetryInterval = "30";
 
 		int ShortRetryCount = Integer.parseInt( connectionProperties.getshortRetryCount() );
 		int LongRetryCount = Integer.parseInt( connectionProperties.getlongRetryCount()  );
@@ -134,6 +140,7 @@ public class SenderApplication implements CommandLineRunner {
 			FirstInfoStreamId = Integer.parseInt( connectionProperties.getfirstInfoStreamId() );
 		String psqlFunctionRun = connectionProperties.getpsqlFunctionRun();
 		String HrmsSchema =  connectionProperties.gethrmsDbSchema() ;
+		ApplicationProperties.ExtSysSchema = connectionProperties.getextsysDbSchema();
 
 		// Установаливем "техническое соединение" , что бы считать конфигурацию из БД в public static HashMap'Z
 		java.sql.Connection Target_Connection = DataAccess.make_Hermes_Connection( HrmsSchema, connectionProperties.gethrmsPoint(),
@@ -145,16 +152,16 @@ public class SenderApplication implements CommandLineRunner {
 		if ( Target_Connection == null)
 		{
 			taskExecutor.shutdown();
-			this.monitorWriterPool.shutdown();
+			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
 			MQbroker.stop();
 			NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Application on " + InetAddress.getLocalHost().getHostAddress() + " , *нет связи с БД*", AppThead_log );
 			System.exit(-22);
 		}
 
 		try {
-			ApplicationProperties.extSystemDataSource = ExtSystemDataAccess.HiDataSource (connectionProperties.gethrmsPoint(),
-					connectionProperties.gethrmsDbLogin(),
-					connectionProperties.gethrmsDbPasswd()
+			ApplicationProperties.extSystemDataSource = ExtSystemDataAccess.HiDataSource (connectionProperties.getextsysPoint(),
+					connectionProperties.getextsysDbLogin(),
+					connectionProperties.getextsysDbPasswd()
 			);
 			ApplicationProperties.extSystemDataSourcePoolMetadata = ExtSystemDataAccess.DataSourcePoolMetadata;
 		} catch (Exception e) {
@@ -199,6 +206,30 @@ public class SenderApplication implements CommandLineRunner {
 
 		InitMessageRepository.SelectMsgTemplates( AppThead_log );
 		//AppThead_log.info("keysAllMessageTemplates: " + MessageTemplate.AllMessageTemplate.get(12).getTemplate_name() );
+
+		// Запуск пула потоков под Scheduler
+
+		int TotalScheduledTask = MessageRepositoryHelper.countMessageType_4_Scheduled("CRON_DAEMON");
+		if (TotalScheduledTask > 0 )  // количество типов сообщений, запускаемых по расписанию == 0 значит, выключен
+		{
+		externSystemCallTask_Init( TotalScheduledTask );
+		Integer WaitTimeBetweenWrite = 1000; /// Integer.parseInt(dbLoggingProperties.getwaitTimeScan());
+
+		externSystemCallPool.setThreadGroupName("externSystemCal");
+
+			ExternSystemCallTask[] externSystemCallTask = new ExternSystemCallTask[TotalScheduledTask];
+			for (i = 0; i < TotalScheduledTask; i++) {
+				externSystemCallTask[i] = new ExternSystemCallTask();
+				externSystemCallTask[i].setMessageType_4_Scheduled( MessageRepositoryHelper.getMessageType_4_Scheduled( i,"CRON_DAEMON") );
+				//monitorWriterTask[ i ].setContext(  MntrContext );
+				externSystemCallTask[i].setWaitTimeBetweenScan(1000);
+
+				externSystemCallTask[i].setTheadNum(i);
+
+				externSystemCallPool.execute(externSystemCallTask[i]);
+			}
+		}
+		else externSystemCallPool = null;
 
 		// int totalTasks = Integer.parseInt( "1" ); // TotalNumTasks; //Integer.parseInt( "50" ); //
 		Long CurrentTime;
@@ -284,12 +315,14 @@ public class SenderApplication implements CommandLineRunner {
 			}
 		}
 		taskExecutor.shutdown();
-		monitorWriterPool.shutdown();
+		// monitorWriterPool.shutdown(); -- monitorWriter для Графаны больше не используется , комментарим
 		 NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", AppThead_log );
 		System.exit(-22);
 		return;
 	}
 
+	/* -- monitorWriter для Графаны больше не используется , комментарим
+	 *//*
 	private void monitorWriter() {
 		monitorWriterPool = new ThreadPoolTaskExecutor();
 		monitorWriterPool.initialize();
@@ -301,4 +334,14 @@ public class SenderApplication implements CommandLineRunner {
 		monitorWriterPool.setThreadNamePrefix("Monitor-");
 		AppThead_log.info("ThreadPoolTaskExecutor for monitorWriter prepared: CorePoolSize(203), MaxPoolSize(204); ");
 	}
+	*/
+ private  void  externSystemCallTask_Init ( int numberMessageType_4_Scheduled ) {
+	 externSystemCallPool = new ThreadPoolTaskExecutor();
+	 externSystemCallPool.initialize();
+	 externSystemCallPool.setCorePoolSize(numberMessageType_4_Scheduled);
+	 externSystemCallPool.setMaxPoolSize(numberMessageType_4_Scheduled + 1 );
+	 externSystemCallPool.setWaitForTasksToCompleteOnShutdown(true);
+	 externSystemCallPool.setThreadNamePrefix("CronD-");
+	 AppThead_log.info("ThreadPoolTaskExecutor for externSystemCall prepared: CorePoolSize("+ numberMessageType_4_Scheduled + "), MaxPoolSize(" + (numberMessageType_4_Scheduled+1) + "); ");
+ }
 }

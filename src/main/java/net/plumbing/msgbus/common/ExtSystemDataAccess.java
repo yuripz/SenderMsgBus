@@ -32,7 +32,7 @@ public class ExtSystemDataAccess {
 
 //        hikariConfig.setDriverClassName("oracle.jdbc.driver.OracleDriver");
 //        hikariConfig.setJdbcUrl( "jdbc:oracle:thin:@"+ JdbcUrl); //("jdbc:oracle:thin:@//10.242.36.8:1521/hermes12");
-        SenderApplication.AppThead_log.info( "Try make hikariConfig: " + connectionUrl + " as " + Username + " , Class.forName:" + ClassforName);
+        SenderApplication.AppThead_log.info( "ExtSystemDataAccess: Try make hikariConfig: JdbcUrl `" + connectionUrl + "` as " + Username + " ["+ Password + "] , Class.forName:" + ClassforName);
         hikariConfig.setDriverClassName(ClassforName);
         hikariConfig.setJdbcUrl(  connectionUrl ); //("jdbc:oracle:thin:@//10.242.36.8:1521/hermes12");
 
@@ -55,10 +55,17 @@ public class ExtSystemDataAccess {
         hikariConfig.addDataSourceProperty("dataSource.prepStmtCacheSqlLimit", "4096");
         hikariConfig.addDataSourceProperty("dataSource.useServerPrepStmts", "true");
         hikariConfig.addDataSourceProperty("dataSource.autoCommit", "false");
-        SenderApplication.AppThead_log.info( "Try make DataSourcePool: " + connectionUrl + " as " + Username + " , Class.forName:" + ClassforName);
-        HikariDataSource dataSource = new HikariDataSource(hikariConfig);
-        //HikariPool hikariPool = new HikariPool(hikariConfig);
-        DataSourcePoolMetadata = new HikariDataSourcePoolMetadata(dataSource);
+        SenderApplication.AppThead_log.info( "ExtSystemDataAccess: try make DataSourcePool: " + connectionUrl + " as " + Username + " , Class.forName:" + ClassforName);
+        HikariDataSource dataSource;
+        try {
+            dataSource = new HikariDataSource(hikariConfig);
+            //HikariPool hikariPool = new HikariPool(hikariConfig);
+            DataSourcePoolMetadata = new HikariDataSourcePoolMetadata(dataSource);
+        }
+        catch (Exception e)
+        { SenderApplication.AppThead_log.error( "new HikariDataSource() fault" + e.getMessage());
+            return null;
+        }
         SenderApplication.AppThead_log.info( "DataSourcePool ( at start ): getMax: " + DataSourcePoolMetadata.getMax()
                 + ", getIdle: " + DataSourcePoolMetadata.getIdle()
                 + ", getActive: " + DataSourcePoolMetadata.getActive()
@@ -71,10 +78,21 @@ public class ExtSystemDataAccess {
                         + ", LeakDetectionThreshold: " + dataSource.getLeakDetectionThreshold()
         );
 
+        Connection tryConn;
         try {
 
-            Connection tryConn = dataSource.getConnection();
-            PreparedStatement prepareStatement = tryConn.prepareStatement( "SELECT 1 from dual");
+             tryConn = dataSource.getConnection();
+        }
+        catch (java.sql.SQLException e)
+        { SenderApplication.AppThead_log.error( "dataSource.getConnection() fault" + e.getMessage());
+          return null;
+        }
+        String connectionTestQuery = "SELECT 1 ";
+        try {
+            if ( connectionUrl.indexOf("oracle") > 0 )
+                connectionTestQuery = "SELECT 1 from dual";
+
+            PreparedStatement prepareStatement = tryConn.prepareStatement( connectionTestQuery );
             prepareStatement.executeQuery();
             prepareStatement.close();
             SenderApplication.AppThead_log.info( "DataSourcePool ( at prepareStatement ): getMax: " + DataSourcePoolMetadata.getMax()
@@ -87,7 +105,13 @@ public class ExtSystemDataAccess {
             SenderApplication.AppThead_log.info( "getJdbcUrl: "+ hikariConfig.getJdbcUrl());
         }
         catch (java.sql.SQLException e)
-        { SenderApplication.AppThead_log.error( e.getMessage());}
+        { SenderApplication.AppThead_log.error( "dataSource connectionTestQuery fault `" + connectionTestQuery + "` :" +  e.getMessage());
+            try { tryConn.close();
+                }
+            catch (java.sql.SQLException closeE)
+            { SenderApplication.AppThead_log.error( "dataSource connection close() fault " +  closeE.getMessage()); }
+            return null;
+        }
 
 
         return dataSource;

@@ -225,4 +225,57 @@ public static String look4List_Lame_Threads_4_Num_Thread( Integer Num_Thread, Lo
         return Template_Id;
 
     }
+
+    public static  int countMessageType_4_Scheduled(  String Scheduled_Url_Soap_Ack) {
+        int numberMessageType_4_Scheduled = 0;
+        for (int i = 0; i < MessageType.AllMessageType.size(); i++) {
+            MessageTypeVO messageTypeVO = MessageType.AllMessageType.get(i);
+            String URL_SOAP_Ack = messageTypeVO.getURL_SOAP_Ack();
+            if (( URL_SOAP_Ack != null ) &&
+                    ( URL_SOAP_Ack).equalsIgnoreCase( Scheduled_Url_Soap_Ack )
+               )   {    //  нашли операцию, где Url_Soap_Ack == "CRON_DAEMON"
+                numberMessageType_4_Scheduled = +1;
+            }
+        }
+        return numberMessageType_4_Scheduled;
+    }
+
+    public static String getMessageType_4_Scheduled( int numberMessageType_4_Scheduled,  String Scheduled_Url_Soap_Ack) {
+        String MessageType_4_Scheduled = null;
+        int foundMessageType_4_Scheduled =0;
+        for (int i = 0; i < MessageType.AllMessageType.size(); i++) {
+            MessageTypeVO messageTypeVO = MessageType.AllMessageType.get(i);
+            String URL_SOAP_Ack = messageTypeVO.getURL_SOAP_Ack();
+            if (( URL_SOAP_Ack != null ) &&
+                    ( URL_SOAP_Ack).equalsIgnoreCase( Scheduled_Url_Soap_Ack )
+            )   {    //  нашли операцию, где Url_Soap_Ack == "CRON_DAEMON"
+                       if ( numberMessageType_4_Scheduled == foundMessageType_4_Scheduled ) // это нужный тип по номеру в массиве
+                           return (MessageType_4_Scheduled= messageTypeVO.getMsg_Type()) ;
+                           ;
+                    foundMessageType_4_Scheduled += 1;
+            }
+        }
+        return MessageType_4_Scheduled;
+    }
+
+    public static  String look4MessageTypeVO_by_MesssageType(final String BusOperationMesssageType,  Logger messegeSend_log) {
+        // messegeSend_log.info("look4MessageTypeVO_by_MesssageType [0-" + MessageType.AllMessageType.size() + "]: BusOperationInterfaceId=" +BusOperationInterfaceId + " for " + BusOperationMesssageType);
+        for (int i = 0; i < MessageType.AllMessageType.size(); i++) {
+            MessageTypeVO messageTypeVO = MessageType.AllMessageType.get(i);
+            String OperationMesssageType = messageTypeVO.getMsg_Type();
+            int OperationId = messageTypeVO.getOperation_Id();
+            if ( OperationMesssageType != null ) {
+                if ( ( OperationId != 0) &&
+                        ( OperationMesssageType.toUpperCase().equals(BusOperationMesssageType.toUpperCase()) )
+                )
+                {    //  нашли операцию,считаем, что
+                    Integer MessageOperationId = messageTypeVO.getOperation_Id(); // i;
+                    // messegeSend_log.info("look4MessageTypeVO_by_MesssageType MessageOperationId=" + MessageOperationId.toString() + " found" );
+                    return MessageOperationId.toString();
+                }
+            }
+        }
+        return null;
+    }
+
 }
