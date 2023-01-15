@@ -90,18 +90,18 @@ public class MessageSendTask  implements Runnable
         this.HrmsPoint = hrmspoint;
     }
     public void setHrmsSchema( String HrmsSchema) { this.HrmsSchema = HrmsSchema; }
+    public void setHrmsDbPasswd(String hrmsDbPasswd) {
+        this.hrmsDbPasswd = hrmsDbPasswd;
+    }
+    public void setHrmsDbLogin(String hrmsDbLogin) {
+        this.hrmsDbLogin = hrmsDbLogin;
+    }
 
     public void setTotalTimeTasks(Long totalTimeTasks) {
         this.TotalTimeTasks = totalTimeTasks;
     }
 
-    public void setHrmsDbPasswd(String hrmsDbPasswd) {
-        this.hrmsDbPasswd = hrmsDbPasswd;
-    }
 
-    public void setHrmsDbLogin(String hrmsDbLogin) {
-        this.hrmsDbLogin = hrmsDbLogin;
-    }
 
     public void setTheadNum( int TheadNum) {
         this.theadNum = TheadNum;
@@ -175,10 +175,10 @@ public class MessageSendTask  implements Runnable
             return;
         }
 
-        TheadDataAccess TheadDataAccess = new TheadDataAccess();
-        TheadDataAccess.setDbSchema( HrmsSchema );
+        TheadDataAccess theadDataAccess = new TheadDataAccess();
+        theadDataAccess.setDbSchema( HrmsSchema );
         // Установаливем " соединение" , что бы зачитывать очередь
-        Connection Hermes_Connection = TheadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd,
+        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd,
                 MessegeSend_Log
         );
         if ( Hermes_Connection == null) {
@@ -244,17 +244,17 @@ public class MessageSendTask  implements Runnable
         PreparedStatement stmtQueueLock4JMSconsumer;
         PreparedStatement stmtGetMessage4RowId;
         // PreparedStatement stmtUpdateMessage4RowId; - вместо этого TheadDataAccess.doUPDATE_QUEUE_InfoStreamId()
-        String rdbmsVendor = TheadDataAccess.getRdbmsVendor();
+        String rdbmsVendor = theadDataAccess.getRdbmsVendor();
 
-        if ( TheadDataAccess.Hermes_Connection != null )
+        if ( theadDataAccess.Hermes_Connection != null )
             // Готовим набор SQL
             try {
                 String selectMessage4RowIdSQL= "select q.ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute) as Queue_Date," +
                         " Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id, Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid," +
                         " Q.msg_type_own,Q.msg_result, Q.subsys_cod, COALESCE(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date," +
-                        " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp at time zone '+03:00' - Interval '1' Minute )) as Queue_Create_Date, Q.Perform_Object_Id" +
+                        " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute )) as Queue_Create_Date, Q.Perform_Object_Id" +
                         " from " + HrmsSchema + ".MESSAGE_QUEUE q where q.ROWID=?";
-                stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessage4RowIdSQL );
+                stmtGetMessage4RowId = theadDataAccess.Hermes_Connection.prepareStatement( selectMessage4RowIdSQL );
                 //stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update ARTX_PROJ.MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
                 String PreSelectMessageSQL =
                         "select * from ( select q.ROWID, " +
@@ -275,23 +275,23 @@ public class MessageSendTask  implements Runnable
                                 " COALESCE(Q.retry_count, 0) as Retry_Count," +
                                 " Q.prev_queue_direction," +
                                 " Q.prev_msg_date Prev_Msg_Date, " +
-                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp at time zone '+03:00' - Interval '1' Minute  )) as Queue_Create_Date, " +
+                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute  )) as Queue_Create_Date, " +
                                 " Q.Perform_Object_Id " +
                                 "from " + HrmsSchema + ".MESSAGE_QUEUE Q" +
                                 " Where 1=1" +
                                 " and Q.msg_infostreamid = ? "  +
                                 " and Q.queue_direction in( 'OUT','SEND')" +  // ",'RESOUT','DELOUT')"
-                                " and Q.msg_date < Current_TimeStamp at time zone '+03:00' " ;
+                                " and Q.msg_date < Current_TimeStamp " ;
                 String selectMessageSQL;
                 if (rdbmsVendor.equals("oracle") ) // TODO Oracle
                     selectMessageSQL = PreSelectMessageSQL +" order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan ;
                 else
                     selectMessageSQL = PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit " + NumMessageInScan ;
                 MessegeSend_Log.info( "Main_MESSAGE_QueueSelect:{" + selectMessageSQL  + "} Q.Msg_InfostreamId ="  + (this.FirstInfoStreamId + theadNum ) ) ;
-                stmtMsgQueue = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
+                stmtMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
 
-                stmtQueueLock = TheadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where q.ROWID=? for update nowait" );
-                stmtQueueLock4JMSconsumer = TheadDataAccess.Hermes_Connection.prepareStatement( "select Q.ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
+                stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where q.ROWID=? for update nowait" );
+                stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
 
                 // Получеем перечень потоков, которым надо помогать ДАННОМУ потоку
                 String List_Lame_Threads =  MessageRepositoryHelper.look4List_Lame_Threads_4_Num_Thread( theadNum + this.FirstInfoStreamId  , MessegeSend_Log );
@@ -315,20 +315,20 @@ public class MessageSendTask  implements Runnable
                                 " COALESCE(Q.retry_count, 0) as Retry_Count," +
                                 " Q.prev_queue_direction," +
                                 " Q.prev_msg_date Prev_Msg_Date, " +
-                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp at time zone '+03:00' - Interval '1' Minute  )) as Queue_Create_Date, " +
+                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute  )) as Queue_Create_Date, " +
                                 " Q.Perform_Object_Id " +
                                 "from " + HrmsSchema + ".MESSAGE_QUEUE Q" +
                                 " Where 1=1" +
                                 " and Q.msg_infostreamid in (" + List_Lame_Threads + ")" +
                                 " and Q.queue_direction='OUT'" +  // in( 'OUT')",'SEND','RESOUT','DELOUT')"
-                                " and Q.msg_date < Current_TimeStamp at time zone '+03:00' ";
+                                " and Q.msg_date < Current_TimeStamp ";
                     if (rdbmsVendor.equals("oracle") ) // TODO Oracle
                         selectMessageSQL = PreSelectMessageSQL +" order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum =1 " ;
                     else
                         selectMessageSQL = PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit 1"  ;
 
                     MessegeSend_Log.info( "Helper_MESSAGE_QueueSelect: " + selectMessageSQL );
-                    stmtHelperMsgQueue = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
+                    stmtHelperMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
                 }
                 else
                     MessegeSend_Log.info( "NO-Helper, no Helper_MESSAGE_QueueSelect!" );
@@ -357,7 +357,7 @@ public class MessageSendTask  implements Runnable
             MessegeSend_Log.warn("MessageSendTask[" + theadNum + "]: localDate.toString=" + localDate.toString() + " localDate.format( DTformatter )=" + localDate.format( DTformatter ));
 */
 
-        MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: scaning on " + HrmsSchema + ".MESSAGE_QUEUE is starting ");
+        MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: scaning on " + HrmsSchema + ".MESSAGE_QUEUE is starting, InfoStreamId=" +  (this.FirstInfoStreamId + theadNum ) );
         for ( theadRunCount = 0; theadRunCount < theadRunTotalCount; theadRunCount += 1 ) {
             long secondsFromEpoch = Instant.ofEpochSecond(0L).until(Instant.now(), ChronoUnit.SECONDS);
             if ( secondsFromEpoch - startTimestamp > Long.valueOf(60L * TotalTimeTasks) )
@@ -438,7 +438,7 @@ public class MessageSendTask  implements Runnable
                             // Очистили Message от всего, что там было
                             Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
                             try {
-                                PerformQueueMessages.performMessage(Message, messageQueueVO, TheadDataAccess, MessegeSend_Log);
+                                PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                             } catch (Exception e) {
                                 System.err.println("performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
                                 e.printStackTrace();
@@ -447,7 +447,7 @@ public class MessageSendTask  implements Runnable
                             }
                         }
                         if ( rLock != null)
-                        { rLock.close(); TheadDataAccess.Hermes_Connection.commit(); }
+                        { rLock.close(); theadDataAccess.Hermes_Connection.commit(); }
                     } // Цикл по выборке по своему потоку
                     rs.close();
                 } catch (Exception e) {
@@ -523,7 +523,7 @@ public class MessageSendTask  implements Runnable
                                         isNoLock = false;
                                     }
                                     else {
-                                        if (TheadDataAccess.doUPDATE_QUEUE_InfoStreamId( LockedROWID_QUEUE, LockedQueue_Id,
+                                        if (theadDataAccess.doUPDATE_QUEUE_InfoStreamId( LockedROWID_QUEUE, LockedQueue_Id,
                                                 (theadNum + this.FirstInfoStreamId), MessegeSend_Log)
                                                 != 0
                                         ) // Не смогли установить свой №№ обработчика - значи, считакм, что блокировка не сработала.
@@ -544,7 +544,7 @@ public class MessageSendTask  implements Runnable
                                     Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
                                     try {
                                         num_HelpedMessage4Perform +=1; // отмечаем, что конкретно помогаем
-                                        PerformQueueMessages.performMessage(Message, messageQueueVO, TheadDataAccess, MessegeSend_Log);
+                                        PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                                     } catch (Exception e) {
                                         System.err.println("Helper: performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
                                         e.printStackTrace();
@@ -558,7 +558,7 @@ public class MessageSendTask  implements Runnable
                                 }
 
                                 if ( rLock != null)
-                                { rLock.close(); TheadDataAccess.Hermes_Connection.commit(); }
+                                { rLock.close(); theadDataAccess.Hermes_Connection.commit(); }
                             }
                             rs.close();
                         } catch (Exception e) {
@@ -593,7 +593,7 @@ public class MessageSendTask  implements Runnable
                                         Message, messageQueueVO,
                                         monitoringQueueVO,
                                         PerformQueueMessages,
-                                        TheadDataAccess);
+                                        theadDataAccess);
                                 // Thread.sleep(WaitTimeBetweenScan * 1000);
                                 //////////////////////////////////////////////////////
                                 if ( tempDestResponce != null ) {
@@ -611,7 +611,7 @@ public class MessageSendTask  implements Runnable
                             }
                         } catch (JMSException e) {
                             MessegeSend_Log.error("JMSconsumer.receive: НЕ удалось зпроосить сообщений ActiveMQ");
-
+                            Thread.sleep(WaitTimeBetweenScan * 1000);
                         }
                 }
                 else

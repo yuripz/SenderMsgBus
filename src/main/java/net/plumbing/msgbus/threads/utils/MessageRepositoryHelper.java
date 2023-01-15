@@ -258,8 +258,8 @@ public static String look4List_Lame_Threads_4_Num_Thread( Integer Num_Thread, Lo
         return MessageType_4_Scheduled;
     }
 
-    public static  String look4MessageTypeVO_by_MesssageType(final String BusOperationMesssageType,  Logger messegeSend_log) {
-        // messegeSend_log.info("look4MessageTypeVO_by_MesssageType [0-" + MessageType.AllMessageType.size() + "]: BusOperationInterfaceId=" +BusOperationInterfaceId + " for " + BusOperationMesssageType);
+    public static  Integer getMax_Retry_Time_by_MesssageType(final String BusOperationMesssageType,  Logger messegeSend_log) {
+        messegeSend_log.info("getMax_Retry_Time_by_MesssageType [0-" + MessageType.AllMessageType.size() + "]: "  + " for " + BusOperationMesssageType);
         for (int i = 0; i < MessageType.AllMessageType.size(); i++) {
             MessageTypeVO messageTypeVO = MessageType.AllMessageType.get(i);
             String OperationMesssageType = messageTypeVO.getMsg_Type();
@@ -269,13 +269,32 @@ public static String look4List_Lame_Threads_4_Num_Thread( Integer Num_Thread, Lo
                         ( OperationMesssageType.toUpperCase().equals(BusOperationMesssageType.toUpperCase()) )
                 )
                 {    //  нашли операцию,считаем, что
-                    Integer MessageOperationId = messageTypeVO.getOperation_Id(); // i;
-                    // messegeSend_log.info("look4MessageTypeVO_by_MesssageType MessageOperationId=" + MessageOperationId.toString() + " found" );
-                    return MessageOperationId.toString();
+                    Integer MessageRetryTime = messageTypeVO.getMax_Retry_Time(); // i;
+                     messegeSend_log.info("getMax_Retry_Time_by_MesssageType() MessageOperationId=" + OperationId + " found, MessageRetryTime=" + MessageRetryTime );
+                    return MessageRetryTime;
                 }
             }
         }
         return null;
+    }
+
+    public static  int getOperation_Id_by_MesssageType(final String BusOperationMesssageType,  Logger messegeSend_log) {
+        messegeSend_log.info("getOperation_Id_by_MesssageType [0-" + MessageType.AllMessageType.size() + "]: "  + " for " + BusOperationMesssageType);
+        for (int i = 0; i < MessageType.AllMessageType.size(); i++) {
+            MessageTypeVO messageTypeVO = MessageType.AllMessageType.get(i);
+            String OperationMesssageType = messageTypeVO.getMsg_Type();
+            int OperationId = messageTypeVO.getOperation_Id();
+            if ( OperationMesssageType != null ) {
+                if ( ( OperationId != 0) &&
+                        ( OperationMesssageType.toUpperCase().equals(BusOperationMesssageType.toUpperCase()) )
+                )
+                {    //  нашли операцию,считаем, что
+                    messegeSend_log.info("getOperation_Id_by_MesssageType() MessageOperationId=" + OperationId + " found"  );
+                    return OperationId;
+                }
+            }
+        }
+        return -1;
     }
 
 }

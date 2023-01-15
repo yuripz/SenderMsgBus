@@ -213,20 +213,32 @@ public class SenderApplication implements CommandLineRunner {
 		if (TotalScheduledTask > 0 )  // количество типов сообщений, запускаемых по расписанию == 0 значит, выключен
 		{
 		externSystemCallTask_Init( TotalScheduledTask );
-		Integer WaitTimeBetweenWrite = 1000; /// Integer.parseInt(dbLoggingProperties.getwaitTimeScan());
-
+		Integer WaitTimeBetweenWrite; /// Integer.parseInt(dbLoggingProperties.getwaitTimeScan());
+		String MessageType_4_Scheduled;
 		externSystemCallPool.setThreadGroupName("externSystemCal");
 
 			ExternSystemCallTask[] externSystemCallTask = new ExternSystemCallTask[TotalScheduledTask];
 			for (i = 0; i < TotalScheduledTask; i++) {
-				externSystemCallTask[i] = new ExternSystemCallTask();
-				externSystemCallTask[i].setMessageType_4_Scheduled( MessageRepositoryHelper.getMessageType_4_Scheduled( i,"CRON_DAEMON") );
-				//monitorWriterTask[ i ].setContext(  MntrContext );
-				externSystemCallTask[i].setWaitTimeBetweenScan(1000);
 
-				externSystemCallTask[i].setTheadNum(i);
+				MessageType_4_Scheduled = MessageRepositoryHelper.getMessageType_4_Scheduled( i,"CRON_DAEMON");
+				if ( MessageType_4_Scheduled != null ) {
+					externSystemCallTask[i] = new ExternSystemCallTask();
+					externSystemCallTask[i].setMessageType_4_Scheduled( MessageType_4_Scheduled);
+					//monitorWriterTask[ i ].setContext(  MntrContext );
+					WaitTimeBetweenWrite = MessageRepositoryHelper.getMax_Retry_Time_by_MesssageType( MessageType_4_Scheduled, AppThead_log );
+					if ( WaitTimeBetweenWrite != null )
+					    externSystemCallTask[i].setWaitTimeBetweenScan(WaitTimeBetweenWrite);
+					else
+						externSystemCallTask[i].setWaitTimeBetweenScan(120);
+					externSystemCallTask[ i ].setHrmsSchema( connectionProperties.gethrmsDbSchema());
+					externSystemCallTask[ i ].setHrmsPoint( connectionProperties.gethrmsPoint());
+					externSystemCallTask[ i ].setHrmsDbLogin( connectionProperties.gethrmsDbLogin());
+					externSystemCallTask[ i ].setHrmsDbPasswd( connectionProperties.gethrmsDbPasswd());
 
-				externSystemCallPool.execute(externSystemCallTask[i]);
+					externSystemCallTask[i].setTheadNum(i);
+
+					externSystemCallPool.execute(externSystemCallTask[i]);
+				}
 			}
 		}
 		else externSystemCallPool = null;

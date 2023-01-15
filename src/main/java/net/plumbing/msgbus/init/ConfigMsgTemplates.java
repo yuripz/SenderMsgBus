@@ -95,6 +95,11 @@ public class ConfigMsgTemplates {
                     case "AckXSLT":
                         messageTemplateVO.setAckXSLT( configContent);
                         break;
+
+                    case "EnvelopeXSLTExt":
+                        messageTemplateVO.setEnvelopeXSLTExt( configContent);
+                        break;
+
                     case "ErrTransXSLT":
                         messageTemplateVO.setErrTransXSLT( configContent);
                         break;

@@ -48,6 +48,71 @@ public class MessageUtils {
                 "</" + XMLchars.TagEntryRec + ">"
         );
     }
+    public static Long MakeNewMessage_Queue(MessageQueueVO messageQueueVO, TheadDataAccess theadDataAccess, Logger MessegeReceive_Log ){
+        ResultSet rs = null;
+        try {
+            rs = theadDataAccess.stmt_New_Queue_Prepare.executeQuery();
+            while (rs.next()) {
+                messageQueueVO.setMessageQueue(
+                        rs.getLong("Queue_Id"),
+                        rs.getTimestamp("Queue_Date"),
+                        rs.getString("OutQueue_Id"),
+                        rs.getTimestamp("Msg_Date"),
+                        rs.getInt("Msg_Status"),
+                        rs.getInt("MsgDirection_Id"),
+                        rs.getInt("Msg_InfoStreamId"),
+                        rs.getInt("Operation_Id"),
+                        rs.getString("Queue_Direction"),
+                        rs.getString("Msg_Type"),
+                        rs.getString("Msg_Reason"),
+                        rs.getString("Msg_Type_own"),
+                        rs.getString("Msg_Result"),
+                        rs.getString("SubSys_Cod"),
+                        rs.getString("Prev_Queue_Direction"),
+                        rs.getInt("Retry_Count"),
+                        rs.getTimestamp("Prev_Msg_Date"),
+                        rs.getTimestamp("Queue_Create_Date"),
+                        0L
+                );
+            }
+            rs.close();
+            theadDataAccess.Hermes_Connection.commit();
+        }
+        catch (SQLException e)
+        {
+            MessegeReceive_Log.error(e.getMessage());
+            e.printStackTrace();
+            MessegeReceive_Log.error( "что то пошло совсем не так...:" + theadDataAccess.selectMessageStatement);
+            //if ( rs !=null ) rs.close();
+            return null;
+        }
+
+        long Queue_Id = messageQueueVO.getQueue_Id();
+        try {
+            // "(QUEUE_ID, QUEUE_DIRECTION, QUEUE_DATE, MSG_STATUS, MSG_DATE, OPERATION_ID, OUTQUEUE_ID, MSG_TYPE) "
+            theadDataAccess.stmt_New_Queue_Insert.setLong(1, Queue_Id);
+            theadDataAccess.stmt_New_Queue_Insert.executeUpdate();
+            // MessegeReceive_Log.info(  ">" + theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] done");
+
+        } catch (SQLException e) {
+            MessegeReceive_Log.error(theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
+            e.printStackTrace();
+            try {
+                theadDataAccess.Hermes_Connection.rollback();
+            } catch (SQLException exp) {
+                MessegeReceive_Log.error("Hermes_Connection.rollback()fault: " + exp.getMessage());
+            }
+            return null;
+        }
+        try {
+            theadDataAccess.Hermes_Connection.commit();
+        } catch (SQLException exp) {
+            MessegeReceive_Log.error("Hermes_Connection.commit() fault: " + exp.getMessage());
+            return null;
+        }
+        return Queue_Id;
+    }
+
 
     public static Integer ProcessingSendError(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess,
                                               String whyIsFault , boolean isMessageQueue_Directio_2_ErrorOUT, Exception e , Logger MessegeSend_Log)

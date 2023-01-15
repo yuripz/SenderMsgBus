@@ -97,9 +97,11 @@ public class ExternalXmlSQLStatement {
                                             MessageQueueVO messageQueueVO,
                                             MessageDetails messageDetails, boolean isDebugged, Logger MessegeSend_Log) {
         int nn = 0;
-        messageDetails.Message.clear();
-        messageDetails.MessageRowNum = 0;
-        messageDetails.Message_Tag_Num = 0;
+        // TODO - messageDetails.Message содержит параметиры запроса и очищать его нельзя
+        // messageDetails.Message.clear();
+        //messageDetails.MessageRowNum = 0;
+        //messageDetails.Message_Tag_Num = 0;
+
         messageDetails.MsgReason.setLength(0);
        // messageDetails.MsgReason.append("ExecuteSQLinXML is not ready yet! ");
         Connection current_Connection_4_ExecuteSQL = extSystemDataConnection;
@@ -157,7 +159,7 @@ public class ExternalXmlSQLStatement {
                             if (isDebugged)
                                 MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] ExecuteSQLincludedXML: SQLStatementParamList.get(" + sqlStatementParamListIndex + ") SQLStatementParam.getName()= (" + SQLStatementParam.getName() + "), SQLStatementParam.value=(" + SQLStatementParam.getTextTrim() + ")");
                             if (isDebugged)
-                                MessegeSend_Log.warn("-------------------------------------------------------------------------------------------------------");
+                                MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]-------------------------------------------------------------------------------------------------------");
                             if (SQLStatementParam.getName().equals(TagNamePSTMT))
                             SQLcallableStatementExpression = SQLStatementParam.getText();
 
@@ -180,7 +182,7 @@ public class ExternalXmlSQLStatement {
                                         if ( NN > firstStatementParamNum ) {
                                             SQLparamValues.put(NN-firstStatementParamNum-1, SQLStatementParam.getTextTrim()); //
                                             //String sss = SQLStatementParam.getValue();
-                                            MessegeSend_Log.warn(" ExecuteSQLincludedXML-> put(" + (NN-firstStatementParamNum-1) +") [" +SQLStatementParam.getTextTrim() + " ]");
+                                            MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] ExecuteSQLincludedXML-> put(" + (NN-firstStatementParamNum-1) +") [" +SQLStatementParam.getTextTrim() + " ]");
                                             //MessegeSend_Log.warn(" ExecuteSQLincludedXML-> sss-put(" + (NN-firstStatementParamNum-1) +") [" + sss + " ]");
                                         }
                                     }
@@ -230,7 +232,7 @@ public class ExternalXmlSQLStatement {
                 if (isDebugged) {
                     MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] =====================================================================================");
                     for ( int k =0; k < SQLparamValues.size(); k++ )
-                        MessegeSend_Log.warn( "SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
+                        MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
                 }
 
                 // todo
@@ -242,7 +244,7 @@ public class ExternalXmlSQLStatement {
                         // Step 2.B: Creating JDBC CallableStatement
                         preparedStatement = current_Connection_4_ExecuteSQL.prepareStatement (SQLcallableStatementExpression);
                         if (isDebugged)
-                            MessegeSend_Log.info( SQLcallableStatementExpression );
+                            MessegeSend_Log.info( "[" + messageQueueVO.getQueue_Id() + "] " + SQLcallableStatementExpression );
                         // register OUT parameter
                         for ( int k =0; k < SQLparamValues.size(); k++ )
                             //   MessegeSend_Log.warn( "SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
@@ -254,7 +256,7 @@ public class ExternalXmlSQLStatement {
                         } catch (SQLException e) {
                             ;
                             messageDetails.MsgReason.append(", SQLException preparedStatement.execute(`"+ messageQueueVO.getOutQueue_Id() + "`):=" + sStackTracе.strInterruptedException(e) );
-                            MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                            MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                             preparedStatement.close();
                             return -3;
                         }
@@ -263,7 +265,7 @@ public class ExternalXmlSQLStatement {
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
                         messageDetails.MsgReason.append("SQLException Hermes_Connection.preparedStatement `"+ messageQueueVO.getOutQueue_Id() + "`:=" ); messageDetails.MsgReason.append( sStackTracе.strInterruptedException(e) );
-                        MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                        MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
                     }
                 if ( SQLStatement_functionORselect.equals( OperTypeFunc ) )
@@ -273,12 +275,12 @@ public class ExternalXmlSQLStatement {
                         // Step 2.B: Creating JDBC CallableStatement
                         callableStatement = current_Connection_4_ExecuteSQL.prepareCall (SQLcallableStatementExpression);
                         if (isDebugged)
-                            MessegeSend_Log.info( SQLcallableStatementExpression );
+                            MessegeSend_Log.info( "[" + messageQueueVO.getQueue_Id() + "] " + SQLcallableStatementExpression );
                         // register OUT parameter
                         callableStatement.registerOutParameter(1, Types.INTEGER);
                         for ( int k =0; k < SQLparamValues.size(); k++ ) {
                             if (isDebugged)
-                            MessegeSend_Log.warn("callableStatement.setString: SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
+                            MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] " + "callableStatement.setString: SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
                             callableStatement.setString(2 + k, SQLparamValues.get(k));
                         }
 
@@ -289,7 +291,7 @@ public class ExternalXmlSQLStatement {
 
                         } catch (SQLException e) {
                             messageDetails.MsgReason.append(", SQLException callableStatement.execute(`"+ messageQueueVO.getOutQueue_Id() + "`):=" + sStackTracе.strInterruptedException(e) );
-                            MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                            MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " +messageDetails.MsgReason.toString());
                             callableStatement.close();
                             current_Connection_4_ExecuteSQL.rollback();
                             return -3;
@@ -321,7 +323,7 @@ public class ExternalXmlSQLStatement {
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
                         messageDetails.MsgReason.append(OperTypeFunc +  " SQLException Connection.prepareCall :=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTracе.strInterruptedException(e) );
-                        MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                        MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
                     }
                 if ( SQLStatement_functionORselect.equals( OperTypeRef ) )
@@ -331,16 +333,16 @@ public class ExternalXmlSQLStatement {
                         // Step 2.B: Creating JDBC CallableStatement
                         callableStatement =  current_Connection_4_ExecuteSQL.prepareCall (SQLcallableStatementExpression);
                         if (isDebugged)
-                            MessegeSend_Log.info( "SQLcallableStatementExpression_4_" + OperTypeRef + ":" + SQLcallableStatementExpression );
+                            MessegeSend_Log.info( "[" + messageQueueVO.getQueue_Id() + "] " + "SQLcallableStatementExpression_4_" + OperTypeRef + ":" + SQLcallableStatementExpression );
                         // register OUT parameter
                         callableStatement.registerOutParameter(1, Types.REF_CURSOR); // OracleTypes.CURSOR);
                         for ( int k =1; k < SQLparamValues.size(); k++ ) {
                             if (isDebugged)
-                                MessegeSend_Log.warn("SQLparamValues.get(" + k + ")-> [" + (1 + k) + "]=" + SQLparamValues.get(k));
+                                MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] " + "SQLparamValues.get(" + k + ")-> [" + (1 + k) + "]=" + SQLparamValues.get(k));
                             callableStatement.setString(( 1 + k), SQLparamValues.get(k));
                         }
                         if (isDebugged)
-                        MessegeSend_Log.warn("SQLparamValues.set All" );
+                        MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] " + "SQLparamValues.set All" );
                         try {
                             // Step 2.C: Executing CallableStatement
                             callableStatement.execute();
@@ -353,9 +355,9 @@ public class ExternalXmlSQLStatement {
                                 //OracleResultSet oraRs = (OracleResultSet) callableStatement.getObject(1);
                                 PgResultSet oraRs = (PgResultSet) callableStatement.getObject(1);
                                 ResultSetMetaData resultSetMetaData = callableStatement.getMetaData(); // getParameterMetaData(); .getMetaData();
-                                MessegeSend_Log.warn( "resultSetMetaData =" + resultSetMetaData ) ;
+                                MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] " + "resultSetMetaData =" + resultSetMetaData ) ;
                                 ResultSetMetaData oraRsMetaDatasmd = oraRs.getMetaData();
-                                MessegeSend_Log.warn( "OraResultSetMetaData =" + oraRsMetaDatasmd ) ;
+                                MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] " +"OraResultSetMetaData =" + oraRsMetaDatasmd ) ;
                                 //ParameterMetaData resultSetMetaData = callableStatement.getParameterMetaData();
                                 int ColumnCount = oraRsMetaDatasmd.getColumnCount(); // Integer.parseInt(SQLStatement_ColumnCount); //
                                 int i;
@@ -371,10 +373,10 @@ public class ExternalXmlSQLStatement {
                                     }
                                 isDebugged = true;*/
                                 int num_Rows4Perform = 0;
-                                // Формируем псевдо XML_MsgConfirmation из
-                                messageDetails.XML_MsgConfirmation.setLength(0);
+                                // Формируем псевдо XML_ClearBodyResponse из
+                                messageDetails.XML_ClearBodyResponse.setLength(0);
 
-                                    messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + XMLchars.TagConfirmation + XMLchars.CloseTag // <Confirmation>
+                                    messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.TagConfirmation + XMLchars.CloseTag // <Confirmation>
                                                     + XMLchars.OpenTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag //  <ResultCode>
                                                     + "0"
                                                     + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag // </ResultCode>
@@ -387,29 +389,29 @@ public class ExternalXmlSQLStatement {
                                     while (rs.next()) {
                                         //OracleResultSetMetaData
 
-                                        messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + RowTag + XMLchars.CloseTag //  <ROW>
+                                        messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + RowTag + XMLchars.CloseTag //  <ROW>
                                         );
                                         num_Rows4Perform += 1;
                                         for (i = 1; i < ColumnCount + 1; i++) {
                                             ColumnLabel = toCamelCase( oraRsMetaDatasmd.getColumnLabel(i), "_" ); // "Col_0" + i; // toCamelCase( resultSetMetaData.getColumnLabel(i), "_" );
-                                            messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag);
-                                            messageDetails.XML_MsgConfirmation.append( ColumnLabel); messageDetails.XML_MsgConfirmation.append(XMLchars.CloseTag);
-                                            messageDetails.XML_MsgConfirmation.append( StringEscapeUtils.escapeXml10(rs.getString(i)) )   ;
-                                            messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag); messageDetails.XML_MsgConfirmation.append(XMLchars.EndTag);
-                                            messageDetails.XML_MsgConfirmation.append( ColumnLabel ); messageDetails.XML_MsgConfirmation.append(XMLchars.CloseTag);
+                                            messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag);
+                                            messageDetails.XML_ClearBodyResponse.append( ColumnLabel); messageDetails.XML_ClearBodyResponse.append(XMLchars.CloseTag);
+                                            messageDetails.XML_ClearBodyResponse.append( StringEscapeUtils.escapeXml10(rs.getString(i)) )   ;
+                                            messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag); messageDetails.XML_ClearBodyResponse.append(XMLchars.EndTag);
+                                            messageDetails.XML_ClearBodyResponse.append( ColumnLabel ); messageDetails.XML_ClearBodyResponse.append(XMLchars.CloseTag);
                                         }
-                                        messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + XMLchars.EndTag + RowTag + XMLchars.CloseTag //  </ROW>
+                                        messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag + RowTag + XMLchars.CloseTag //  </ROW>
                                         );
                                         num_Rows4Perform += 1;
                                     } // Цикл по выборке
 
-                                    messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagDetailList + XMLchars.CloseTag //   </DetailList>
+                                    messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagDetailList + XMLchars.CloseTag //   </DetailList>
                                             + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagConfirmation + XMLchars.CloseTag // </Confirmation>
                                     );
 
                                 rs.close();
                                 if (isDebugged)
-                                    MessegeSend_Log.warn( messageDetails.XML_MsgConfirmation.toString() );
+                                    MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] XML_ClearBodyResponse `" + messageDetails.XML_ClearBodyResponse.toString() + "`");
 
                             } catch (SQLException e) {
                                 //e.printStackTrace();
@@ -425,7 +427,7 @@ public class ExternalXmlSQLStatement {
                             current_Connection_4_ExecuteSQL.commit();
                         } catch (SQLException e) {
                             messageDetails.MsgReason.append(", [" + messageQueueVO.getOutQueue_Id() + "] SQLException refcursor callableStatement.execute(`"+  SQLcallableStatementExpression + "`):=" + sStackTracе.strInterruptedException(e) );
-                            MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                            MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                             current_Connection_4_ExecuteSQL.rollback();
                             callableStatement.close();
                             return -3;
@@ -453,7 +455,7 @@ public class ExternalXmlSQLStatement {
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
                         messageDetails.MsgReason.append(OperTypeRef +  " SQLException Connection.prepareCall:=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTracе.strInterruptedException(e) );
-                        MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                        MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
                     }
 
@@ -463,14 +465,14 @@ public class ExternalXmlSQLStatement {
                         selectStatement = current_Connection_4_ExecuteSQL.prepareStatement (SQLcallableStatementExpression);
                         msg_Reason.append( SQLcallableStatementExpression);
                         if (isDebugged)
-                        MessegeSend_Log.info( SQLcallableStatementExpression );
+                        MessegeSend_Log.info( "[" + messageQueueVO.getQueue_Id() + "] " + SQLcallableStatementExpression );
                         // register OUT parameter
                         if ( SQLparamValues.size() > 0 )
                         msg_Reason.append( " using: " );
 
                         for ( int k =0; k < SQLparamValues.size(); k++ ) {
                             if (isDebugged)
-                            MessegeSend_Log.warn("selectStatement.setString: SQLparamValues.get(" + 1+k + " )=" + SQLparamValues.get(k));
+                            MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] " + "selectStatement.setString: SQLparamValues.get(" + 1+k + " )=" + SQLparamValues.get(k));
                             selectStatement.setString(1 + k, SQLparamValues.get(k));
                             msg_Reason.append( SQLparamValues.get(k)); msg_Reason.append( ", " );
                         }
@@ -483,7 +485,7 @@ public class ExternalXmlSQLStatement {
                             int i;
                             if (isDebugged)
                             for (i=1; i < ColumnCount+1; i++ ) {
-                                MessegeSend_Log.warn(
+                                MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] " +
                                         "ColumnType: " + ResultSetMetaData.getColumnType(i) +
                                                 " , ColumnName: " + ResultSetMetaData.getColumnName(i) +
                                                 " , ColumnTypeName: " + ResultSetMetaData.getColumnTypeName(i) +
@@ -491,8 +493,8 @@ public class ExternalXmlSQLStatement {
                                 );
                             }
                             int num_Rows4Perform = 0;
-                            // Формируем псевдо XML_MsgConfirmation из PIPEfunction
-                            messageDetails.XML_MsgConfirmation.setLength(0);
+                            // Формируем псевдо XML_ClearBodyResponse из PIPEfunction
+                            messageDetails.XML_ClearBodyResponse.setLength(0);
                             /********** TABLE(do_pipe()) в удалённом вызове не поддерживается
                             if ( SQLStatement_functionORselect.equals( OperTypePipe ) ) // формируем из подготовленной структуры TAG_NUM TAG_ID, TAG_VALUE TAG_PAR_NUM
                             MakeConfirmation4PIPEfunction(rs, messageQueueVO.getQueue_Id(), messageDetails, MessegeSend_Log);
@@ -500,7 +502,7 @@ public class ExternalXmlSQLStatement {
                             // именно SELECT из таблиц когда нет подготовленной структуры TAG_NUM TAG_ID, TAG_VALUE TAG_PAR_NUM
 
 
-                                messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + XMLchars.TagConfirmation + XMLchars.CloseTag // <Confirmation>
+                                messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.TagConfirmation + XMLchars.CloseTag // <Confirmation>
                                                 + XMLchars.OpenTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag //  <ResultCode>
                                                 + "0"
                                                 + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag // </ResultCode>
@@ -510,29 +512,29 @@ public class ExternalXmlSQLStatement {
                                 );
                                 String ColumnLabel;
                                 while (rs.next()) {
-                                    messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + RowTag + XMLchars.CloseTag //  <ROW>
+                                    messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + RowTag + XMLchars.CloseTag //  <ROW>
                                     );
                                     num_Rows4Perform += 1;
                                     for (i = 1; i < ColumnCount + 1; i++) {
                                         ColumnLabel = toCamelCase( ResultSetMetaData.getColumnLabel(i), "_" );
-                                        messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag);
-                                        messageDetails.XML_MsgConfirmation.append( ColumnLabel); messageDetails.XML_MsgConfirmation.append(XMLchars.CloseTag);
-                                        messageDetails.XML_MsgConfirmation.append( StringEscapeUtils.escapeXml10(rs.getString(i)) )   ;
-                                        messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag); messageDetails.XML_MsgConfirmation.append(XMLchars.EndTag);
-                                        messageDetails.XML_MsgConfirmation.append( ColumnLabel ); messageDetails.XML_MsgConfirmation.append(XMLchars.CloseTag);
+                                        messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag);
+                                        messageDetails.XML_ClearBodyResponse.append( ColumnLabel); messageDetails.XML_ClearBodyResponse.append(XMLchars.CloseTag);
+                                        messageDetails.XML_ClearBodyResponse.append( StringEscapeUtils.escapeXml10(rs.getString(i)) )   ;
+                                        messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag); messageDetails.XML_ClearBodyResponse.append(XMLchars.EndTag);
+                                        messageDetails.XML_ClearBodyResponse.append( ColumnLabel ); messageDetails.XML_ClearBodyResponse.append(XMLchars.CloseTag);
                                     }
-                                    messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + XMLchars.EndTag + RowTag + XMLchars.CloseTag //  </ROW>
+                                    messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag + RowTag + XMLchars.CloseTag //  </ROW>
                                     );
                                     num_Rows4Perform += 1;
                                 } // Цикл по выборке
 
-                                messageDetails.XML_MsgConfirmation.append(XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagDetailList + XMLchars.CloseTag //   </DetailList>
+                                messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagDetailList + XMLchars.CloseTag //   </DetailList>
                                         + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagConfirmation + XMLchars.CloseTag // </Confirmation>
                                 );
 
                             rs.close();
                             if (isDebugged)
-                             MessegeSend_Log.warn( messageDetails.XML_MsgConfirmation.toString() );
+                             MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.XML_ClearBodyResponse.toString() );
                             if (isDebugged)
                                 MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] num_Rows4Perform=" + num_Rows4Perform );
 
@@ -541,7 +543,7 @@ public class ExternalXmlSQLStatement {
                             messageDetails.MsgReason.append(", SQLException selectStatement.executeQuery(`");
                             messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10(SQLcallableStatementExpression) );
                             messageDetails.MsgReason.append("`):="); messageDetails.MsgReason.append( e.getMessage()); //sStackTracе.strInterruptedException(e));
-                            MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                            MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "  + messageDetails.MsgReason.toString());
                             selectStatement.close();
                             current_Connection_4_ExecuteSQL.rollback();
                             return -3;
@@ -561,7 +563,7 @@ public class ExternalXmlSQLStatement {
                     } catch (SQLException e) {
                         messageDetails.MsgReason.append( OperTypeSel + " SQLException Hermes_Connection.prepareCall:=`"); messageDetails.MsgReason.append( SQLcallableStatementExpression); messageDetails.MsgReason.append("`"); messageDetails.MsgReason.append( sStackTracе.strInterruptedException(e) );
                         current_Connection_4_ExecuteSQL.rollback();
-                        MessegeSend_Log.error(messageDetails.MsgReason.toString());
+                        MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
                     }
                 ////------------- SelectTotalStatement ----------------
@@ -580,7 +582,7 @@ public class ExternalXmlSQLStatement {
 
                     } catch (SQLException e) {
 
-                        messageDetails.MsgReason.append( OperTypeSel +  " SelectTotal SQLException Hermes_Connection.prepareCall(`");
+                        messageDetails.MsgReason.append( OperTypeSel +  " SelectTotal SQLException Connection_4_ExecuteSQL.prepareCall(`");
                         messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10(SelectTotalStatement)); messageDetails.MsgReason.append("`" );
                         messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTracе.strInterruptedException(e)) );
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "+ messageDetails.MsgReason.toString());

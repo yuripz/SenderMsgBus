@@ -189,6 +189,7 @@ public class MessageTemplate4Perform {
         this.LongRetryCountPostExec= LongRetryCount;
         this.LongRetryIntervalPostExec = LongRetryInterval;
             this.HeaderXSLT = messageTemplateVO.getHeaderXSLT();
+            this.EnvelopeXSLTExt = messageTemplateVO.getEnvelopeXSLTExt();
             this.PropUser = Db_user;
             this.PropPswd = Db_pswd != null ? Db_pswd : null;
 

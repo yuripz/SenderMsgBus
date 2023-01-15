@@ -151,6 +151,7 @@ public class MessageTemplateVO {
     public String getMessageXSLT () { return this.MessageXSLT; }
 
     public void setEnvelopeXSLTExt (String EnvelopeXSLTExt) { this.EnvelopeXSLTExt = EnvelopeXSLTExt ; }
+    public String getEnvelopeXSLTExt () { return this.EnvelopeXSLTExt; }
     public void setEnvelopeXSLTPost (String EnvelopeXSLTPost) { this.EnvelopeXSLTPost = EnvelopeXSLTPost ; }
     public String getEnvelopeXSLTPost () { return this.EnvelopeXSLTPost; }
 
@@ -180,5 +181,6 @@ public class MessageTemplateVO {
 
     public void setHeaderXSLT (String HeaderXSLT) { this.HeaderXSLT = HeaderXSLT ; }
     public String getHeaderXSLT () { return this.HeaderXSLT; }
+
 
 }
