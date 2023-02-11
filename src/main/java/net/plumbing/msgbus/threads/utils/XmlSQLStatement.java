@@ -123,6 +123,7 @@ public class XmlSQLStatement {
                         messageDetails.MsgReason.append(", SQLException callableStatement.execute():=" + e.toString());
                         MessegeSend_Log.error(messageDetails.MsgReason.toString());
                         callableStatement.close();
+                        theadDataAccess.Hermes_Connection.rollback();
                         return -3;
                     }
 

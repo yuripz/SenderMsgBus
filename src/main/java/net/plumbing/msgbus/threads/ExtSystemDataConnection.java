@@ -43,6 +43,7 @@ public class ExtSystemDataConnection {
 
 
         if (!rdbmsVendor.equals("oracle")) {
+            dataAccess_log.info("[" + Queue_Id + "] try ExtSystem `set SESSION time zone 3`");
             try {
                 PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();

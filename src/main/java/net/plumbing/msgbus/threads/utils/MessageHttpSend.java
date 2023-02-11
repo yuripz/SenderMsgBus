@@ -58,6 +58,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 // import com.google.common.escape.Escaper;
 // import com.google.common.net.UrlEscapers;
 
@@ -320,6 +321,26 @@ public class MessageHttpSend {
         InputStream Response;
         byte[] RequestBody;
 
+        Map<String, String> httpHeaders= new HashMap<>();
+        String headerParams[];
+        httpHeaders.put("Content-Type", "text/xml;charset=UTF-8");
+
+        if ( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) == -1 )// NOT Header_is_empty
+        {
+            headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post headerParams.length=" + headerParams.length );
+            for (int i = 0; i < headerParams.length; i++)
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post headerParams[" + i + "] = " + headerParams[i] );
+
+            if (headerParams.length > 1  )
+            for (int i = 0; i < headerParams.length; i++)
+                httpHeaders.put(headerParams[0], headerParams[1]);
+        }
+        else
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) );
+        MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post `" + messageDetails.Soap_HeaderRequest + "` httpHeaders.size=" + httpHeaders.size() );
+        //+                 "; headerParams= " + headerParams.toString() );
+
         if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
                 ( !messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8" ) )) {
             try {
@@ -352,14 +373,16 @@ public class MessageHttpSend {
                Response =
                     Unirest.post(EndPointUrl)
                             .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
-                            .header("Content-Type", "text/xml;charset=UTF-8")
+                            .headers(httpHeaders) // возможно несколько заголовков!
+                            //.header("Content-Type", "text/xml;charset=UTF-8")
                             .body( RequestBody )
                             .asBinary()
                             .getRawBody();
             else
                 Response =
                         Unirest.post(EndPointUrl)
-                                .header("Content-Type", "text/xml;charset=UTF-8")
+                                .headers(httpHeaders) // возможно несколько заголовков!
+                                 //.header("Content-Type", "text/xml;charset=UTF-8")
                                 .body( RequestBody )
                                 .asBinary()
                                 .getRawBody(); //.asString() //.getBody();

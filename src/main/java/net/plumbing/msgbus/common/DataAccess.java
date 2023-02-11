@@ -6,11 +6,12 @@ import org.slf4j.Logger;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 
 public  class DataAccess {
 
     public static Connection  Hermes_Connection;
-    public  static Date InitDate;
+    public  static Timestamp InitDate; ; // Date InitDate;
     public static DateFormat dateFormat;
 
     //@Autowired
@@ -18,12 +19,14 @@ public  class DataAccess {
     static JdbcTemplate jdbcTemplate;
     static DriverManagerDataSource dataSource;
     */
+    private static  String SQLCurrentTimeStringRead;
+    private static  String SQLCurrentTimeDateRead;
     private static PreparedStatement stmtCurrentTimeStringRead;
     private static PreparedStatement stmtCurrentTimeDateRead;
     public static  String HrmsSchema="orm";
     public static  String rdbmsVendor="oracle";
 
-    public static  Connection make_Hermes_Connection( String DbSchema, String dst_point, String db_userid , String db_password, Logger dataAccess_log) {
+    public static  Connection make_DataBase_Connection(String DbSchema, String dst_point, String db_userid , String db_password, Logger dataAccess_log) {
         Connection Target_Connection = null;
         String connectionUrl ;
         if ( dst_point==null) {
@@ -59,9 +62,17 @@ public  class DataAccess {
             // Handle any errors that may have occurred.
             Target_Connection.setAutoCommit(false);
             if ( !rdbmsVendor.equals("oracle") ) {
+                SQLCurrentTimeStringRead= "SELECT to_char( clock_timestamp(), 'YYYYMMDDHH24MISS') as InitTime";
+                SQLCurrentTimeDateRead= "SELECT clock_timestamp() as InitTime";
+                dataAccess_log.info("Try setup Connection: `set SESSION time zone 3`");
                 PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
+            }
+            else
+            { // используем DUAL
+               SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYYMMDDHH24MISS') as InitTime FROM dual";
+               SQLCurrentTimeDateRead= "SELECT current_timestamp as InitTime FROM dual";
             }
 
             /*dataSource = new DriverManagerDataSource(connectionUrl);
@@ -70,15 +81,15 @@ public  class DataAccess {
             dataSource.setUsername(db_userid);
             */
             DataAccess.Hermes_Connection = Target_Connection;
-            dateFormat = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+            dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
             stmtCurrentTimeStringRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeStringRead );
             stmtCurrentTimeDateRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeDateRead );
             // PreparedStatement stmtInitTimeDateRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeDateRead );
             ResultSet rs = null;
             rs = stmtCurrentTimeDateRead.executeQuery();
             while (rs.next()) {
-                InitDate = rs.getDate("InitTime");
-                dataAccess_log.info( "RDBMS CurrentTime: LocalDate ="+ InitDate.toLocalDate().toString() + " getTime=" + InitDate.getTime()  + " mSec., " + dateFormat.format( InitDate )  );
+                InitDate = rs.getTimestamp("InitTime");
+                dataAccess_log.info( "RDBMS make_DataBase_Connection CurrentTime: LocalDateTime ="+ InitDate.toString() + " getTime=" + InitDate.getTime()  + " mSec., " + dateFormat.format( InitDate )  );
             }
             rs.close();
             // stmtInitTimeDateRead.close();
@@ -88,22 +99,18 @@ public  class DataAccess {
             return ( (Connection) null );
         }
 
-        dataAccess_log.info( "RDBMS getConnection: " + connectionUrl + " as " + db_userid + " at " + dateFormat.format( InitDate ) + " done" );
+        dataAccess_log.info( "RDBMS make_DataBase_Connection: " + connectionUrl + " as " + db_userid + " at " + dateFormat.format( InitDate ) + " done" );
         /*
         jdbcTemplate = new JdbcTemplate( dataSource );
         InitDate = jdbcTemplate.queryForObject(
                 "SELECT current_timestamp FROM dual", Date.class);
         */
       if ( InitDate != null)
-        dataAccess_log.info( "RDBMS current_timestamp: LocalDate ="+ InitDate.toLocalDate().toString() + " getTime=" + InitDate.getTime() + " mSec., " + dateFormat.format( InitDate )  );
+        dataAccess_log.info( "RDBMS make_DataBase_Connection: LocalDate ="+ InitDate.toString() + " getTime=" + InitDate.getTime() + " mSec., " + dateFormat.format( InitDate )  );
 
 
         return Target_Connection;
     }
-
-
-    private static final String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYYMMDDHHMISS') as InitTime FROM dual";
-    private static final String SQLCurrentTimeDateRead= "SELECT current_timestamp as InitTime FROM dual";
 
 
     public static String getCurrentTimeString(@NotNull Logger dataAccess_log ) {
@@ -116,9 +123,9 @@ public  class DataAccess {
                 CurrentTime = rs.getString("InitTime");
             }
             rs.close();
-            dataAccess_log.info( "RDBMS CurrentTime: LocalDate ="+ CurrentTime );
+            dataAccess_log.info( "RDBMS CurrentTime getCurrentTimeString(): LocalDate ="+ CurrentTime );
         } catch (Exception e) {
-            dataAccess_log.error("getCurrentTimeString fault: " + sStackTracе.strInterruptedException(e));
+            dataAccess_log.error("getCurrentTimeString `" + SQLCurrentTimeStringRead + "` fault:" + sStackTracе.strInterruptedException(e));
 
         }
         return ( CurrentTime );
@@ -127,17 +134,25 @@ public  class DataAccess {
 
     public static Long getCurrentTime(@NotNull Logger dataAccess_log )
     throws SQLException {
-        Date CurrentTime=null;
+        Timestamp CurrentTime=null;
+        LocalDateTime localDateTime;
         try {
             ResultSet rs = null;
             rs = stmtCurrentTimeDateRead.executeQuery();
             while (rs.next()) {
-                CurrentTime = rs.getDate("InitTime");
+                CurrentTime = rs.getTimestamp("InitTime");
             }
             rs.close();
-            if ( CurrentTime != null)
-                dataAccess_log.info( "RDBMS CurrentTime: LocalDate ="+ CurrentTime.toLocalDate().toString() + " getTime=" + CurrentTime.getTime()  + " mSec., " + dateFormat.format( CurrentTime )  );
-            return CurrentTime.getTime();
+            Hermes_Connection.commit();
+            if ( CurrentTime != null) {
+                localDateTime = CurrentTime.toLocalDateTime();
+                dataAccess_log.info("RDBMS CurrentTime(): LocalDate =" + CurrentTime.toLocalDateTime() + " getTime=" + CurrentTime.getTime() + " mSec., "
+                        + " getLocalDateTime=" + localDateTime.toString() + " `"
+                        + dateFormat.format(CurrentTime) + "`");
+
+                return CurrentTime.getTime();
+            }
+            else return null;
 
         } catch (SQLException e) {
             dataAccess_log.error("getCurrentTimeDate fault: " + sStackTracе.strInterruptedException(e));

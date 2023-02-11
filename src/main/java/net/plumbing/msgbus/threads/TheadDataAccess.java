@@ -371,9 +371,9 @@ public class TheadDataAccess {
                         "from DUAL "  ;
             else selectMessageStatement = "select nextval('" + dbSchema + ".MESSAGE_QUEUE_SEQ') as queue_id," +
                     " '" + DirectOUT +"' as queue_direction," +
-                    " current_timestamp  Queue_Date," +
+                    " clock_timestamp()  Queue_Date," +
                     " 0 msg_status," +
-                    " current_timestamp Msg_Date," +
+                    " clock_timestamp() Msg_Date," +
                     " 0 operation_id," +
                     " '0' as outqueue_id," +
                     " 'Undefine' as msg_type," +
@@ -385,8 +385,8 @@ public class TheadDataAccess {
                     " NULL subsys_cod," +
                     " 0 as Retry_Count," +
                     " NULL prev_queue_direction," +
-                    " current_timestamp Prev_Msg_Date, " +
-                    " current_timestamp Queue_Create_Date ";
+                    " clock_timestamp() Prev_Msg_Date, " +
+                    " clock_timestamp() Queue_Create_Date ";
 
             //dataAccess_log.info( "MESSAGE_QueueSelect4insert:" + selectMessageStatement );
             StmtMsg_Queue = this.Hermes_Connection.prepareStatement( selectMessageStatement);
@@ -405,7 +405,7 @@ public class TheadDataAccess {
         try {
             INSERT_Message_Queue= "INSERT into " + dbSchema + ".MESSAGE_Queue " +
                     "(QUEUE_ID, QUEUE_DIRECTION, QUEUE_DATE, MSG_STATUS, MSG_DATE, OPERATION_ID, OUTQUEUE_ID, MSG_TYPE) " +
-                    "values (?,        '"+ DirectOUT +"',          current_timestamp,    0,          current_timestamp,  0,            0,          'Undefine')";
+                    "values (?, '"+ DirectOUT +"', current_timestamp, 0, current_timestamp, 0, 0,          'Undefine')";
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement( INSERT_Message_Queue );
         } catch (SQLException e) {
             dataAccess_log.error( e.getMessage() );

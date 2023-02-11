@@ -47,7 +47,10 @@ public class ExtSystemDataAccess {
 
         hikariConfig.setMaximumPoolSize(30);
         hikariConfig.setMinimumIdle(10);
-        hikariConfig.setConnectionTestQuery("SELECT 1 from dual");
+        // hikariConfig.setConnectionTestQuery("SELECT 1 from dual");
+        if ( connectionUrl.indexOf("oracle") > 0 )
+            hikariConfig.setConnectionTestQuery("SELECT 1 from dual");
+        else hikariConfig.setConnectionTestQuery("SELECT 1 ");
         hikariConfig.setPoolName("ExtSystemCP");
 
         hikariConfig.addDataSourceProperty("dataSource.cachePrepStmts", "true");

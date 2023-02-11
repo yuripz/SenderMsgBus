@@ -244,11 +244,12 @@ public class PerformQueueMessages {
                         ).substring(XMLchars.xml_xml.length());// берем после <?xml version="1.0" encoding="UTF-8"?>
                         if ( Message.MessageTemplate4Perform.getIsDebugged() )
                             MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] после XSLT=:{" + Message.XML_MsgSEND + "}");
-                    } catch ( TransformerException exception ) {
+                    } catch ( TransformerException  exception ) {
+                        MessegeSend_Log.error(Queue_Direction + " [" + Queue_Id + "] ConvXMLuseXSLT fault: " + exception.getMessage() );
                         MessegeSend_Log.error(Queue_Direction + " [" + Queue_Id + "] XSLT-преобразователь тела:{" + MessageXSLT_4_OUT_2_SEND +"}");
                         MessegeSend_Log.error(Queue_Direction + " [" + Queue_Id + "] после XSLT=:{" + Message.XML_MsgSEND +"}");
                         MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO,   Message,  theadDataAccess,
-                                "XSLT fault message: " + ConvXMLuseXSLTerr + XML_4_XSLT+ " on " + MessageXSLT_4_OUT_2_SEND ,
+                                "XSLT fault: message=`" + ConvXMLuseXSLTerr + "` XSLT=`" + XML_4_XSLT+ "` on " + MessageXSLT_4_OUT_2_SEND ,
                                 null ,  MessegeSend_Log);
                         // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, XML_4_XSLT,  Message.XML_MsgOUT.toString(), monitoringQueueVO, MessegeSend_Log);
                         return -2L;
@@ -427,6 +428,36 @@ public class PerformQueueMessages {
                         Function_Result = ShellScripExecutor.execShell(messageQueueVO, Message, theadDataAccess,
                                 MessegeSend_Log);
                     } else { // http : SOAP или Rest ( post| get)  если getPropWebMetod() != null
+
+                        // готовим НАБОР заголовков HTTP на основе данных до XSLT преобразования OUT->SEND
+                        Message.Soap_HeaderRequest.setLength(0);
+                        if (Message.MessageTemplate4Perform.getHeaderXSLT() != null && Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10) // Есть чем преобразовывать HeaderXSLT
+                            if (Message.MessageTemplate4Perform.getIsDebugged()) {
+                                MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] XSLT-преобразователь заголовка (чем):`" + Message.MessageTemplate4Perform.getHeaderXSLT() + "`");
+                                MessegeSend_Log.info(Queue_Direction + " [" + Queue_Id + "] XSLT-преобразователь заголовка (что):`" + Message.XML_MsgOUT + "`");
+                            }
+                            try {
+                                Message.Soap_HeaderRequest.append(
+                                        ConvXMLuseXSLT(messageQueueVO.getQueue_Id(), Message.XML_MsgOUT.toString() , // содержание того, что отправляем
+                                                Message.MessageTemplate4Perform.getHeaderXSLT(),  // через HeaderXSLT
+                                                Message.MsgReason, MessegeSend_Log,
+                                                Message.MessageTemplate4Perform.getIsDebugged()
+                                        )
+                                                .substring(XMLchars.xml_xml.length()) // берем после <?xml version="1.0" encoding="UTF-8"?>
+                                );
+                            } catch (TransformerException exception) {
+                                MessegeSend_Log.error(Queue_Direction + " [" + Queue_Id + "] XSLT-преобразователь заголовка:{" + Message.MessageTemplate4Perform.getHeaderXSLT() + "}");
+
+                                theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
+                                        "Header XSLT fault: " + ConvXMLuseXSLTerr + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(), 1244,
+                                        messageQueueVO.getRetry_Count(), MessegeSend_Log);
+
+                                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key),
+                                //        "Header XSLT fault: " + ConvXMLuseXSLTerr  + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(),  monitoringQueueVO, MessegeSend_Log);
+                                //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessegeSend_Log);
+                                return -5L;
+                            }
+
                         if (Message.MessageTemplate4Perform.getPropWebMetod() != null) {
                             if (Message.MessageTemplate4Perform.getPropWebMetod().equals("get")) {
                                 Function_Result = MessageHttpSend.HttpGetMessage(messageQueueVO, Message, theadDataAccess, MessegeSend_Log);
@@ -444,8 +475,7 @@ public class PerformQueueMessages {
                                 return -401L;
                             }
                         } else {
-                            // готовим заголовок
-
+                            // готовим SOAP-заголовок
                             Message.Soap_HeaderRequest.setLength(0);
                             if (Message.MessageTemplate4Perform.getHeaderXSLT() != null && Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10) // Есть чем преобразовывать HeaderXSLT
                                 try {
@@ -602,7 +632,7 @@ public class PerformQueueMessages {
                                 final int resultSQL = XmlSQLStatement.ExecuteSQLincludedXML( theadDataAccess,  Passed_Envelope4XSLTPost, messageQueueVO, Message, MessegeSend_Log);
                                 if (resultSQL != 0) {
                                     MessegeSend_Log.error("["+ Queue_Id +"] Envelope4XSLTPost:" + MessageUtils.PrepareEnvelope4XSLTPost( messageQueueVO,  Message, MessegeSend_Log) );
-                                    MessegeSend_Log.error("["+ Queue_Id +"] Ошибка ExecuteSQLinXML:" + Message.MsgReason.toString() );
+                                    MessegeSend_Log.error("["+ Queue_Id +"] Ошибка ExecuteSQLinXML(" + resultSQL + "):" + Message.MsgReason.toString() );
                                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                                             "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), 1232,
                                             messageQueueVO.getRetry_Count(),  MessegeSend_Log);
@@ -726,7 +756,7 @@ public class PerformQueueMessages {
         }
 
         if ( Message.MessageTemplate4Perform.getIsDebugged() ) {
-            MessegeSend_Log.info("[" + Queue_Id + "] string 773:" );
+            MessegeSend_Log.info("[" + Queue_Id + "] string 759:" );
             MessegeSend_Log.info("[" + Queue_Id + "] AnswXSLTQueue_Direction='" + AnswXSLTQueue_Direction + "'");
             MessegeSend_Log.info("[" + Queue_Id + "] messageQueueVO.getQueue_Direction()='" + messageQueueVO.getQueue_Direction() + "'");
         }
@@ -1101,10 +1131,15 @@ public class PerformQueueMessages {
             if ( result != null) {
                 res = fout.toString();
                 // System.err.println("result != null, res:" + res );
-                if ( res.length() < XMLchars.EmptyXSLT_Result.length())
+                if ( res.length() < XMLchars.EmptyXSLT_Result.length()) {
+                    if ( IsDebugged )
+                        MessegeSend_Log.info("["+ QueueId  + "] length transformer.transform(`"+ res+ "`) < " + XMLchars.EmptyXSLT_Result.length() );
                     res = XMLchars.EmptyXSLT_Result;
+                }
             }
             else {
+                if ( IsDebugged )
+                    MessegeSend_Log.info("["+ QueueId  + "] StreamResult transformer.transform() is null ");
                 res = XMLchars.EmptyXSLT_Result;
                 // System.err.println("result= null, res:" + res );
             }

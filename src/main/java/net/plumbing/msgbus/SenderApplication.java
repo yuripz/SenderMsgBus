@@ -135,6 +135,7 @@ public class SenderApplication implements CommandLineRunner {
 		int WaitTimeBetweenScan = Integer.parseInt( connectionProperties.getwaitTimeScan() );
 		int NumMessageInScan = Integer.parseInt( connectionProperties.getnumMessageInScan() );
 		int ApiRestWaitTime = Integer.parseInt( connectionProperties.getapiRestWaitTime() );
+
 		int FirstInfoStreamId = 101;
 		if ( connectionProperties.getfirstInfoStreamId() != null)
 			FirstInfoStreamId = Integer.parseInt( connectionProperties.getfirstInfoStreamId() );
@@ -143,7 +144,7 @@ public class SenderApplication implements CommandLineRunner {
 		ApplicationProperties.ExtSysSchema = connectionProperties.getextsysDbSchema();
 
 		// Установаливем "техническое соединение" , что бы считать конфигурацию из БД в public static HashMap'Z
-		java.sql.Connection Target_Connection = DataAccess.make_Hermes_Connection( HrmsSchema, connectionProperties.gethrmsPoint(),
+		java.sql.Connection Target_Connection = DataAccess.make_DataBase_Connection( HrmsSchema, connectionProperties.gethrmsPoint(),
 				connectionProperties.gethrmsDbLogin(),
 				connectionProperties.gethrmsDbPasswd(),
 				AppThead_log
@@ -281,7 +282,7 @@ public class SenderApplication implements CommandLineRunner {
 			try {
 
 				// Thread.sleep(25000);
-				Thread.sleep(19000);
+				Thread.sleep(20000);
 				CurrentTime = DataAccess.getCurrentTime(AppThead_log);
 				if ( CurrentTime != null )
 				{
@@ -303,8 +304,8 @@ public class SenderApplication implements CommandLineRunner {
 						AppThead_log.info("CurrentTimeString=" + CurrentTimeString + " (CurrentTime - DataAccess.InitDate.getTime())/1000: " + timeToReInit.toString());
 						// Перечитывать перечень систем бессмысленно, потоки и их конфигурация уже сформированы
 						// InitMessageRepository.ReReadMsgDirections(CurrentTime, ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval, AppThead_log);
-						InitMessageRepository.ReReadMsgTypes(AppThead_log);
-						InitMessageRepository.ReReadMsgTemplates(AppThead_log);
+						InitMessageRepository.ReReadMsgTypes(intervalReInit, AppThead_log);
+						InitMessageRepository.ReReadMsgTemplates(intervalReInit, AppThead_log);
 						DataAccess.InitDate.setTime(CurrentTime);
 						AppThead_log.info(" New InitDate=" + DataAccess.dateFormat.format(DataAccess.InitDate));
 

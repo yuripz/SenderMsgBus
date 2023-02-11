@@ -48,6 +48,7 @@ public class XMLchars {
     final public static String xml_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     public static final String TagMsgHeaderEmpty  = "Header_is_empty";
+    public static final String TagMsgBodyEmpty  = "Body_is_empty";
 
     public static final String Body="Body";
     public static final String NameRootTagContentJsonResponse    = "MsgData";
