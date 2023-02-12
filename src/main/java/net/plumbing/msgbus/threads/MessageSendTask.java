@@ -61,7 +61,6 @@ public class MessageSendTask  implements Runnable
     // private ControlledTheadService schedulerService;
 
     private ApplicationContext context;
-    private   String name;
     public static final Logger MessegeSend_Log = LoggerFactory.getLogger(MessageSendTask.class);
 
     private ThreadSafeClientConnManager externalConnectionManager;
@@ -123,8 +122,6 @@ public class MessageSendTask  implements Runnable
         //if (( theadNum != null ) && ((theadNum == 17) || (theadNum == 18) || (theadNum == 19) || (theadNum == 20)) )
         if (( theadNum == null ) ) // && (theadNum == 0))
             return;
-        Integer count = 0;
-
 
         MessegeSend_Log.info("AllMessageTemplates[" + theadNum + "]: size=" + MessageTemplate.AllMessageTemplate.size()); //.get( theadNum+1 ).getTemplate_name() );
         if ( theadNum == -1 ) {
@@ -243,62 +240,114 @@ public class MessageSendTask  implements Runnable
         PreparedStatement stmtHelperMsgQueue=null;
         PreparedStatement stmtQueueLock;
         PreparedStatement stmtQueueLock4JMSconsumer;
-        PreparedStatement stmtGetMessage4RowId;
+        PreparedStatement stmtGetMessage4QueueId;
         // PreparedStatement stmtUpdateMessage4RowId; - вместо этого TheadDataAccess.doUPDATE_QUEUE_InfoStreamId()
         String rdbmsVendor = theadDataAccess.getRdbmsVendor();
         String selectMessageSQL;
-
+        String selectMessage4QueueIdSQL;
         if ( theadDataAccess.Hermes_Connection != null )
             // Готовим набор SQL
             try {
-                String selectMessage4RowIdSQL= """
-                        select q.ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute) as Queue_Date,
-                        Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id, 
-                        Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid,
-                        Q.msg_type_own,Q.msg_result, Q.subsys_cod, 
-                        COALESCE(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date,
-                        COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute )) as Queue_Create_Date, 
-                        Q.Perform_Object_Id
-                        from
-                        """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.ROWID=? ";
-                stmtGetMessage4RowId = theadDataAccess.Hermes_Connection.prepareStatement( selectMessage4RowIdSQL );
-                //stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update ARTX_PROJ.MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
-                String PreSelectMessageSQL =
-                        "select * from ( select q.ROWID, " +
-                                " Q.queue_Id," +
-                                " Q.queue_Direction," +
-                                " COALESCE(Q.queue_date, Current_timeStamp -  Interval '1' Minute ) as Queue_Date, "+
-                                " Q.msg_Status," +
-                                " Q.Msg_Date," +
-                                " Q.Operation_id," +
-                                " to_Char(Q.outqueue_id, '9999999999999999') as outQueue_Id," +
-                                " Q.msg_Type," +
-                                " Q.msg_Reason," +
-                                " Q.msgDirection_Id," +
-                                " Q.msg_InfoStreamId," +
-                                " Q.msg_Type_own," +
-                                " Q.msg_Result," +
-                                " Q.subSys_Cod," +
-                                " COALESCE(Q.retry_count, 0) as Retry_Count," +
-                                " Q.Prev_Queue_Direction," +
-                                " Q.Prev_Msg_Date, " +
-                                " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute  )) as Queue_Create_Date, " +
-                                " Q.Perform_Object_Id " +
-                                "from " + HrmsSchema + ".MESSAGE_QUEUE Q" +
-                                " Where 1=1" +
-                                " and Q.msg_InfoStreamId = ? "  +
-                                " and Q.queue_Direction in( 'OUT','SEND')"  // ",'RESOUT','DELOUT')"
-                                ;
 
                 if (rdbmsVendor.equals("oracle") )
-                    selectMessageSQL = PreSelectMessageSQL +" and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan ;
-                else // TODO Pg -" and Q.Msg_Date < Current_TimeStamp AT TIME ZONE 'Europe/Moscow'" - почему то не срабвтывает условие, java как бы в <time zone 0> хотя выставлено set SESSION time zone 3;
-                    selectMessageSQL = PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit " + NumMessageInScan ;
+                selectMessage4QueueIdSQL= """
+                        select q.ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, Current_TimeStamp - Interval '1' Minute) as Queue_Date,
+                        Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id,
+                        Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid,
+                        Q.msg_type_own,Q.msg_result, Q.subsys_cod,
+                        COALESCE(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date,
+                        COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute )) as Queue_Create_Date,
+                        Q.Perform_Object_Id
+                        from
+                        """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.queue_id=?";
+                        // """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.ROWID=? ";
+                else // для PostGree используем псевдостолбец CTID с типом ::tid
+                    selectMessage4QueueIdSQL= """
+                        select CTID::varchar as ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute) as Queue_Date,
+                        Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id,
+                        Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid,
+                        Q.msg_type_own,Q.msg_result, Q.subsys_cod,
+                        COALESCE(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date,
+                        COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute )) as Queue_Create_Date,
+                        Q.Perform_Object_Id
+                        from
+                        """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.queue_id=?";
+                        // """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where CTID=?::tid ";
+                stmtGetMessage4QueueId = theadDataAccess.Hermes_Connection.prepareStatement( selectMessage4QueueIdSQL );
+                //stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update ARTX_PROJ.MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
+                // String PreSelectMessageSQL;
+                if (rdbmsVendor.equals("oracle") ) // для PostGree используем псевдостолбец CTID с типом ::tid
+                { selectMessageSQL = """
+                            select * from ( select q.ROWID,
+                                    q.queue_Id,
+                                    q.queue_Direction,
+                                    COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute ) as Queue_Date,
+                                    q.msg_Status,
+                                    q.Msg_Date,
+                                    q.Operation_id,
+                                    to_Char(q.outqueue_id, '9999999999999999') as outQueue_Id,
+                                    q.msg_Type,
+                                    q.msg_Reason,
+                                    q.msgDirection_Id,
+                                    q.msg_InfoStreamId,
+                                    q.msg_Type_own,
+                                    q.msg_Result,
+                                    q.subSys_Cod,
+                                    " COALESCE(q.retry_count, 0) as Retry_Count,
+                                    q.Prev_Queue_Direction,
+                                    q.Prev_Msg_Date,
+                                    CALESCE(q.queue_create_date, COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute )) as Queue_Create_Date, " +
+                                    q.Perform_Object_Id
+                                    from\040
+                                    """
+                                    + HrmsSchema +
+                                    """
+                                    .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId = ?\040
+                                      and Q.queue_Direction in( 'OUT','SEND')\040
+                                      and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc, Q.queue_id asc) QUEUE where rownum <\040
+                                    """
+                                    + NumMessageInScan;
+                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where q.ROWID=? for update nowait" );
+                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
+
+                    // selectMessageSQL = PreSelectMessageSQL + " and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan;
+                   }
+                else {  // TODO Pg -" and Q.Msg_Date < Current_TimeStamp AT TIME ZONE 'Europe/Moscow'" - почему то не срабвтывает условие, java как бы в <time zone 0> хотя выставлено set SESSION time zone 3;
+                    // TODO Pg - " and Q.Msg_Date < clock_timestamp() AT TIME ZONE 'Europe/Moscow'" -- попробовать
+                    selectMessageSQL = """
+                            select * from ( select CTID::varchar as ROWID,
+                                    q.queue_Id,
+                                    q.queue_Direction,
+                                    COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' -  Interval '1' Minute ) as Queue_Date,
+                                    q.msg_Status,
+                                    q.Msg_Date,
+                                    q.Operation_id,
+                                    to_Char(q.outqueue_id, '9999999999999999') as outQueue_Id,
+                                    q.msg_Type,
+                                    q.msg_Reason,
+                                    q.msgDirection_Id,
+                                    q.msg_InfoStreamId,
+                                    q.msg_Type_own,
+                                    q.msg_Result,
+                                    q.subSys_Cod,
+                                    COALESCE(q.retry_count, 0) as Retry_Count,
+                                    q.Prev_Queue_Direction,
+                                    q.Prev_Msg_Date,
+                                    COALESCE(q.queue_create_date, COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute  )) as Queue_Create_Date,
+                                    q.Perform_Object_Id
+                                    from\040
+                            """+ HrmsSchema + """
+                             .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId = ?\040
+                               and Q.queue_Direction in( 'OUT','SEND')\040
+                               and Q.Msg_Date < Current_TimeStamp order by q.Priority_Level asc , q.queue_id asc ) QUEUE Limit\040
+                             """
+                            + NumMessageInScan;
+                    // CTID::varchar as ROWID и where CTID=?::tid
+                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update nowait" );
+                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
+                }
                 MessegeSend_Log.info( "Main_MESSAGE_QueueSelect:{" + selectMessageSQL  + "} Q.Msg_InfostreamId ="  + (this.FirstInfoStreamId + theadNum ) ) ;
                 stmtMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
-
-                stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where q.ROWID=? for update nowait" );
-                stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
 
                 // Получеем перечень потоков, которым надо помогать ДАННОМУ потоку
                 String List_Lame_Threads =  MessageRepositoryHelper.look4List_Lame_Threads_4_Num_Thread( theadNum + this.FirstInfoStreamId  , MessegeSend_Log );
@@ -336,7 +385,7 @@ public class MessageSendTask  implements Runnable
                         Lame_selectMessageSQL = Lame_PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit 1"  ;
 
                     MessegeSend_Log.info( "Helper_MESSAGE_QueueSelect: " + Lame_selectMessageSQL );
-                    stmtHelperMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
+                    stmtHelperMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( Lame_selectMessageSQL );
                 }
                 else
                     MessegeSend_Log.info( "NO-Helper, no Helper_MESSAGE_QueueSelect!" );
@@ -349,7 +398,7 @@ public class MessageSendTask  implements Runnable
         {
             return;
         }
-        // инициализируем
+        // инициализируемся
         MessegeSend_Log .info("Setup Connection for thead:" + (this.FirstInfoStreamId + theadNum ) + " rdbmsVendor=`" + rdbmsVendor + "`") ;
         if ( !rdbmsVendor.equals("oracle") ) {
             MessegeSend_Log .info("Try setup Connection for thead: " + (this.FirstInfoStreamId + theadNum ) + " `set SESSION time zone 3`");
@@ -357,10 +406,9 @@ public class MessageSendTask  implements Runnable
                 String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYY-MM-DD-HH24:MI:SS') as currentTime";
                 PreparedStatement stmtCurrentTimeStringRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeStringRead );
                 String CurrentTime="00000-00000";
-            PreparedStatement stmt_SetTimeZone = theadDataAccess.Hermes_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
-            stmt_SetTimeZone.execute();
-            stmt_SetTimeZone.close();
-
+                    PreparedStatement stmt_SetTimeZone = theadDataAccess.Hermes_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
+                    stmt_SetTimeZone.execute();
+                    stmt_SetTimeZone.close();
                 ResultSet rs = stmtCurrentTimeStringRead.executeQuery();
                 while (rs.next()) {
                     CurrentTime = rs.getString("currentTime");
@@ -464,11 +512,12 @@ public class MessageSendTask  implements Runnable
                         }
 
                         if ( isNoLock )
-                        { // запись
-                            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, messageQueueVO.getMsg_Type(), String.valueOf(messageQueueVO.getQueue_Id()),  monitoringQueueVO, MessegeSend_Log);
+                        { // запись захвачена
+                            // -- это графана, не нужно -- ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, messageQueueVO.getMsg_Type(), String.valueOf(messageQueueVO.getQueue_Id()),  monitoringQueueVO, MessegeSend_Log);
                             // Очистили Message от всего, что там было
                             Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
                             try {
+                                MessegeSend_Log.warn( "Main Thread: (518:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
                                 PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                             } catch (Exception e) {
                                 System.err.println("performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
@@ -501,7 +550,8 @@ public class MessageSendTask  implements Runnable
                         try {
                             ResultSet rLock = null;
                             ResultSet rs = stmtHelperMsgQueue.executeQuery();
-                            RowId LockedROWID_QUEUE;
+                            // TODO : for Ora  @NotNull java.sql.RowId
+                            String LockedROWID_QUEUE;
                             while (rs.next()) {
                                 messageQueueVO.setMessageQueue(
                                         rs.getLong("Queue_Id"),
@@ -524,7 +574,8 @@ public class MessageSendTask  implements Runnable
                                         rs.getTimestamp("Queue_Create_Date"),
                                         rs.getLong("Perform_Object_Id")
                                 );
-                                LockedROWID_QUEUE = rs.getRowId("ROWID");
+                                // TODO : for Ora java.sql.RowId = rs.getRowId("ROWID");
+                                LockedROWID_QUEUE = rs.getString("ROWID");
                                 MessegeSend_Log.info( "Helper: messageQueueVO.Queue_Id:" + rs.getLong("Queue_Id") + " [Msg_InfoStreamId=" + rs.getInt("Msg_InfoStreamId") + "]" +
                                         " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + LockedROWID_QUEUE);
                                 messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
@@ -534,7 +585,8 @@ public class MessageSendTask  implements Runnable
                                 int LockedMsg_InfoStreamId=0;
                                 String LockedQueue_Direction="NONE";
                                 try {
-                                    stmtQueueLock.setRowId(1, LockedROWID_QUEUE);
+                                    // TODO : for Ora java.sql.RowId => .setRowId(1, LockedROWID_QUEUE);
+                                    stmtQueueLock.setString(1, LockedROWID_QUEUE);
                                     rLock = stmtQueueLock.executeQuery();
                                     while (rLock.next()) {
                                         LockedMsg_InfoStreamId = rLock.getInt("Msg_InfoStreamId");
@@ -554,7 +606,7 @@ public class MessageSendTask  implements Runnable
                                         isNoLock = false;
                                     }
                                     else {
-                                        if (theadDataAccess.doUPDATE_QUEUE_InfoStreamId( LockedROWID_QUEUE, LockedQueue_Id,
+                                        if (theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId( LockedROWID_QUEUE, LockedQueue_Id,
                                                 (theadNum + this.FirstInfoStreamId), MessegeSend_Log)
                                                 != 0
                                         ) // Не смогли установить свой №№ обработчика - значи, считакм, что блокировка не сработала.
@@ -575,6 +627,7 @@ public class MessageSendTask  implements Runnable
                                     Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
                                     try {
                                         num_HelpedMessage4Perform +=1; // отмечаем, что конкретно помогаем
+                                        MessegeSend_Log.warn( "Helped Thread: (628:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
                                         PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                                     } catch (Exception e) {
                                         System.err.println("Helper: performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
@@ -619,7 +672,7 @@ public class MessageSendTask  implements Runnable
                                 messageQueueVO.setQueue_Direction("NONE");
                                 //  инициируем обработку с использованием JMS
                                 PerfotmJMSMessage(  stmtQueueLock4JMSconsumer,
-                                        stmtGetMessage4RowId,
+                                        stmtGetMessage4QueueId, selectMessage4QueueIdSQL,
                                         JMSTextMessage.getText(),
                                         Message, messageQueueVO,
                                         monitoringQueueVO,
@@ -696,8 +749,7 @@ private  boolean  LockMessage_Queue_ROW(RowId LockedROWID_QUEUE, MessageQueueVO 
 */
 
     private Long PerfotmJMSMessage ( PreparedStatement stmtQueueLock4JMSconsumer,
-                                     PreparedStatement stmtGetMessage4RowId,
-                                     // PreparedStatement stmtUpdateMessage4RowId,
+                                     PreparedStatement stmtGetMessage4QueueId, String selectMessage4QueueIdSQL,
                                      String MessageText,
                                      MessageDetails Message, MessageQueueVO messageQueueVO,
                                      MonitoringQueueVO monitoringQueueVO,
@@ -725,31 +777,41 @@ private  boolean  LockMessage_Queue_ROW(RowId LockedROWID_QUEUE, MessageQueueVO 
             return -1L;
         }
 /*
-stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessage4RowIdSQL );
+stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessage4QueueIdSQL );
          stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update " + HrmsSchema + ".MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
  */
         // пробуем захватить запись
-        MessegeSend_Log.info( "PerfotmJMSMessage: пробуем захватить запись Queue_Id="+ Queue_Id );
+        MessegeSend_Log.info( "PerfotmJMSMessage: пробуем захватить (`"+ selectMessage4QueueIdSQL+ "`) запись Queue_Id="+ Queue_Id );
 
         String Queue_Direction=null;
-        RowId QueueRowId = null;
+
+        // TODO : for Ora java.sql.RowId QueueRowId = null;
+        // RowId QueueRowId = null;
+        String QueueRowId = null;
+
         try {
             stmtQueueLock4JMSconsumer.setLong(1, Queue_Id );
             rLock = stmtQueueLock4JMSconsumer.executeQuery();
             while (rLock.next()) {
                 Queue_Direction = rLock.getString("Queue_Direction");
-                QueueRowId = rLock.getRowId("ROWID");
-                // q.Queue_Direction, q.msg_InfostreamId
-                MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id="+ Queue_Id+ " :" + QueueRowId +
-                        " record locked. msg_InfostreamId=" + rLock.getInt("msg_InfostreamId") + " Queue_Direction=[" + Queue_Direction + "]");
+                if ( theadDataAccess.getRdbmsVendor().equals("oracle") ) {
+                    QueueRowId = rLock.getString("rowid"); // TODO : for Ora  rLock.getRowId
+                    MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id="+ Queue_Id+ " :" + QueueRowId +
+                            " record locked. msg_InfostreamId=" + rLock.getInt("msg_InfostreamId") + " Queue_Direction=[" + Queue_Direction + "]");
+                }
+                else {
+                    QueueRowId = rLock.getString("rowid");
+                    MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id="+ Queue_Id+ " :" + QueueRowId +
+                            " record locked. msg_InfostreamId=" + rLock.getInt("msg_InfostreamId") + " Queue_Direction=[" + Queue_Direction + "]");
+                }
             }
         }
         catch (SQLException e) {
             // Запись захвачена другим потоком
             MessegeSend_Log.info( "Main Thread: stmtQueueLock.Queue_Id:" + Queue_Id + " record can't be locked, " +e.getSQLState() + " :" + e.getMessage() );
-
             isNoLock = false;
         }
+        MessegeSend_Log.info( "PerfotmJMSMessage: select for update вернул rowid ="+ QueueRowId );
         // У "своих" из ОЧЕРЕДИ может увести сообщение только свой и он отпустит его рлмле SEND
         // TODO : надо проверять при блокировке, а не захватил ли сообщение какой нибудь "Помощник". Такой конфтгурации пока нет, но...
         if ( isNoLock )
@@ -757,14 +819,15 @@ stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selec
             if ( Queue_Direction.equals(DirectOUT) )
             {
                 // Захватываем ( "update " + HrmsSchema + ".MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
-                int IsUpdated = theadDataAccess.doUPDATE_QUEUE_InfoStreamId(QueueRowId, Queue_Id, (theadNum + this.FirstInfoStreamId), MessegeSend_Log);
+                int IsUpdated;
+                IsUpdated =  theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId(QueueRowId, Queue_Id, (theadNum + this.FirstInfoStreamId), MessegeSend_Log);
                 if ( IsUpdated != 0) {
                     try {
                         rLock.close();
                         theadDataAccess.Hermes_Connection.rollback();
                     } catch (SQLException ee) {
                         MessegeSend_Log.error(ee.getMessage());
-                        System.err.println("sqlException Queue_Id:[" + Queue_Id + "]");
+                        System.err.println("sqlException Queue_Id:[" + Queue_Id + "] rollback()");
                         ee.printStackTrace();
                         MessegeSend_Log.error("PerfotmJMSMessage: Ошибка при закрытии SQL-ResultSet select for Update ...");
                         return -2L;
@@ -788,9 +851,11 @@ stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selec
                 // Очистили Message от всего, что там было
                 Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
                 try {
-                    stmtGetMessage4RowId.setRowId(1, QueueRowId );
-                    ResultSet rs = stmtGetMessage4RowId.executeQuery();
+                    stmtGetMessage4QueueId.setLong(1, Queue_Id ); //setString(1, QueueRowId ); // TODO : for Ora .setRowId( QueueRowId );
+                    ResultSet rs = stmtGetMessage4QueueId.executeQuery();
+                    boolean isRecordFoud = false;
                     while (rs.next()) {
+                        isRecordFoud = true;
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
@@ -814,11 +879,13 @@ stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selec
                         );
 
                         MessegeSend_Log.info("PerfotmJMSMessage: messageQueueVO.Queue_Id = " + rs.getLong("Queue_Id") +
-                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getRowId("ROWID"));
+                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getString("ROWID"));
                         messageQueueVO.setMsg_Date(java.sql.Timestamp.valueOf(LocalDateTime.now(ZoneId.of("Europe/Moscow"))));
                     }
+                    if ( !isRecordFoud )
+                        MessegeSend_Log.error( "PerfotmJMSMessage: не нашли запись в `"+ selectMessage4QueueIdSQL +"` =>`" + QueueRowId + "`");
                 } catch (SQLException e) { MessegeSend_Log.error(e.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
-                    MessegeSend_Log.error( "PerfotmJMSMessage: Ошибка при \"select q.ROWID, Q.queue_id, Q.queue_direction ... where q.ROWID=?\" ...");
+                    MessegeSend_Log.error( "PerfotmJMSMessage: Ошибка выборки `"+ selectMessage4QueueIdSQL + "` ...");
                     try { rLock.close(); theadDataAccess.Hermes_Connection.rollback();
                     } catch (SQLException ee) { MessegeSend_Log.error(ee.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); ee.printStackTrace();
                         MessegeSend_Log.error( "PerfotmJMSMessage: Ошибка при закрытии SQL-ResultSet select for Update ...");
@@ -826,9 +893,10 @@ stmtGetMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( selec
                     }
                     return -2L;
                 }
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, messageQueueVO.getMsg_Type(), String.valueOf(messageQueueVO.getQueue_Id()),  monitoringQueueVO, MessegeSend_Log);
+                // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, messageQueueVO.getMsg_Type(), String.valueOf(messageQueueVO.getQueue_Id()),  monitoringQueueVO, MessegeSend_Log);
 
                 try {
+                    MessegeSend_Log.warn( "PerfotmJMSMessage Thread: (894:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
                     performMessageResult = PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                 } catch (Exception e) {
                     System.err.println("performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());

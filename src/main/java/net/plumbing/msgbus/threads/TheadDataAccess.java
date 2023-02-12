@@ -435,12 +435,15 @@ public class TheadDataAccess {
 
     public PreparedStatement make_UPDATE_QUEUE_InfoStreamId(Logger dataAccess_log) {
         PreparedStatement StmtMsg_Queue;
-        UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
+        if ( rdbmsVendor.equals("oracle") )
+            UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
+        else
+            UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where CTID= ?::tid";  // CTID='(921,21)'::tid  ;
         try {
-
-            StmtMsg_Queue = (PreparedStatement) this.Hermes_Connection.prepareStatement(UPDATE_QUEUE_InfoStreamId);
+            StmtMsg_Queue = this.Hermes_Connection.prepareStatement(UPDATE_QUEUE_InfoStreamId);
         } catch (Exception e) {
-            dataAccess_log.error(e.getMessage());
+            dataAccess_log.error( "prepareStatement `" + UPDATE_QUEUE_InfoStreamId + "` fault: " + e.getMessage());
+            System.err.println("prepareStatement `" + UPDATE_QUEUE_InfoStreamId + "` fault: ");
             e.printStackTrace();
             return null;
         }
@@ -451,7 +454,7 @@ public class TheadDataAccess {
 
     //public final String UPDATE_QUEUElog_Response="update " + dbSchema + ".MESSAGE_QUEUElog L set l.Resp_DT = current_timestamp, l.Response = ? where l.Queue_Id = ?";
     //public PreparedStatement stmt_UPDATE_QUEUElog;
-    public int doUPDATE_QUEUElog( // TODO : for Ora  @NotNull RowId
+    public int doUPDATE_QUEUElog( // TODO : for Ora  @NotNull java.sql.RowId
                                   @NotNull String ROWID_QUEUElog,
                                   @NotNull long Queue_Id, String sResponse,
                                   Logger dataAccess_log) {
@@ -476,11 +479,14 @@ public class TheadDataAccess {
         return 0;
     }
 
-    public int doUPDATE_QUEUE_InfoStreamId(@NotNull java.sql.RowId ROWID_QUEUE, @NotNull long Queue_Id, int Msg_InfoStreamId,
+    public int doUPDATE_QUEUE_InfoStreamId_by_RowId(// TODO : for Ora  @NotNull java.sql.RowId
+                                                    @NotNull String ROWID_QUEUE,
+                                                    @NotNull long Queue_Id, int Msg_InfoStreamId,
                                            Logger dataAccess_log) {
 
         try {
-            stmt_UPDATE_QUEUE_InfoStreamId.setRowId(2, ROWID_QUEUE);
+            stmt_UPDATE_QUEUE_InfoStreamId.setString(2, ROWID_QUEUE);
+            // stmt_UPDATE_QUEUE_InfoStreamId.setRowId(2, ROWID_QUEUE);
             stmt_UPDATE_QUEUE_InfoStreamId.setInt(1, Msg_InfoStreamId);
 
             int state_Update = stmt_UPDATE_QUEUE_InfoStreamId.executeUpdate();

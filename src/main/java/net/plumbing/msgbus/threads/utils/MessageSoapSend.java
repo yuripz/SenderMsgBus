@@ -228,13 +228,16 @@ public class MessageSoapSend {
 
 		int nn = 0;
 		// MessegeSend_Log.info("XML_BodyElemets2StringB: <" + EntryElement.getName() + ">");
+		// MessegeSend_Log.warn("XML_BodyElemets2StringB getValue: `<" + EntryElement.getName() + ">" + EntryElement.getValue() + "</" + EntryElement.getName() + ">`");
+		// MessegeSend_Log.warn("XML_BodyElemets2StringB getText: `<" + EntryElement.getName() + ">" + EntryElement.getText() + "</" + EntryElement.getName() + ">`");
 		List<Element> Elements = EntryElement.getChildren();
-		// Перебор всех элементов TemplConfig
+		// Перебор всех элементов
 		for (int i = 0; i < Elements.size(); i++) {
-			Element XMLelement = (Element) Elements.get(i);
+			Element XMLelement = Elements.get(i);
 			String ElementEntry = XMLelement.getName();
-			String ElementContent = XmlEscapers.xmlAttributeEscaper().escape( XMLelement.getText()); //.getText(); заменил на getValue() из-за "<>"
-
+			String ElementContent = XmlEscapers.xmlAttributeEscaper().escape( XMLelement.getValue()); //.getText(); заменил на getValue() из-за "<>"
+			// MessegeSend_Log.warn("XML_BodyElemets2StringB getValue: `<" + ElementEntry + ">" + XMLelement.getValue() + "</" + ElementEntry + ">`");
+			// MessegeSend_Log.warn("XML_BodyElemets2StringB getText: `<" + ElementEntry + ">" + XMLelement.getText() + "</" + ElementEntry + ">`");
 			messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + ElementEntry);
 			//MessegeSend_Log.info("XML_BodyElemets2StringB {<" + ElementEntry + ">}");
 

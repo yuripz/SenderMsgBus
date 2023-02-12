@@ -703,7 +703,8 @@ public class MessageHttpSend {
                 // MessageSend_Log.info("Rest:JsonBody2XML_String=(\n" + SoapElmnt.getName() + " =" + SoapElmnt.getText() + "\n");
                 // надо подготовить очищенный от ns: содержимое Body.
                 messageDetails.XML_ClearBodyResponse.append(OpenTag).append( SoapElmnt.getName() ).append( XMLchars.CloseTag);
-                MessageSoapSend.XML_BodyElemets2StringB(messageDetails, SoapElmnt, MessageSend_Log);
+                MessageSoapSend.XML_BodyElemets2StringB(messageDetails, SoapElmnt, MessageSend_Log); // Рекурсивный вызов для элемента внутри <Body>
+                messageDetails.XML_ClearBodyResponse.append(SoapElmnt.getText() );
                 messageDetails.XML_ClearBodyResponse.append(OpenTag).append( XMLchars.EndTag ).append( SoapElmnt.getName() ).append( XMLchars.CloseTag);
                 //MessageSend_Log.info(messageDetails.XML_ClearBodyResponse.toString());
             }
