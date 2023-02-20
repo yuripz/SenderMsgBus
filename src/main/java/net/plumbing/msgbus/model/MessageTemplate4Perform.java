@@ -150,7 +150,7 @@ public class MessageTemplate4Perform {
                 "PropTimeout_Conn:" + PropTimeout_Conn + ", " +
                 "PropTimeout_Read:" + PropTimeout_Read + ", " +
                 "Type_Connection:" + Type_Connection + ", " +
-                "SOAPAction:" + SOAPAction
+                "SOAPAction:" + SOAPAction + ", " + "PropHost" + PropHost + ", " + "PropUrl" + PropUrl
         ;
     }
     public MessageTemplate4Perform( MessageTemplateVO messageTemplateVO,

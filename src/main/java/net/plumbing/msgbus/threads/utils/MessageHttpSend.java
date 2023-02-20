@@ -704,10 +704,17 @@ public class MessageHttpSend {
                 // надо подготовить очищенный от ns: содержимое Body.
                 messageDetails.XML_ClearBodyResponse.append(OpenTag).append( SoapElmnt.getName() ).append( XMLchars.CloseTag);
                 MessageSoapSend.XML_BodyElemets2StringB(messageDetails, SoapElmnt, MessageSend_Log); // Рекурсивный вызов для элемента внутри <Body>
-                messageDetails.XML_ClearBodyResponse.append(SoapElmnt.getText() );
                 messageDetails.XML_ClearBodyResponse.append(OpenTag).append( XMLchars.EndTag ).append( SoapElmnt.getName() ).append( XMLchars.CloseTag);
                 //MessageSend_Log.info(messageDetails.XML_ClearBodyResponse.toString());
             }
+            // TODO - что то надо делать когда корневой элемент без дочерних элементов
+            if ( list.size() == 0 ) // корневой элемент без дочерних элементов
+            {
+                messageDetails.XML_ClearBodyResponse.append(OpenTag).append( SoapBody.getName() ).append( XMLchars.CloseTag);
+                messageDetails.XML_ClearBodyResponse.append(SoapBody.getText());
+                messageDetails.XML_ClearBodyResponse.append(OpenTag).append( XMLchars.EndTag ).append( SoapBody.getName() ).append( XMLchars.CloseTag);
+            }
+
         }
         return BodyListSize;
 

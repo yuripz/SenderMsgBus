@@ -142,6 +142,8 @@ public class SenderApplication implements CommandLineRunner {
 		String psqlFunctionRun = connectionProperties.getpsqlFunctionRun();
 		String HrmsSchema =  connectionProperties.gethrmsDbSchema() ;
 		ApplicationProperties.ExtSysSchema = connectionProperties.getextsysDbSchema();
+		ApplicationProperties.ExtSysDbLogin = connectionProperties.getextsysDbLogin();
+		ApplicationProperties.ExtSysPoint = connectionProperties.getextsysPoint();
 
 		// Установаливем "техническое соединение" , что бы считать конфигурацию из БД в public static HashMap'Z
 		java.sql.Connection Target_Connection = DataAccess.make_DataBase_Connection( HrmsSchema, connectionProperties.gethrmsPoint(),

@@ -235,7 +235,7 @@ public class MessageSoapSend {
 		for (int i = 0; i < Elements.size(); i++) {
 			Element XMLelement = Elements.get(i);
 			String ElementEntry = XMLelement.getName();
-			String ElementContent = XmlEscapers.xmlAttributeEscaper().escape( XMLelement.getValue()); //.getText(); заменил на getValue() из-за "<>"
+			String ElementContent = XmlEscapers.xmlAttributeEscaper().escape( XMLelement.getText()); // .getValue() вынимает СОДЕРЖАНИЕ всех дочерних элементов!
 			// MessegeSend_Log.warn("XML_BodyElemets2StringB getValue: `<" + ElementEntry + ">" + XMLelement.getValue() + "</" + ElementEntry + ">`");
 			// MessegeSend_Log.warn("XML_BodyElemets2StringB getText: `<" + ElementEntry + ">" + XMLelement.getText() + "</" + ElementEntry + ">`");
 			messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + ElementEntry);
@@ -257,7 +257,6 @@ public class MessageSoapSend {
 				messageDetails.XML_ClearBodyResponse.append(ElementContent);
 				// MessegeSend_Log.info("XML_BodyElemets2StringB[" + ElementContent + "]");
 			}
-
 
 			XML_BodyElemets2StringB(messageDetails, XMLelement,
 					MessegeSend_Log);

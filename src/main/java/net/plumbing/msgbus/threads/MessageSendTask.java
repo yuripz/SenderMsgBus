@@ -293,10 +293,10 @@ public class MessageSendTask  implements Runnable
                                     q.msg_Type_own,
                                     q.msg_Result,
                                     q.subSys_Cod,
-                                    " COALESCE(q.retry_count, 0) as Retry_Count,
+                                    COALESCE(q.retry_count, 0) as Retry_Count,
                                     q.Prev_Queue_Direction,
                                     q.Prev_Msg_Date,
-                                    CALESCE(q.queue_create_date, COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute )) as Queue_Create_Date, " +
+                                    COALESCE(q.queue_create_date, COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute )) as Queue_Create_Date,
                                     q.Perform_Object_Id
                                     from\040
                                     """
@@ -318,7 +318,7 @@ public class MessageSendTask  implements Runnable
                             select * from ( select CTID::varchar as ROWID,
                                     q.queue_Id,
                                     q.queue_Direction,
-                                    COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' -  Interval '1' Minute ) as Queue_Date,
+                                    COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute ) as Queue_Date,
                                     q.msg_Status,
                                     q.Msg_Date,
                                     q.Operation_id,
@@ -357,7 +357,7 @@ public class MessageSendTask  implements Runnable
                         "select * from ( select q.ROWID, " +
                                 " Q.queue_id," +
                                 " Q.queue_direction," +
-                                " COALESCE(Q.queue_date, Current_timeStamp -  Interval '1' Minute ) as Queue_Date, "+
+                                " COALESCE(Q.queue_date, Current_timeStamp -  Interval '1' Minute ) as Queue_Date," +
                                 " Q.msg_status," +
                                 " Q.msg_date," +
                                 " Q.operation_id," +

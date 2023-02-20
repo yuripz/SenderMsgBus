@@ -372,9 +372,9 @@ public class PerformQueueMessages {
                             return -31L;
                         }
                         if (Passed_Envelope4XSLTExt.equals(XMLchars.EmptyXSLT_Result)) {
+                            MessegeSend_Log.error("[" + Queue_Id + "] Ошибка преобразования XSLT для XSLTExt-обработки " + Message.MsgReason.toString());
                             MessegeSend_Log.error("[" + Queue_Id + "] Шаблон для XSLTExt-обработки(" + Message.MessageTemplate4Perform.getEnvelopeXSLTExt() + ")");
                             MessegeSend_Log.error("[" + Queue_Id + "] Envelope4XSLTExt:" + ConvXMLuseXSLTerr.toString());
-                            MessegeSend_Log.error("[" + Queue_Id + "] Ошибка преобразования XSLT для XSLTExt-обработки " + Message.MsgReason.toString());
                             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO, "Ошибка преобразования XSLT для XSLTExt-обработки " + ConvXMLuseXSLTerr.toString() + " :" + Message.MsgReason.toString(), 3231,
                                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
                             return -32L;
@@ -398,7 +398,7 @@ public class PerformQueueMessages {
                             }
                             if (Function_Result != 0) {
                                 MessegeSend_Log.error("[" + Queue_Id + "] Envelope4XSLTExt:" + ConvXMLuseXSLTerr.toString());
-                                MessegeSend_Log.error("[" + Queue_Id + "] Ошибка Call4ExternDbSQLincludedXML:" + Message.MsgReason.toString());
+                                    MessegeSend_Log.error("[" + Queue_Id + "] Ошибка Call4ExternDbSQLincludedXML:" + Message.MsgReason.toString());
                                 theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO, "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), 3231,
                                         messageQueueVO.getRetry_Count(), MessegeSend_Log);
                                 return -34L;

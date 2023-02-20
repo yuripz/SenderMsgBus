@@ -210,6 +210,7 @@ public class ExternalXmlSQLStatement {
                 {
                     messageDetails.MsgReason.append("ExecuteSQLincludedXML: Не нашли " + "/"+ TagNameHead+ "/"+ TagNameSQLStatement + "/" + TagNamePSTMT + " в результате XSLT прообразования " + Passed_Envelope4XSLTPost);
                     MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "+ messageDetails.MsgReason.toString());
+                    MakeConfirmation4Function( -2, messageDetails.MsgReason.toString(), messageDetails);
                     return -2;
                 }
 /*************************************************************************
@@ -277,7 +278,7 @@ public class ExternalXmlSQLStatement {
                         if (isDebugged)
                             MessegeSend_Log.info( "[" + messageQueueVO.getQueue_Id() + "] " + SQLcallableStatementExpression );
                         // register OUT parameter
-                        callableStatement.registerOutParameter(1, Types.INTEGER);
+                        callableStatement.registerOutParameter(1,Types.VARCHAR); // Types.INTEGER);
                         for ( int k =0; k < SQLparamValues.size(); k++ ) {
                             if (isDebugged)
                             MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] " + "callableStatement.setString: SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
@@ -294,20 +295,10 @@ public class ExternalXmlSQLStatement {
                             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " +messageDetails.MsgReason.toString());
                             callableStatement.close();
                             current_Connection_4_ExecuteSQL.rollback();
+                            MakeConfirmation4Function( -3, messageDetails.MsgReason.toString(), messageDetails);
                             return -3;
                         }
-                    /*
-                    ResultSetMetaData ResultSetMetaData = callableStatement.getMetaData();
-                    int ColumnCount = ResultSetMetaData.getColumnCount();
-                    int i;
-                    for (i=0; i < ColumnCount; i++ ) {
-                        MessegeSend_Log.warn(
-                        "ColumnType: " + ResultSetMetaData.getColumnType(i) +
-                                "ColumnTypeName: " + ResultSetMetaData.getColumnTypeName(i) +
-                                "ColumnClassName: " +  ResultSetMetaData.getColumnClassName( i )
-                        );
-                    }
-                    */
+
                         // get count and print in console
                         SQLWarning warning = callableStatement.getWarnings();
 
@@ -317,13 +308,24 @@ public class ExternalXmlSQLStatement {
                             warning = warning.getNextWarning();
                         }
                         // todo было: String countS = callableStatement.getString(1);
-                        Integer callableStatementResult = callableStatement.getInt(1); //getString(1);
-                        MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + " ] "+ SQLcallableStatementExpression + " callableStatement.getInt=" + callableStatementResult.toString());
+                        String callableStatementResult = callableStatement.getString(1); //getInt(1);
+                        MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + " ] "+ SQLcallableStatementExpression + " callableStatement return=" + callableStatementResult);
+                        String   callableStatementResults[] = callableStatementResult.split("~");
+                        String callStatement_Message;
+                        Integer callStatementResult = Integer.parseInt(callableStatementResults[0] );
+                        if ( callableStatementResults.length > 1 ) {
+                            if (callableStatementResults[1] != null ) callStatement_Message = callableStatementResults[1]; else callStatement_Message = "`пусто`";
+                        }
+                        else
+                            callStatement_Message = "`пусто`";
+                        // Формируем псевдо XML_ClearBodyResponse из function
+                        MakeConfirmation4Function( callStatementResult, "Функция была успешно вызвана,callableStatement_MessageResult =" + callStatement_Message, messageDetails);
                         callableStatement.close();
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
                         messageDetails.MsgReason.append(OperTypeFunc +  " SQLException Connection.prepareCall :=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTracе.strInterruptedException(e) );
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
+                        MakeConfirmation4Function( -2, messageDetails.MsgReason.toString(), messageDetails);
                         return -2;
                     }
                 if ( SQLStatement_functionORselect.equals( OperTypeRef ) )
@@ -631,6 +633,33 @@ public class ExternalXmlSQLStatement {
         }
 ************************************************************/
         return nn;
+    }
+
+    private static void MakeConfirmation4Function(Integer callableStatementResult, String p_Message_String, MessageDetails messageDetails) {
+        // Формируем псевдо XML_ClearBodyResponse из function
+        String s_Message_String;
+        if ( p_Message_String !=null ) s_Message_String = p_Message_String;
+        else s_Message_String = "";
+        messageDetails.XML_ClearBodyResponse.setLength(0);
+        messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.TagConfirmation + XMLchars.CloseTag // <Confirmation>
+                + XMLchars.OpenTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag //  <ResultCode>
+                + callableStatementResult.toString()
+                + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag // </ResultCode>
+                + XMLchars.OpenTag + XMLchars.NameTagFaultTxt + XMLchars.CloseTag //  <Message>
+                + s_Message_String
+                + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.NameTagFaultTxt + XMLchars.CloseTag // </Message>
+        );
+
+        messageDetails.XML_ClearBodyResponse.append( XMLchars.OpenTag + XMLchars.TagDetailList + XMLchars.CloseTag //  <DetailList>
+                + XMLchars.OpenTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag //  <ResultCode>
+                + callableStatementResult.toString()
+                + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag // </ResultCode>
+                + XMLchars.OpenTag + XMLchars.NameTagFaultTxt + XMLchars.CloseTag //  <Message>
+                + s_Message_String
+                + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.NameTagFaultTxt + XMLchars.CloseTag // </Messag
+                + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagDetailList + XMLchars.CloseTag // ЗАКРЫВАЕМ  </DetailList>
+                + XMLchars.OpenTag + XMLchars.EndTag + XMLchars.TagConfirmation + XMLchars.CloseTag //  ЗАКРЫВАЕМ </Confirmation>
+        );
     }
 /******************
     private static int MakeConfirmation4PIPEfunction(ResultSet rs, long Queue_Id, MessageDetails messageDetails,  Logger MessegeReceive_Log) {

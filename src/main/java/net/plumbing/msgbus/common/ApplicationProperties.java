@@ -22,8 +22,6 @@ public  class ApplicationProperties {
         this.ExtSysDbLogin = extSysDbLogin;
     }
 
-
-
     public static HikariDataSource dataSource; //= HiDataSource();
     public static HikariDataSource extSystemDataSource;
     public static HikariDataSourcePoolMetadata DataSourcePoolMetadata;
