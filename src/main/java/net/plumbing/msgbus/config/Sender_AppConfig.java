@@ -8,19 +8,15 @@ import org.springframework.context.annotation.Configuration;
 //import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-
 @Configuration
-@ComponentScan(basePackages = "ru.hermes.msgbus.*")
+@ComponentScan(basePackages = "net.plumbing.msgbus.*")
 public class Sender_AppConfig {
 
     private static final Logger AppConfig_log = LoggerFactory.getLogger(Sender_AppConfig.class);
-
-    //    @Autowired
+//    @Autowired
 //    private  TaskPollProperties taskPollProperties ;
-
     @Bean(name = "taskExecutor")
     public ThreadPoolTaskExecutor taskExecutor() {
-
         ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
 //        pool.setCorePoolSize(taskPollProperties.getcorePoolSize());
 //        pool.setMaxPoolSize(taskPollProperties.getmaxPoolSize());
