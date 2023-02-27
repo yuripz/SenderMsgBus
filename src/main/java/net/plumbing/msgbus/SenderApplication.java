@@ -135,6 +135,7 @@ public class SenderApplication implements CommandLineRunner {
 		int WaitTimeBetweenScan = Integer.parseInt( connectionProperties.getwaitTimeScan() );
 		int NumMessageInScan = Integer.parseInt( connectionProperties.getnumMessageInScan() );
 		int ApiRestWaitTime = Integer.parseInt( connectionProperties.getapiRestWaitTime() );
+		int CuberNumId = Integer.parseInt( connectionProperties.getcuberNumId() );
 
 		int FirstInfoStreamId = 101;
 		if ( connectionProperties.getfirstInfoStreamId() != null)
@@ -144,6 +145,7 @@ public class SenderApplication implements CommandLineRunner {
 		ApplicationProperties.ExtSysSchema = connectionProperties.getextsysDbSchema();
 		ApplicationProperties.ExtSysDbLogin = connectionProperties.getextsysDbLogin();
 		ApplicationProperties.ExtSysPoint = connectionProperties.getextsysPoint();
+		ApplicationProperties.CuberNumId = connectionProperties.getcuberNumId();
 
 		// Установаливем "техническое соединение" , что бы считать конфигурацию из БД в public static HashMap'Z
 		java.sql.Connection Target_Connection = DataAccess.make_DataBase_Connection( HrmsSchema, connectionProperties.gethrmsPoint(),
@@ -266,6 +268,7 @@ public class SenderApplication implements CommandLineRunner {
 			messageSendTask[ i ].setNumMessageInScan( NumMessageInScan );
 			messageSendTask[ i ].setApiRestWaitTime( ApiRestWaitTime );
 			messageSendTask[ i ].setFirstInfoStreamId( FirstInfoStreamId );
+			messageSendTask[ i ].setСuberNumId( CuberNumId );
 			messageSendTask[ i ].setTheadNum(i);
 			messageSendTask[ i ].setJMSQueueConnection( JMSQueueConnection );
 			taskExecutor.execute(messageSendTask[ i ]);

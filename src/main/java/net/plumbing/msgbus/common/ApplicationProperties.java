@@ -9,6 +9,7 @@ public  class ApplicationProperties {
     public static String ExtSysPoint;
     public static String ExtSysDbLogin;
     public static String ExtSysDbPasswd;
+    public static String CuberNumId;
 
     public void setExtSysSchema(String extSysSchema) {
         this.ExtSysSchema = extSysSchema;

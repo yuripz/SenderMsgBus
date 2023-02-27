@@ -11,8 +11,17 @@ import org.springframework.stereotype.Component;
 
 public class ConnectionProperties {
 
+    // @Value("${totalNumTasks")
+    private String cuberNumId;
+    public String getcuberNumId() {
+        return cuberNumId;
+    }
+    public void setcuberNumId(String cuberNumId) {
+        this.cuberNumId = cuberNumId;
+    }
+
  // extSystem
- private String extsysDbSchema;
+    private String extsysDbSchema;
     public String getextsysDbSchema() {
         return extsysDbSchema;
     }
@@ -114,26 +123,21 @@ public class ConnectionProperties {
 
     // @Value("${totalNumTasks")
     private String totalNumTasks;
-
     public String gettotalNumTasks() {
         return totalNumTasks;
     }
-
     public void settotalNumTasks(String totalNumTasks) {
         this.totalNumTasks = totalNumTasks;
     }
 
     // @Value("${totalNumTasks")
     private String totalTimeTasks;
-
     public String gettotalTimeTasks() {
         return this.totalTimeTasks;
     }
-
     public void settotalTimeTasks(String totalTimeTasks) {
         this.totalTimeTasks = totalTimeTasks;
     }
-
 
     private String waitTimeScan;
     public String getwaitTimeScan() {
@@ -166,7 +170,6 @@ public class ConnectionProperties {
     public void setfirstInfoStreamId(String firstInfoStreamId) {
         this.firstInfoStreamId = firstInfoStreamId;
     }
-
 
     private String apiRestWaitTime;
     public String getapiRestWaitTime() {

@@ -330,8 +330,8 @@ public class TheadDataAccess {
             Hermes_Connection.commit();
 
         } catch (SQLException e) {
-            dataAccess_log.error( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]:  doUPDATE_MessageQueue_In2Ok ) fault: " + e.getMessage() );
-            System.err.println( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: doUPDATE_MessageQueue_In2Ok )) fault: ");
+            dataAccess_log.error( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]:  doUPDATE_MessageQueue_Out2Ok ) fault: " + e.getMessage() );
+            System.err.println( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: doUPDATE_MessageQueue_OUT2Ok )) fault: ");
             try {
                 Hermes_Connection.rollback(); } catch (SQLException SQLe) {
                 dataAccess_log.error( "[" + Queue_Id + "] rollback(" + UPDATE_MessageQueue_OUT2Ok + ") fault: " + SQLe.getMessage() );
