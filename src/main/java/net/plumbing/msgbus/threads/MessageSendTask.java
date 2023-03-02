@@ -453,7 +453,7 @@ public class MessageSendTask  implements Runnable
                     stmtMsgQueue.setInt(2, (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000 ) );
 
                     ResultSet rs = stmtMsgQueue.executeQuery();
-                    MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: do scanning on `" + selectMessageSQL + "` using msg_InfostreamId=" + (theadNum + this.FirstInfoStreamId) );
+                    MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: do scanning on `" + selectMessageSQL + "` using msg_InfostreamId in (" + (theadNum + this.FirstInfoStreamId) + ", "  + (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000 ) + ")");
                     while (rs.next()) {
                         num_Message4Perform +=1;
                         messageQueueVO.setMessageQueue(
