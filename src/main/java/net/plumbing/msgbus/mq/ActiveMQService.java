@@ -138,11 +138,11 @@ public class ActiveMQService {
        return Qconnection;
    }
     @Bean
-    public BrokerService ActiveMQbroker( String bindAddressСonnectMsgBus ) throws Exception {
+    public BrokerService ActiveMQbroker( String bindAddressConnectMsgBus ) throws Exception {
         if ( MQbroker == null ) {
             final BrokerService broker = new BrokerService();
             // TransportConnector tcp_connection =broker.addConnector("tcp://localhost:61216");
-            TransportConnector tcp_connection =broker.addConnector(bindAddressСonnectMsgBus);
+            TransportConnector tcp_connection =broker.addConnector(bindAddressConnectMsgBus);
             TransportConnector vm_connection = broker.addConnector("vm://localhost:77177");
             broker.setPersistent(false);
             broker.setAllowTempAutoCreationOnSend(true);

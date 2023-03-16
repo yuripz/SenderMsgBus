@@ -7,11 +7,13 @@ import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.Properties;
+import java.util.Set;
 
 public  class DataAccess {
 
     public static Connection  Hermes_Connection;
-    public  static Timestamp InitDate; ; // Date InitDate;
+    public  static Timestamp InitDate; // Date InitDate;
     public static DateFormat dateFormat;
 
     //@Autowired
@@ -70,11 +72,59 @@ public  class DataAccess {
                 stmt_SetTimeZone.close();
             }
             else
-            { // используем DUAL
-               SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYYMMDDHH24MISS') as InitTime FROM dual";
-               SQLCurrentTimeDateRead= "SELECT current_timestamp as InitTime FROM dual";
+            {
+                /*DatabaseMetaData  databaseMetaData  = Target_Connection.getMetaData();
+                ResultSet rs= databaseMetaData.getClientInfoProperties();
+                dataAccess_log.info( "RDBMS get main ClientInfoProperties:");
+                while (rs.next()) {
+                    //CurrentTime = rs.getString("NAME");
+                    dataAccess_log.info( "RDBMS ClientInfoProperties: NAME=`"+ rs.getString("NAME") + "` DESCRIPTION [" + rs.getString("DESCRIPTION")  + "] DEFAULT_VALUE=" + rs.getString("DEFAULT_VALUE")  );
+                }
+                rs.close();
+                */
+
+
+                // используем DUAL
+                   SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYYMMDDHH24MISS') as InitTime FROM dual";
+                   SQLCurrentTimeDateRead= "SELECT current_timestamp as InitTime FROM dual";
+                   /*
+                    CallableStatement stmtDBMS_SET_MODULE = Target_Connection.prepareCall("call DBMS_APPLICATION_INFO.SET_MODULE( 'Sender', 'mainSenderThread')"  );
+                    stmtDBMS_SET_MODULE.execute();
+                    stmtDBMS_SET_MODULE.close();
+
+                    stmtDBMS_SET_MODULE = Target_Connection.prepareCall("call DBMS_APPLICATION_INFO.SET_CLIENT_INFO( 'thread N 00')"  );
+                    stmtDBMS_SET_MODULE.execute();
+                    stmtDBMS_SET_MODULE.close();
+
+                DBMS_APPLICATION_INFO.SET_MODULE(
+                        module_name => 'Sender',
+                        action_name => 'main_Sender');
+
+                DBMS_APPLICATION_INFO.SET_CLIENT_INFO (
+                        client_info => 'thread N 00' );
+                        */
+               // Устанавлеваем Tracing Properties
+
+                Target_Connection.setClientInfo("OCSID.CLIENTID", "Sender");
+                Target_Connection.setClientInfo("OCSID.MODULE", "SenderMain");
+                Target_Connection.setClientInfo("OCSID.ACTION", "ReRead config");
             }
 
+            Properties propClientInfo = Target_Connection.getClientInfo();
+            if ( propClientInfo != null ) {
+                dataAccess_log.warn( "RDBMS ClientInfoProperties: propClientInfo :" + propClientInfo + " size=" + propClientInfo.size() );
+                Set<String> propKeysSet = propClientInfo.stringPropertyNames();
+                String[]  propKeys =propKeysSet.toArray(new String[0]);
+                for ( int i=0; i < propKeys.length; i++ ) {
+                    String propKey = propKeys[i];
+                    if ( propKey != null )
+                        dataAccess_log.info( "RDBMS ClientInfoProperties: NAME=`"+ propKey + "` VALUE=" + propClientInfo.getProperty(propKey)  );
+                    else
+                        dataAccess_log.info( "RDBMS ClientInfoProperties: key is null" );
+                }
+            }
+            else
+                dataAccess_log.warn( "RDBMS ClientInfoProperties: propClientInfo is null" );
             /*dataSource = new DriverManagerDataSource(connectionUrl);
             dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
             dataSource.setPassword(db_password);

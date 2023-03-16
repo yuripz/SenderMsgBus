@@ -113,7 +113,7 @@ public class TheadDataAccess {
         }
     }
 
-    public Connection make_Hermes_Connection(String dst_point, String db_userid, String db_password, Logger dataAccess_log) {
+    public Connection make_Hermes_Connection(String dst_point, String db_userid, String db_password, int theadNum, Logger dataAccess_log) {
         Connection Target_Connection = null;
         String connectionUrl;
 
@@ -149,6 +149,28 @@ public class TheadDataAccess {
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
             }
+            else {
+                // Устанавлеваем Tracing Properties
+                /*
+                DatabaseMetaData  databaseMetaData  = Target_Connection.getMetaData();
+                ResultSet rs= databaseMetaData.getClientInfoProperties();
+                dataAccess_log.info( "RDBMS get tread ClientInfoProperties:");
+                while (rs.next()) {
+                    //CurrentTime = rs.getString("NAME");
+                    dataAccess_log.info( "RDBMS ClientInfoProperties: NAME=`"+ rs.getString("NAME") + "` DESCRIPTION [" + rs.getString("DESCRIPTION")  + "] DEFAULT_VALUE=" + rs.getString("DEFAULT_VALUE")  );
+                }
+                rs.close();
+                */
+                //Target_Connection.setClientInfo("v$session.terminal","Sender thead");
+                //Target_Connection.setClientInfo("v$session.program","SenderMsgBus");
+                // Target_Connection.setClientInfo("v$session.process",String.valueOf(theadNum) );
+                //Target_Connection.setClientInfo("OCSID.MODULE", "SenderThread");
+                Target_Connection.setClientInfo("OCSID.ACTION", "Pull messages");
+                Target_Connection.setClientInfo("OCSID.CLIENTID", "Sender");
+                Target_Connection.setClientInfo("OCSID.MODULE", ("Thead_" + String.valueOf(theadNum)) );
+
+            }
+
             // Handle any errors that may have occurred.
         } catch (Exception e) {
             dataAccess_log.error(e.getMessage());

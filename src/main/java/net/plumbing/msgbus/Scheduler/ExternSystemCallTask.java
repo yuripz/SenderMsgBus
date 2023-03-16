@@ -73,7 +73,7 @@ public class ExternSystemCallTask implements Runnable {
         TheadDataAccess theadDataAccess = new TheadDataAccess();
         theadDataAccess.setDbSchema( HrmsSchema );
         // Установаливем " соединение" , что бы зачитывать очередь
-        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd,
+        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, 100000 + theadNum,
                 externSystemCallTas_Log
         );
         if ( Hermes_Connection == null) {

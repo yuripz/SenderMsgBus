@@ -178,7 +178,7 @@ public class MessageSendTask  implements Runnable
         TheadDataAccess theadDataAccess = new TheadDataAccess();
         theadDataAccess.setDbSchema( HrmsSchema );
         // Установаливем " соединение" , что бы зачитывать очередь
-        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd,
+        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, this.FirstInfoStreamId + theadNum,
                 MessegeSend_Log
         );
         if ( Hermes_Connection == null) {
@@ -304,7 +304,7 @@ public class MessageSendTask  implements Runnable
                                     """
                                     + HrmsSchema +
                                     """
-                                    .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId = ?\040
+                                    .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId in ( ?, ? )\040
                                       and Q.queue_Direction in( 'OUT','SEND')\040
                                       and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc, Q.queue_id asc) QUEUE where rownum <\040
                                     """
