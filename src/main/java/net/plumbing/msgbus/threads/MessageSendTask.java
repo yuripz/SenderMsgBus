@@ -705,7 +705,7 @@ public class MessageSendTask  implements Runnable
                                 MessegeSend_Log.info("Received message: empty" );
                             }
                         } catch (JMSException e) {
-                            MessegeSend_Log.error("JMSconsumer.receive: НЕ удалось зпроосить сообщений ActiveMQ");
+                            MessegeSend_Log.error("JMSconsumer.receive: НЕ удалось зпроосить сообщений ActiveMQ (" + e.getMessage() + ")" );
                             Thread.sleep(WaitTimeBetweenScan * 1000);
                         }
                 }

@@ -3,7 +3,6 @@ package net.plumbing.msgbus.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-
 //@Validated
 // @SuppressWarnings({"unused", "WeakerAccess"})
 @Component
@@ -198,9 +197,7 @@ public class ConnectionProperties {
     @Override
     public String toString() {
         return "ConnectionProperties{" +
-                "hrmsPoint='" + hrmsPoint + '\'' +
-                ", hrmsPoint='" + hrmsPoint + '\'' +
-                '}' + "\n" +
+                "hrmsPoint=`" + hrmsPoint + "`, hrmsDbLogin=`" + hrmsDbLogin + "` }\n" +
                 "longRetryCount=" + longRetryCount +", longRetryInterval=" + longRetryInterval
                 + "\n" +
                 "shortRetryCount=" + shortRetryCount +", shortRetryInterval=" + shortRetryInterval
@@ -209,7 +206,7 @@ public class ConnectionProperties {
                 + "\n" +
                 "numMessageInScan=" + numMessageInScan +", waitTimeScan=" + this.waitTimeScan
                 + "\n" +
-                "intervalReInit=" + intervalReInit + ", firstInfoStreamId=" +this.firstInfoStreamId + ", " + this.connectMsgBus
+                "intervalReInit=" + intervalReInit + ", firstInfoStreamId=" +this.firstInfoStreamId + ", connectMsgBus=" + this.connectMsgBus
                 ;
     }
 

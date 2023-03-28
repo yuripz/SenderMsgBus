@@ -37,7 +37,7 @@ public class ActiveMQService {
  //   @Bean
     public ActiveMQDestination NewQueue(String pDESTINATION_NAME ) throws Exception {
         if ( MQbroker != null ) {
-            ActiveMQDestination CurrentListActiveMQDestination[] = MQbroker.getDestinations();
+            ActiveMQDestination[] CurrentListActiveMQDestination = MQbroker.getDestinations();
             if ( CurrentListActiveMQDestination != null ) {
                 ActiveMQDestination[] NewListActiveMQDestination = Arrays.copyOf(CurrentListActiveMQDestination, CurrentListActiveMQDestination.length + 1);
                 ActiveMQQueue activeMQQueue = new ActiveMQQueue(pDESTINATION_NAME);
@@ -73,7 +73,7 @@ public class ActiveMQService {
     }
 
    public  Destination getDestination( String pDESTINATION_NAME) throws Exception {
-       ActiveMQDestination CurrentListActiveMQDestination[] = MQbroker.getDestinations();
+       ActiveMQDestination[] CurrentListActiveMQDestination = MQbroker.getDestinations();
        ActiveMQDestination MQDestination;
        int i;
        for ( i=0; i < CurrentListActiveMQDestination.length; i ++ )
@@ -142,6 +142,7 @@ public class ActiveMQService {
         if ( MQbroker == null ) {
             final BrokerService broker = new BrokerService();
             // TransportConnector tcp_connection =broker.addConnector("tcp://localhost:61216");
+            ActiveMQService_Log.info("ActiveMQbroker MsgBus init for :" + bindAddressConnectMsgBus );
             TransportConnector tcp_connection =broker.addConnector(bindAddressConnectMsgBus);
             TransportConnector vm_connection = broker.addConnector("vm://localhost:77177");
             broker.setPersistent(false);
@@ -157,9 +158,8 @@ public class ActiveMQService {
             ActiveMQService_Log.info("ActiveMQbroker MsgBus VM connect: [" +  vm_connection.getConnectUri() +"]" ) ;
             ActiveMQService_Log.info("ActiveMQbroker MsgBus TCP connect: [" +  tcp_connection.getConnectUri() +"]") ;
 
-            ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(vm_connection.getConnectUri());
             // Create a Connection
-            MQconnectionFactory = connectionFactory;
+            MQconnectionFactory = new ActiveMQConnectionFactory(vm_connection.getConnectUri());
 
             return broker;
         }

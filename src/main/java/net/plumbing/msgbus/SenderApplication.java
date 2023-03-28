@@ -71,7 +71,7 @@ public class SenderApplication implements CommandLineRunner {
 		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		 NotifyByChannel.Telegram_sendMessage( "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ", AppThead_log );
 		String propConnectMsgBus = connectionProperties.getconnectMsgBus();
-		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://localhost:61216";
+		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://0.0.0.0:61216";
 
 		ActiveMQService activeMQService= new ActiveMQService();
 		BrokerService MQbroker= activeMQService.ActiveMQbroker( propConnectMsgBus );
