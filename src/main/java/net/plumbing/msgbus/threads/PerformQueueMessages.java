@@ -1076,7 +1076,7 @@ public class PerformQueueMessages {
 
     private   String ConvXMLuseXSLT(@NotNull Long QueueId, @NotNull String xmldata, @NotNull String XSLTdata, StringBuilder MsgResult, Logger MessegeSend_Log, boolean IsDebugged )
             throws TransformerException
-    { StreamSource source,srcxslt;
+    { StreamSource source,srcXSLT;
         Transformer transformer;
         StreamResult result;
         ByteArrayInputStream xmlInputStream=null;
@@ -1097,9 +1097,14 @@ public class PerformQueueMessages {
             return XMLchars.EmptyXSLT_Result ;
         }
 
+        if ( (XSLTdata == null) || ( XSLTdata.length() < XMLchars.EmptyXSLT_Result.length() )  ) {
+            if ( IsDebugged )
+                MessegeSend_Log.info("["+ QueueId  + "] length XSLTdata 4 transform is null OR  < " + XMLchars.EmptyXSLT_Result.length() );
+            return XMLchars.EmptyXSLT_Result ;
+        }
         source = new StreamSource(xmlInputStream);
         try {
-            srcxslt = new StreamSource(new ByteArrayInputStream(XSLTdata.getBytes(StandardCharsets.UTF_8)));
+            srcXSLT = new StreamSource(new ByteArrayInputStream(XSLTdata.getBytes(StandardCharsets.UTF_8)));
         }
                 catch ( Exception exp ) {
                 ConvXMLuseXSLTerr = strInterruptedException(exp);
@@ -1120,8 +1125,8 @@ public class PerformQueueMessages {
                     log.warn("Warning received while processing a stylesheet", te);
                 }
                 */
-         // transformer = TransformerFactory.newInstance().newTransformer(srcxslt);
-            transformer = XSLTransformerFactory.newTransformer(srcxslt);
+         // transformer = TransformerFactory.newInstance().newTransformer(srcXSLT);
+            transformer = XSLTransformerFactory.newTransformer(srcXSLT);
             if ( transformer != null) {
                 transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
                 transformer.transform(source, result);

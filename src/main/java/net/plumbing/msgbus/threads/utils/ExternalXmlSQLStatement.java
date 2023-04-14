@@ -310,14 +310,19 @@ public class ExternalXmlSQLStatement {
                         // todo было: String countS = callableStatement.getString(1);
                         String callableStatementResult = callableStatement.getString(1); //getInt(1);
                         MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + " ] "+ SQLcallableStatementExpression + " callableStatement return=" + callableStatementResult);
-                        String   callableStatementResults[] = callableStatementResult.split("~");
                         String callStatement_Message;
-                        Integer callStatementResult = Integer.parseInt(callableStatementResults[0] );
-                        if ( callableStatementResults.length > 1 ) {
-                            if (callableStatementResults[1] != null ) callStatement_Message = callableStatementResults[1]; else callStatement_Message = "`пусто`";
-                        }
-                        else
-                            callStatement_Message = "`пусто`";
+                        Integer callStatementResult = 0;
+                        if ( callableStatementResult != null ) {
+                            String callableStatementResults[] = callableStatementResult.split("~");
+                            callStatementResult = Integer.parseInt(callableStatementResults[0]);
+                            if (callableStatementResults.length > 1) {
+                                if (callableStatementResults[1] != null)
+                                    callStatement_Message = callableStatementResults[1];
+                                else callStatement_Message = "`пусто`";
+                            } else
+                                callStatement_Message = "`пусто`";
+                        } else
+                            callStatement_Message = "`неожиданно пусто`";
                         // Формируем псевдо XML_ClearBodyResponse из function
                         MakeConfirmation4Function( callStatementResult, "Функция была успешно вызвана,callableStatement_MessageResult =" + callStatement_Message, messageDetails);
                         callableStatement.close();

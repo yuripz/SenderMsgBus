@@ -341,7 +341,7 @@ public class MessageSendTask  implements Runnable
                             """+ HrmsSchema + """
                              .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId in ( ?, ? ) \040
                                and Q.queue_Direction in( 'OUT','SEND')\040
-                               and Q.Msg_Date < Current_TimeStamp order by q.Priority_Level asc , q.queue_id asc ) QUEUE Limit\040
+                               and Q.Msg_Date < clock_timestamp() AT TIME ZONE 'Europe/Moscow' order by q.Priority_Level asc , q.queue_id asc ) QUEUE Limit\040
                              """
                             + NumMessageInScan;
                     // CTID::varchar as ROWID и where CTID=?::tid

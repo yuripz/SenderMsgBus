@@ -215,7 +215,8 @@ public  class DataAccess {
 
     public static Integer moveERROUT2RESOUT(@NotNull String pSQL_function, @NotNull Logger dataAccess_log ) {
         CallableStatement callableStatement =null;
-        Integer count;
+        // Integer count;
+        String sErrorDescription;
 
         // # HE-5467 Необходимо обеспечить обработку ПРИЁМА ответов на ИСХОДЯЩИЕ события для инициации вызова прикладного обработчика при любых ошибках и сбоях внешней системы при интеграции
         try {
@@ -224,12 +225,12 @@ public  class DataAccess {
 
         } catch (Exception e) {
             dataAccess_log.error("prepareCall(" + pSQL_function + " fault: " + sStackTracе.strInterruptedException(e));
-            return null;
+            return -2;
         }
         try {
             dataAccess_log.info("try executeCall(" + pSQL_function);
         // register OUT parameter
-        callableStatement.registerOutParameter(1, Types.INTEGER);
+        callableStatement.registerOutParameter(1, Types.VARCHAR);
 
         // Step 2.C: Executing CallableStatement
             try {
@@ -241,17 +242,23 @@ public  class DataAccess {
             }
 
         // get count and print in console
-        count = callableStatement.getInt(1);
-            dataAccess_log.info( pSQL_function + " = " + count);
+            sErrorDescription = callableStatement.getString(1);
+            dataAccess_log.info( pSQL_function + " = " + sErrorDescription);
 
             callableStatement.close();
 
         } catch (Exception e) {
-            dataAccess_log.error("executeCall(" + pSQL_function + " fault: " + sStackTracе.strInterruptedException(e));
-            return null;
+            dataAccess_log.error("executeCall(" + pSQL_function + ") fault: " + sStackTracе.strInterruptedException(e));
+            try {
+                callableStatement.close();
+            }catch (SQLException eSQL) {
+                dataAccess_log.error("callableStatement.close(" + pSQL_function + ") fault: " + sStackTracе.strInterruptedException(e));
+            }
+
+            return -4;
         }
 
-        return count;
+        return 0;
     }
 /*
     public static String getCurrentTimeString(@NotNull Logger dataAccess_log ) {
