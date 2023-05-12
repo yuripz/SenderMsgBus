@@ -313,7 +313,7 @@ public class ExternalXmlSQLStatement {
                         String callStatement_Message;
                         Integer callStatementResult = 0;
                         if ( callableStatementResult != null ) {
-                            String callableStatementResults[] = callableStatementResult.split("~");
+                            String[] callableStatementResults = callableStatementResult.split("~");
                             callStatementResult = Integer.parseInt(callableStatementResults[0]);
                             if (callableStatementResults.length > 1) {
                                 if (callableStatementResults[1] != null)

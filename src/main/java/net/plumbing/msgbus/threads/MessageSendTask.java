@@ -345,8 +345,8 @@ public class MessageSendTask  implements Runnable
                              """
                             + NumMessageInScan;
                     // CTID::varchar as ROWID и where CTID=?::tid
-                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update nowait" );
-                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
+                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update SKIP LOCKED" ); //  nowait -> SKIP LOCKED
+                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update SKIP LOCKED" ); //  nowait -> SKIP LOCKED
                 }
                 MessegeSend_Log.info( "Main_MESSAGE_QueueSelect:{" + selectMessageSQL  + "} Q.Msg_InfostreamId ="  + (this.FirstInfoStreamId + theadNum ) ) ;
                 stmtMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
@@ -488,7 +488,7 @@ public class MessageSendTask  implements Runnable
                             // TODO Oracle stmtQueueLock.setRowId(1, rs.getRowId("ROWID") );
                             stmtQueueLock.setString(1, rs.getString("ROWID") );
                             int LockedMsg_InfoStreamId=0;
-                            Long LockedQueue_Id=0L;
+                            long LockedQueue_Id=0L;
                             String LockedQueue_Direction;
                             rLock = stmtQueueLock.executeQuery();
                             while (rLock.next()) {
@@ -520,6 +520,12 @@ public class MessageSendTask  implements Runnable
                             // Запись захвачена другим потоком
                             MessegeSend_Log.warn( "Main Thread: stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record can't be locked, " +e.getSQLState() + " :" + e.getMessage() );
                             isNoLock = false;
+                            try {
+                                theadDataAccess.Hermes_Connection.rollback();
+                            }
+                            catch (SQLException rollback_e) {
+                                MessegeSend_Log.info( "Main Thread: stmtQueueLock4JMSconsumer.Queue_Id:" + messageQueueVO.getQueue_Id() + " Hermes_Connection.rollback() fault, " +e.getSQLState() + " :" + e.getMessage() );
+                            }
                         }
 
                         if ( isNoLock )
@@ -539,6 +545,7 @@ public class MessageSendTask  implements Runnable
                         }
                         if ( rLock != null)
                         { rLock.close(); theadDataAccess.Hermes_Connection.commit(); }
+
                     } // Цикл по выборке по своему потоку
                     rs.close();
                 } catch (Exception e) {
@@ -819,7 +826,14 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
         }
         catch (SQLException e) {
             // Запись захвачена другим потоком
-            MessegeSend_Log.info( "Main Thread: stmtQueueLock.Queue_Id:" + Queue_Id + " record can't be locked, " +e.getSQLState() + " :" + e.getMessage() );
+            MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:" + Queue_Id + " record can't be locked, " +e.getSQLState() + " :" + e.getMessage() );
+            try {
+                theadDataAccess.Hermes_Connection.rollback();
+            }
+            catch (SQLException rollback_e) {
+                MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:" + Queue_Id + " Hermes_Connection.rollback() fault, " +e.getSQLState() + " :" + e.getMessage() );
+            }
+
             isNoLock = false;
         }
         MessegeSend_Log.info( "PerfotmJMSMessage: select for update вернул rowid ="+ QueueRowId );
