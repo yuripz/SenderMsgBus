@@ -924,9 +924,9 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                     MessegeSend_Log.warn( "PerfotmJMSMessage Thread: (894:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
                     performMessageResult = PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                 } catch (Exception e) {
-                    System.err.println("performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
+                    System.err.println("PerfotmJMSMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
                     e.printStackTrace();
-                    MessegeSend_Log.error("performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
+                    MessegeSend_Log.error("PerfotmJMSMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
                     MessegeSend_Log.error("что то пошло совсем не так...");
                 }
             }
@@ -935,7 +935,14 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                 MessegeSend_Log.warn( "Запись уже обрабатывется, надо разблокировать Queue_Id="+ Queue_Id );
                 try {
                     if ( rLock != null)
-                    { rLock.close(); theadDataAccess.Hermes_Connection.rollback(); }
+                    { rLock.close();
+                        try {
+                            theadDataAccess.Hermes_Connection.rollback();
+                        }
+                        catch (SQLException rollback_e) {
+                            MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:" + messageQueueVO.getQueue_Id() + " Hermes_Connection.rollback() fault, " +rollback_e.getSQLState() + " :" + rollback_e.getMessage() );
+                        }
+                    }
                 } catch (SQLException e) { MessegeSend_Log.error(e.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
                     MessegeSend_Log.error( "Ошибка при закрытии SQL-ResultSet select for Update ...");
                     return -2L;
