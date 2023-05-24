@@ -45,7 +45,7 @@ public class InitMessageRepository {
                     "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
                         "where (1=1) and t.msg_direction like '%OUT%' " +
-                        "and t.LAST_UPDATE_DT > ( sysDate  -  ( 120 + " + intervalReInit + " )/(24*3600)  )" +
+                        "and t.LAST_UPDATE_DT > ( sysDate - ( 120 + " + intervalReInit + " )/(24*3600)  )" +
                         "order by t.interface_id, t.operation_id";
         else //  PostGree
             selectMsgTypeReRead = "select t.interface_id, " +
@@ -53,7 +53,7 @@ public class InitMessageRepository {
                     "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
                         "where (1=1) " +
-                        "and t.LAST_UPDATE_DT >  ( clock_timestamp()  - Interval '1 Second' * ( 120 + " + intervalReInit + " )  )" +
+                        "and t.LAST_UPDATE_DT > ( now() AT TIME ZONE 'Europe/Moscow' - Interval '1 Second' * ( 120 + " + intervalReInit + " )  )" +
                         "order by t.interface_id, t.operation_id";
         try {
             stmtMsgTypeReRead = DataAccess.Hermes_Connection.prepareStatement( selectMsgTypeReRead );
@@ -139,7 +139,7 @@ public class InitMessageRepository {
                     "t.dst_subcod, t.lastmaker, t.lastdate " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_TemplateS t " +
                     "where (1=1) " +
-                    "and t.LastDate >  ( clock_timestamp()  - Interval '1 Second' * ( 120 + " + intervalReInit + " )  )" +
+                    "and t.LastDate > ( now() AT TIME ZONE 'Europe/Moscow' - Interval '1 Second' * ( 120 + " + intervalReInit + " )  )" +
                     "and t.template_dir like '%OUT%' " +  // "and t.operation_id in (0, 154 ) " +
                     "order by t.interface_id, t.operation_id, t.destin_id, t.dst_subcod";
 
