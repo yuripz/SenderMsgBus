@@ -71,7 +71,7 @@ public class SenderApplication implements CommandLineRunner {
 		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		 NotifyByChannel.Telegram_sendMessage( "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ", AppThead_log );
 		String propConnectMsgBus = connectionProperties.getconnectMsgBus();
-		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://0.0.0.0:61216";
+		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://0.0.0.0:61016";
 
 		ActiveMQService activeMQService= new ActiveMQService();
 		BrokerService MQbroker= activeMQService.ActiveMQbroker( propConnectMsgBus );
@@ -214,7 +214,7 @@ public class SenderApplication implements CommandLineRunner {
 
 		// Запуск пула потоков под Scheduler
 
-		int TotalScheduledTask = MessageRepositoryHelper.countMessageType_4_Scheduled("CRON_DAEMON");
+		int TotalScheduledTask = MessageRepositoryHelper.countMessageType_4_Scheduled("-CRON_!_DAEMON-");
 		if (TotalScheduledTask > 0 )  // количество типов сообщений, запускаемых по расписанию == 0 значит, выключен
 		{
 		externSystemCallTask_Init( TotalScheduledTask );
@@ -225,7 +225,7 @@ public class SenderApplication implements CommandLineRunner {
 			ExternSystemCallTask[] externSystemCallTask = new ExternSystemCallTask[TotalScheduledTask];
 			for (i = 0; i < TotalScheduledTask; i++) {
 
-				MessageType_4_Scheduled = MessageRepositoryHelper.getMessageType_4_Scheduled( i,"CRON_DAEMON");
+				MessageType_4_Scheduled = MessageRepositoryHelper.getMessageType_4_Scheduled( i,"-CRON_!_DAEMON-");
 				if ( MessageType_4_Scheduled != null ) {
 					externSystemCallTask[i] = new ExternSystemCallTask();
 					externSystemCallTask[i].setMessageType_4_Scheduled( MessageType_4_Scheduled);
@@ -246,7 +246,10 @@ public class SenderApplication implements CommandLineRunner {
 				}
 			}
 		}
-		else externSystemCallPool = null;
+		else {
+			AppThead_log.info("countMessageType_4_Scheduled(`-CRON_DAEMON-`) == 0,  Количество типов сообщений, запускаемых по расписанию == 0 значит, выключен");
+			externSystemCallPool = null;
+		}
 
 		// int totalTasks = Integer.parseInt( "1" ); // TotalNumTasks; //Integer.parseInt( "50" ); //
 		Long CurrentTime;

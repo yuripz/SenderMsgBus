@@ -348,7 +348,7 @@ public class PerformQueueMessages {
                   //----------------------------------------------------------------------------
                     if (( Message.MessageTemplate4Perform.getEnvelopeXSLTExt() != null ) &&
                         ( Message.MessageTemplate4Perform.getEnvelopeXSLTExt().length() > 0 ))
-                    { // 2) EnvelopeXSLTExt !! => JDBC-обработчик
+                    { // 2) EnvelopeXSLTExt !! => JDBC-обработчик, причём обращение всегда к ВНЕШНЕЙ БД!
 
                         if (Message.MessageTemplate4Perform.getIsDebugged()) {
                             MessegeSend_Log.info("[" + Queue_Id + "] Шаблон для SQL-XSLTExt-обработки(" + Message.MessageTemplate4Perform.getEnvelopeXSLTExt() + ")");

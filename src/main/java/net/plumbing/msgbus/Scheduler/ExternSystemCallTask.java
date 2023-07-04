@@ -110,7 +110,7 @@ public class ExternSystemCallTask implements Runnable {
 
         for ( theadRunCount = 0 ; true; theadRunCount += 1 )
         try {
-            externSystemCallTas_Log.info("ExternSystemCallTask[" + theadNum + "]: is runing [" + theadRunCount + "] times");
+            externSystemCallTas_Log.info("ExternSystemCallTask[" + theadNum + "]: is runing [" + theadRunCount + "] times 4 make Operation_Id=" + Operation_Id_4_Scheduled);
 
             for( int i=0; i< TemplateList_4_MessageType.size(); i++ ) {
                 Template_4_MessageType template_4_MakeNewMessage_Queue = TemplateList_4_MessageType.get(i);
