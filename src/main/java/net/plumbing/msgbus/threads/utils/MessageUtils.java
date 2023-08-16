@@ -222,10 +222,17 @@ public class MessageUtils {
     }
 
     public static String PrepareEnvelope4XSLTPost( MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, Logger MessegeSend_Log) {
-        int nn = 0;
-        StringBuilder SoapEnvelope = new StringBuilder(XMLchars.Envelope_noNS_Begin);
+        // рассчитываем размер SoapEnvelope
+        int SoapEnvelopeSize ;
+        String MsgId_Vaue = "<MsgId>" + messageQueueVO.getQueue_Id() + "</MsgId>";
+        SoapEnvelopeSize=(XMLchars.Envelope_noNS_Begin.length() + XMLchars.Header_noNS_Begin.length() + MsgId_Vaue.length()+ XMLchars.Header_noNS_End.length()  +
+                XMLchars.Body_noNS_Begin.length() + messageDetails.XML_MsgRESOUT.length() + XMLchars.Body_noNS_End.length() + XMLchars.Envelope_noNS_End.length() +16);
+
+        StringBuilder SoapEnvelope = new StringBuilder( SoapEnvelopeSize );
+        SoapEnvelope.append(XMLchars.Envelope_noNS_Begin);
         SoapEnvelope.append(XMLchars.Header_noNS_Begin);
-        SoapEnvelope.append("<MsgId>" + messageQueueVO.getQueue_Id() +"</MsgId>");
+        // SoapEnvelope.append("<MsgId>" + messageQueueVO.getQueue_Id() +"</MsgId>");
+        SoapEnvelope.append(MsgId_Vaue);
         SoapEnvelope.append(XMLchars.Header_noNS_End);
 
         SoapEnvelope.append(XMLchars.Body_noNS_Begin);

@@ -144,12 +144,12 @@ public class ActiveMQService {
             // TransportConnector tcp_connection =broker.addConnector("tcp://localhost:61216");
             ActiveMQService_Log.info("ActiveMQbroker MsgBus init for :" + bindAddressConnectMsgBus );
             TransportConnector tcp_connection =broker.addConnector(bindAddressConnectMsgBus);
-            TransportConnector vm_connection = broker.addConnector("vm://localhost:77177");
+            TransportConnector vm_connection = broker.addConnector("vm://localhost:77077");
             broker.setPersistent(false);
             broker.setAllowTempAutoCreationOnSend(true);
-            broker.setBrokerId("MsgBus.Sender");
+            broker.setBrokerId("MsgBus.Sender.X");
             broker.setCacheTempDestinations(true);
-            broker.setBrokerName("MsgBus");
+            broker.setBrokerName("MsgBusX");
             broker.setStartAsync(false);
             //broker.setDestinations(new ActiveMQDestination[]{queue()});
             //broker.getDataDirectoryFile();

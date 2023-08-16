@@ -32,6 +32,8 @@
 @REM set MAVEN_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000
 @REM MAVEN_SKIP_RC - flag to disable loading of mavenrc files
 @REM ----------------------------------------------------------------------------
+SET JAVA_HOME=C:\Java\jdk-17.0.6
+SET PATH=C:\Java\jdk-17.0.6\bin;%PATH%
 
 @REM Begin all REM lines with '@' in case MAVEN_BATCH_ECHO is 'on'
 @echo off

@@ -1,6 +1,6 @@
 package net.plumbing.msgbus;
 
-import net.plumbing.msgbus.Scheduler.ExternSystemCallTask;
+import net.plumbing.msgbus.scheduler.ExternSystemCallTask;
 import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.DataAccess;
 import net.plumbing.msgbus.common.ExtSystemDataAccess;
@@ -212,7 +212,7 @@ public class SenderApplication implements CommandLineRunner {
 		InitMessageRepository.SelectMsgTemplates( AppThead_log );
 		//AppThead_log.info("keysAllMessageTemplates: " + MessageTemplate.AllMessageTemplate.get(12).getTemplate_name() );
 
-		// Запуск пула потоков под Scheduler
+		// Запуск пула потоков под scheduler
 
 		int TotalScheduledTask = MessageRepositoryHelper.countMessageType_4_Scheduled("-CRON_!_DAEMON-");
 		if (TotalScheduledTask > 0 )  // количество типов сообщений, запускаемых по расписанию == 0 значит, выключен

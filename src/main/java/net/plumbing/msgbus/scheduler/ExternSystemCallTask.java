@@ -1,6 +1,5 @@
-package net.plumbing.msgbus.Scheduler;
+package net.plumbing.msgbus.scheduler;
 
-import net.plumbing.msgbus.common.XMLchars;
 import net.plumbing.msgbus.common.sStackTracе;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.TheadDataAccess;
@@ -9,11 +8,9 @@ import net.plumbing.msgbus.threads.utils.MessageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 //import org.springframework.context.annotation.Bean;
 //import org.springframework.scheduling.annotation.EnableScheduling;
 //import org.springframework.stereotype.Component;

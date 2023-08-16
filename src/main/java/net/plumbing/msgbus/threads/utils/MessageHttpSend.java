@@ -84,20 +84,35 @@ public class MessageHttpSend {
     }
 
     public static int sendSoapMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, MonitoringQueueVO monitoringQueueVO, Logger MessageSend_Log) {
-        //
-        StringBuilder SoapEnvelope = new StringBuilder(XMLchars.Envelope_Begin);
+        // рассчитываем размер SoapEnvelope
+        int SoapEnvelopeSize ;
+        if ( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) >= 0 )
+
+            SoapEnvelopeSize= XMLchars.Envelope_Begin.length() + messageDetails.XML_MsgSEND.length() + XMLchars.Envelope_End.length() +16 ;
+        else
+            SoapEnvelopeSize=(XMLchars.Envelope_Begin.length() + XMLchars.Header_Begin.length() + messageDetails.Soap_HeaderRequest.length() + XMLchars.Header_End.length() +
+                              XMLchars.Body_Begin.length() + messageDetails.XML_MsgSEND.length() + XMLchars.Body_End.length() + XMLchars.Envelope_End.length() +16);
+
+        // создаём с запасом в 16 символов
+        StringBuilder SoapEnvelope = new StringBuilder( SoapEnvelopeSize );
+        SoapEnvelope.append(XMLchars.Envelope_Begin);
+        //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] Sending SoapEnvelope-1[" + SoapEnvelope + "]" );
         if ( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) >= 0 )
             // Header_is_empty !
-            SoapEnvelope.append(XMLchars.Empty_Header);
+            ;
+            //SoapEnvelope.append(SoapEnvelope);
         else {
             SoapEnvelope.append(XMLchars.Header_Begin);
             SoapEnvelope.append(messageDetails.Soap_HeaderRequest);
             SoapEnvelope.append(XMLchars.Header_End);
         }
+        //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] Sending SoapEnvelope-2[" + SoapEnvelope + "]" );
         SoapEnvelope.append(XMLchars.Body_Begin);
         SoapEnvelope.append(messageDetails.XML_MsgSEND);
+        //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] Sending messageDetails.XML_MsgSEND[" + messageDetails.XML_MsgSEND + "]" );
         SoapEnvelope.append(XMLchars.Body_End);
         SoapEnvelope.append(XMLchars.Envelope_End);
+        //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] Sending SoapEnvelope-3[" + SoapEnvelope + "]" );
 
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
 
@@ -205,7 +220,7 @@ public class MessageHttpSend {
                 System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
                 ioExc.printStackTrace();
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from " +
-                        messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out()
+                        ( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out() )
                         + " to_UTF_8 fault:" + ioExc );
                 messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: ").append ( sStackTracе.strInterruptedException(ioExc));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
@@ -289,7 +304,8 @@ public class MessageHttpSend {
             }
 
         } catch (Exception e) {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Retry_Count=" + messageQueueVO.getRetry_Count() + "SendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTracе.strInterruptedException(e));
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Retry_Count=" + messageQueueVO.getRetry_Count() + " SendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTracе.strInterruptedException(e));
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Sending SoapEnvelope[" + SoapEnvelope + "]" );
             messageDetails.MsgReason.append(" sendSoapMessage.getResponseBody fault: " ).append ( sStackTracе.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
