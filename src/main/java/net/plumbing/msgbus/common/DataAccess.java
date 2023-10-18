@@ -175,7 +175,7 @@ public  class DataAccess {
             rs.close();
             dataAccess_log.info( "RDBMS CurrentTime getCurrentTimeString(): LocalDate ="+ CurrentTime );
         } catch (Exception e) {
-            dataAccess_log.error("getCurrentTimeString `" + SQLCurrentTimeStringRead + "` fault:" + sStackTracе.strInterruptedException(e));
+            dataAccess_log.error("getCurrentTimeString `" + SQLCurrentTimeStringRead + "` fault:" + sStackTrace.strInterruptedException(e));
 
         }
         return ( CurrentTime );
@@ -205,7 +205,7 @@ public  class DataAccess {
             else return null;
 
         } catch (SQLException e) {
-            dataAccess_log.error("getCurrentTimeDate fault: " + sStackTracе.strInterruptedException(e));
+            dataAccess_log.error("getCurrentTimeDate fault: " + sStackTrace.strInterruptedException(e));
             throw e;
             //return null;
         }
@@ -224,7 +224,7 @@ public  class DataAccess {
 
 
         } catch (Exception e) {
-            dataAccess_log.error("prepareCall(" + pSQL_function + " fault: " + sStackTracе.strInterruptedException(e));
+            dataAccess_log.error("prepareCall(" + pSQL_function + " fault: " + sStackTrace.strInterruptedException(e));
             return -2;
         }
         try {
@@ -248,11 +248,11 @@ public  class DataAccess {
             callableStatement.close();
 
         } catch (Exception e) {
-            dataAccess_log.error("executeCall(" + pSQL_function + ") fault: " + sStackTracе.strInterruptedException(e));
+            dataAccess_log.error("executeCall(" + pSQL_function + ") fault: " + sStackTrace.strInterruptedException(e));
             try {
                 callableStatement.close();
             }catch (SQLException eSQL) {
-                dataAccess_log.error("callableStatement.close(" + pSQL_function + ") fault: " + sStackTracе.strInterruptedException(e));
+                dataAccess_log.error("callableStatement.close(" + pSQL_function + ") fault: " + sStackTrace.strInterruptedException(e));
             }
 
             return -4;

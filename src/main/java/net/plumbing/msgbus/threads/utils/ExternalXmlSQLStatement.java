@@ -1,7 +1,6 @@
 package net.plumbing.msgbus.threads.utils;
 
 //import oracle.jdbc.OracleCallableStatement;
-import com.zaxxer.hikari.HikariDataSource;
 import net.plumbing.msgbus.threads.TheadDataAccess;
 import org.postgresql.jdbc.PgResultSet;
 //import oracle.jdbc.OracleResultSetMetaData;
@@ -19,8 +18,7 @@ import org.jdom2.input.SAXBuilder;
 //import java.util.Arrays;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.common.XMLchars;
-import net.plumbing.msgbus.common.sStackTracе;
-import net.plumbing.msgbus.model.MessageDetailVO;
+import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.MessageDetails;
 import net.plumbing.msgbus.model.MessageQueueVO;
 
@@ -35,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 
 //import static net.plumbing.msgbus.threads.utils.MessageUtils.XML_CurrentConfirmation_Tags;
-import static net.plumbing.msgbus.threads.utils.MessageUtils.stripNonValidXMLCharacters;
+
 
 public class ExternalXmlSQLStatement {
 
@@ -233,7 +231,7 @@ public class ExternalXmlSQLStatement {
                 if (isDebugged) {
                     MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] =====================================================================================");
                     for ( int k =0; k < SQLparamValues.size(); k++ )
-                        MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] SQLparamValues.get(" + k + " )=" + SQLparamValues.get(k).toString());
+                        MessegeSend_Log.warn( "[" + messageQueueVO.getQueue_Id() + "] SQLparamVExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirstalues.get(" + k + " )=" + SQLparamValues.get(k).toString());
                 }
 
                 // todo
@@ -256,7 +254,7 @@ public class ExternalXmlSQLStatement {
                             preparedStatement.execute();
                         } catch (SQLException e) {
                             ;
-                            messageDetails.MsgReason.append(", SQLException preparedStatement.execute(`"+ messageQueueVO.getOutQueue_Id() + "`):=" + sStackTracе.strInterruptedException(e) );
+                            messageDetails.MsgReason.append(", SQLException preparedStatement.execute(`"+ messageQueueVO.getOutQueue_Id() + "`):=" + sStackTrace.strInterruptedException(e) );
                             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                             preparedStatement.close();
                             return -3;
@@ -265,7 +263,7 @@ public class ExternalXmlSQLStatement {
                         preparedStatement.close();
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
-                        messageDetails.MsgReason.append("SQLException Hermes_Connection.preparedStatement `"+ messageQueueVO.getOutQueue_Id() + "`:=" ); messageDetails.MsgReason.append( sStackTracе.strInterruptedException(e) );
+                        messageDetails.MsgReason.append("SQLException Hermes_Connection.preparedStatement `"+ messageQueueVO.getOutQueue_Id() + "`:=" ); messageDetails.MsgReason.append( sStackTrace.strInterruptedException(e) );
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
                     }
@@ -291,7 +289,7 @@ public class ExternalXmlSQLStatement {
                             // TODO : try change callableStatement.execute(); => callableStatement.executeUpdate(); for PgRee
 
                         } catch (SQLException e) {
-                            messageDetails.MsgReason.append(", SQLException callableStatement.execute(`"+ messageQueueVO.getOutQueue_Id() + "`):=" + sStackTracе.strInterruptedException(e) );
+                            messageDetails.MsgReason.append(", SQLException callableStatement.execute(`"+ messageQueueVO.getOutQueue_Id() + "`):=" + sStackTrace.strInterruptedException(e) );
                             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " +messageDetails.MsgReason.toString());
                             callableStatement.close();
                             current_Connection_4_ExecuteSQL.rollback();
@@ -328,7 +326,7 @@ public class ExternalXmlSQLStatement {
                         callableStatement.close();
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
-                        messageDetails.MsgReason.append(OperTypeFunc +  " SQLException Connection.prepareCall :=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTracе.strInterruptedException(e) );
+                        messageDetails.MsgReason.append(OperTypeFunc +  " SQLException Connection.prepareCall :=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTrace.strInterruptedException(e) );
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         MakeConfirmation4Function( -2, messageDetails.MsgReason.toString(), messageDetails);
                         return -2;
@@ -424,7 +422,7 @@ public class ExternalXmlSQLStatement {
                                 //e.printStackTrace();
                                 messageDetails.MsgReason.append(", SQLException callableStatement.getObject(`");
                                 messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10(SQLcallableStatementExpression) );
-                                messageDetails.MsgReason.append("`):="); messageDetails.MsgReason.append( e.getMessage()); //sStackTracе.strInterruptedException(e));
+                                messageDetails.MsgReason.append("`):="); messageDetails.MsgReason.append( e.getMessage()); //sStackTrace.strInterruptedException(e));
                                 MessegeSend_Log.error(messageDetails.MsgReason.toString());
                                 callableStatement.close();
                                 return -3;
@@ -433,7 +431,7 @@ public class ExternalXmlSQLStatement {
 //----------------------------------------------------------------------------------------------------------------/
                             current_Connection_4_ExecuteSQL.commit();
                         } catch (SQLException e) {
-                            messageDetails.MsgReason.append(", [" + messageQueueVO.getOutQueue_Id() + "] SQLException refcursor callableStatement.execute(`"+  SQLcallableStatementExpression + "`):=" + sStackTracе.strInterruptedException(e) );
+                            messageDetails.MsgReason.append(", [" + messageQueueVO.getOutQueue_Id() + "] SQLException refcursor callableStatement.execute(`"+  SQLcallableStatementExpression + "`):=" + sStackTrace.strInterruptedException(e) );
                             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                             current_Connection_4_ExecuteSQL.rollback();
                             callableStatement.close();
@@ -461,7 +459,7 @@ public class ExternalXmlSQLStatement {
                         callableStatement.close();
                         current_Connection_4_ExecuteSQL.commit();
                     } catch (SQLException e) {
-                        messageDetails.MsgReason.append(OperTypeRef +  " SQLException Connection.prepareCall:=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTracе.strInterruptedException(e) );
+                        messageDetails.MsgReason.append(OperTypeRef +  " SQLException Connection.prepareCall:=" ); messageDetails.MsgReason.append( e.getMessage() ); //sStackTrace.strInterruptedException(e) );
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
                     }
@@ -501,13 +499,12 @@ public class ExternalXmlSQLStatement {
                             }
                             int num_Rows4Perform = 0;
                             // Формируем псевдо XML_ClearBodyResponse из PIPEfunction
-                            messageDetails.XML_ClearBodyResponse.setLength(0);
+                            messageDetails.XML_ClearBodyResponse.setLength(0); messageDetails.XML_ClearBodyResponse.trimToSize();
                             /********** TABLE(do_pipe()) в удалённом вызове не поддерживается
                             if ( SQLStatement_functionORselect.equals( OperTypePipe ) ) // формируем из подготовленной структуры TAG_NUM TAG_ID, TAG_VALUE TAG_PAR_NUM
                             MakeConfirmation4PIPEfunction(rs, messageQueueVO.getQueue_Id(), messageDetails, MessegeSend_Log);
                             */
                             // именно SELECT из таблиц когда нет подготовленной структуры TAG_NUM TAG_ID, TAG_VALUE TAG_PAR_NUM
-
 
                                 messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.TagConfirmation + XMLchars.CloseTag // <Confirmation>
                                                 + XMLchars.OpenTag + XMLchars.NameTagFaultResult + XMLchars.CloseTag //  <ResultCode>
@@ -521,7 +518,6 @@ public class ExternalXmlSQLStatement {
                                 while (rs.next()) {
                                     messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + RowTag + XMLchars.CloseTag //  <ROW>
                                     );
-                                    num_Rows4Perform += 1;
                                     for (i = 1; i < ColumnCount + 1; i++) {
                                         ColumnLabel = toCamelCase( ResultSetMetaData.getColumnLabel(i), "_" );
                                         messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag);
@@ -549,7 +545,7 @@ public class ExternalXmlSQLStatement {
                             //e.printStackTrace();
                             messageDetails.MsgReason.append(", SQLException selectStatement.executeQuery(`");
                             messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10(SQLcallableStatementExpression) );
-                            messageDetails.MsgReason.append("`):="); messageDetails.MsgReason.append( e.getMessage()); //sStackTracе.strInterruptedException(e));
+                            messageDetails.MsgReason.append("`):="); messageDetails.MsgReason.append( e.getMessage()); //sStackTrace.strInterruptedException(e));
                             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "  + messageDetails.MsgReason.toString());
                             selectStatement.close();
                             current_Connection_4_ExecuteSQL.rollback();
@@ -568,7 +564,7 @@ public class ExternalXmlSQLStatement {
 
 
                     } catch (SQLException e) {
-                        messageDetails.MsgReason.append( OperTypeSel + " SQLException Hermes_Connection.prepareCall:=`"); messageDetails.MsgReason.append( SQLcallableStatementExpression); messageDetails.MsgReason.append("`"); messageDetails.MsgReason.append( sStackTracе.strInterruptedException(e) );
+                        messageDetails.MsgReason.append( OperTypeSel + " SQLException Hermes_Connection.prepareCall:=`"); messageDetails.MsgReason.append( SQLcallableStatementExpression); messageDetails.MsgReason.append("`"); messageDetails.MsgReason.append( sStackTrace.strInterruptedException(e) );
                         current_Connection_4_ExecuteSQL.rollback();
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] " + messageDetails.MsgReason.toString());
                         return -2;
@@ -591,7 +587,7 @@ public class ExternalXmlSQLStatement {
 
                         messageDetails.MsgReason.append( OperTypeSel +  " SelectTotal SQLException Connection_4_ExecuteSQL.prepareCall(`");
                         messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10(SelectTotalStatement)); messageDetails.MsgReason.append("`" );
-                        messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTracе.strInterruptedException(e)) );
+                        messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTrace.strInterruptedException(e)) );
                         MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "+ messageDetails.MsgReason.toString());
                             selectStatement.close();
                             current_Connection_4_ExecuteSQL.rollback();
@@ -602,14 +598,14 @@ public class ExternalXmlSQLStatement {
             } catch (Exception ex) {
                 // ex.printStackTrace(System.err);
                 messageDetails.MsgReason.setLength(0);
-                messageDetails.MsgReason.append("ExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirst fault: "); messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTracе.strInterruptedException(ex)) );
+                messageDetails.MsgReason.append("ExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirst fault: "); messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTrace.strInterruptedException(ex)) );
                 MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "+ messageDetails.MsgReason.toString());
                 return -1;
             }
         }catch (JDOMException | IOException ex) {
             //ex.printStackTrace(System.err);
             messageDetails.MsgReason.setLength(0);
-            messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: "); messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTracе.strInterruptedException(ex)) );
+            messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: "); messageDetails.MsgReason.append( StringEscapeUtils.escapeXml10 ( sStackTrace.strInterruptedException(ex)) );
             MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] "+ messageDetails.MsgReason.toString());
             return -4;
         }
@@ -632,7 +628,7 @@ public class ExternalXmlSQLStatement {
 
             }
         } catch (SQLException e) {
-            MessegeSend_Log.error("Queue_Id=[" + messageQueueVO.getQueue_Id() + "] :" + sStackTracе.strInterruptedException(e));
+            MessegeSend_Log.error("Queue_Id=[" + messageQueueVO.getQueue_Id() + "] :" + sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             return nn;
         }
@@ -705,8 +701,8 @@ public class ExternalXmlSQLStatement {
             }
             rs.close();
         } catch (SQLException e) {
-            MessegeReceive_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
-            System.err.println("Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
+            MessegeReceive_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            System.err.println("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
             return -2;
         }
         if ( messageDetails.ConfirmationRowNum > 0 )

@@ -1,6 +1,6 @@
 package net.plumbing.msgbus.scheduler;
 
-import net.plumbing.msgbus.common.sStackTracе;
+import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.TheadDataAccess;
 import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
@@ -166,7 +166,7 @@ public class ExternSystemCallTask implements Runnable {
                             messageQueueVO.getMsgDirection_Id(), messageQueueVO.getSubSys_Cod(),
                             MessageType_4_Scheduler, MessageType_4_Scheduler, "", Queue_Id.toString(), externSystemCallTas_Log);
                     } catch (SQLException e) {
-                        externSystemCallTas_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
+                        externSystemCallTas_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
                         e.printStackTrace();
                         try {
                             theadDataAccess.Hermes_Connection.rollback();

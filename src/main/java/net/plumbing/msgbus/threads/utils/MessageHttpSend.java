@@ -6,6 +6,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import net.plumbing.msgbus.common.json.JSONException;
+import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.TheadDataAccess;
 import org.apache.commons.io.IOUtils;
@@ -28,12 +29,10 @@ import net.plumbing.msgbus.common.json.JSONObject;
 import net.plumbing.msgbus.common.json.XML;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.common.XMLchars;
-import net.plumbing.msgbus.common.sStackTracе;
 import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -142,7 +141,7 @@ public class MessageHttpSend {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] UnsupportedEncodingException");
                 encodingExc.printStackTrace();
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + encodingExc);
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTracе.strInterruptedException(encodingExc));
+                messageDetails.MsgReason.append(" HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTrace.strInterruptedException(encodingExc));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "HttpGetMessage.Unirest.post", true, encodingExc, MessageSend_Log);
                 ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(),
@@ -222,12 +221,12 @@ public class MessageHttpSend {
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from " +
                         ( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out() )
                         + " to_UTF_8 fault:" + ioExc );
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: ").append ( sStackTracе.strInterruptedException(ioExc));
+                messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: ").append ( sStackTrace.strInterruptedException(ioExc));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "HttpGetMessage.Unirest.post", true,  ioExc ,  MessageSend_Log);
                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                //        "HttpGetMessage.post.to_UTF_8 fault: " + sStackTracе.strInterruptedException(e), monitoringQueueVO, MessageSend_Log);
+                //        "HttpGetMessage.post.to_UTF_8 fault: " + sStackTrace.strInterruptedException(e), monitoringQueueVO, MessageSend_Log);
                 return -1;
             }
 
@@ -245,10 +244,10 @@ public class MessageHttpSend {
             // Журналируем ответ как есть
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post ("+EndPointUrl+") fault:" + e );
             messageDetails.MsgReason.append(" sendSoapMessage.Unirest.post (" ).append ( EndPointUrl )
-                                    .append ( ") fault: " ).append ( sStackTracе.strInterruptedException(e));
+                                    .append ( ") fault: " ).append ( sStackTrace.strInterruptedException(e));
 
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTracе.strInterruptedException(e), MessageSend_Log );
+                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log );
 
             // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
             // НАДО проверять количество порыток !!!
@@ -278,7 +277,7 @@ public class MessageHttpSend {
                         "sendSoapMessage.Unirest.post (" + EndPointUrl + ") ", true,  e ,  MessageSend_Log);
                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e), monitoringQueueVO, MessageSend_Log);
+                //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTrace.strInterruptedException(e), monitoringQueueVO, MessageSend_Log);
                  return -1;
             }
         }
@@ -304,15 +303,15 @@ public class MessageHttpSend {
             }
 
         } catch (Exception e) {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Retry_Count=" + messageQueueVO.getRetry_Count() + " SendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTracе.strInterruptedException(e));
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Retry_Count=" + messageQueueVO.getRetry_Count() + " SendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTrace.strInterruptedException(e));
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Sending SoapEnvelope[" + SoapEnvelope + "]" );
-            messageDetails.MsgReason.append(" sendSoapMessage.getResponseBody fault: " ).append ( sStackTracе.strInterruptedException(e));
+            messageDetails.MsgReason.append(" sendSoapMessage.getResponseBody fault: " ).append ( sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "sendSoapMessage.getResponseBody" , true,  e ,  MessageSend_Log);
             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-            //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTracе.strInterruptedException(e),monitoringQueueVO, MessageSend_Log);
+            //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTrace.strInterruptedException(e),monitoringQueueVO, MessageSend_Log);
             return -3;
         }
         // когда всё хорошо, увеличивать счётчик нет смысла
@@ -365,7 +364,7 @@ public class MessageHttpSend {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] UnsupportedEncodingException");
                 e.printStackTrace();
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + e);
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to" ).append( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ).append(  " fault: ").append( sStackTracе.strInterruptedException(e));
+                messageDetails.MsgReason.append(" HttpGetMessage.post.to" ).append( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ).append(  " fault: ").append( sStackTrace.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "HttpGetMessage.Unirest.post", true, e, MessageSend_Log);
                 return -1;
@@ -409,7 +408,7 @@ public class MessageHttpSend {
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "]  Exception" );
             e.printStackTrace();
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post ("+EndPointUrl+") fault:" + e );
-            messageDetails.MsgReason.append(" sendPostMessage.Unirest.post fault: " ).append( sStackTracе.strInterruptedException(e));
+            messageDetails.MsgReason.append(" sendPostMessage.Unirest.post fault: " ).append( sStackTrace.strInterruptedException(e));
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "sendPostMessage.Unirest.post("+EndPointUrl+")", true,  e ,  MessageSend_Log);
             return -1;
@@ -433,11 +432,11 @@ public class MessageHttpSend {
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException: Encoding `" + PropEncoding_Out +"`");
             e.printStackTrace();
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from `" + PropEncoding_Out + "` to_UTF_8 fault:" + e);
-            messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `" + PropEncoding_Out +"` :" ).append( sStackTracе.strInterruptedException(e));
+            messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `" + PropEncoding_Out +"` :" ).append( sStackTrace.strInterruptedException(e));
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "HttpGetMessage.Unirest.post", true,  e ,  MessageSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTracе.strInterruptedException(e), MessageSend_Log );
+                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log );
             return -1;
         }
 
@@ -484,8 +483,8 @@ public class MessageHttpSend {
         } catch (Exception e) {
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "]  Exception" );
             e.printStackTrace();
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.getResponseBody fault: " + sStackTracе.strInterruptedException(e));
-            messageDetails.MsgReason.append(" sendPostMessage.getResponseBody fault: ").append( sStackTracе.strInterruptedException(e));
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
+            messageDetails.MsgReason.append(" sendPostMessage.getResponseBody fault: ").append( sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "sendPostMessage.getResponseBody", true, e ,  MessageSend_Log);
@@ -575,11 +574,11 @@ public class MessageHttpSend {
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.Get `"+ EndPointUrl + "` Exception" );
             e.printStackTrace();
 			MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage fault:" + e);
-			messageDetails.MsgReason.append(" HttpGetMessage.Unirest.get `"+ EndPointUrl + "` fault: ").append( sStackTracе.strInterruptedException(e));
+			messageDetails.MsgReason.append(" HttpGetMessage.Unirest.get `"+ EndPointUrl + "` fault: ").append( sStackTrace.strInterruptedException(e));
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "HttpGetMessage.Unirest.get", true,  e ,  MessageSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTracе.strInterruptedException(e), MessageSend_Log );
+                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log );
 			return -1;
 		}
 		if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
@@ -591,11 +590,11 @@ public class MessageHttpSend {
                 System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] UnsupportedEncodingException" );
                 e.printStackTrace();
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + e.toString() );
-                messageDetails.MsgReason.append(" HttpGetMessage.get.to_UTF_8 fault: ").append( sStackTracе.strInterruptedException(e));
+                messageDetails.MsgReason.append(" HttpGetMessage.get.to_UTF_8 fault: ").append( sStackTrace.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "HttpGetMessage.Unirest.get", true,  e ,  MessageSend_Log);
                 if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                    theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTracе.strInterruptedException(e), MessageSend_Log );
+                    theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log );
                 return -1;
             }
         }
@@ -620,8 +619,8 @@ public class MessageHttpSend {
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.JSONObject Exception" );
             e.printStackTrace();
             System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.RestResponse[" + RestResponse + "]" );
-			MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTracе.strInterruptedException(e));
-			messageDetails.MsgReason.append(" HttpGetMessage.getResponseBody fault: ").append( sStackTracе.strInterruptedException(e));
+			MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
+			messageDetails.MsgReason.append(" HttpGetMessage.getResponseBody fault: ").append( sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                     "HttpGetMessage.getResponseBody", true, e ,  MessageSend_Log);
@@ -781,11 +780,11 @@ public class MessageHttpSend {
             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
             MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + e.toString() );
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
-                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e), 123567,
+                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e), 123567,
                     messageQueueVO.getRetry_Count(),  MessageSend_Log);
             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-            //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTracе.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
+            //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
             return -17L;
         }
         try {
@@ -830,7 +829,7 @@ public class MessageHttpSend {
             // System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.JSONObject Exception" );
             // e.printStackTrace();
             // System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.RestResponse[" + RestResponse + "]" );
-            // MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTracе.strInterruptedException(e));
+            // MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
 
             MessageSend_Log.warn("["+ messageQueueVO.getQueue_Id() +"] Пост-обработчик HttpGet не вернул JSon(" + EndPointUrl + "):" + e.toString() );
             theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessageSend_Log );

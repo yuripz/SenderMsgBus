@@ -10,7 +10,7 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 import org.slf4j.Logger;
-import net.plumbing.msgbus.common.sStackTracе;
+import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.MessageQueueVO;
 
 import javax.validation.constraints.NotNull;
@@ -139,14 +139,14 @@ public class XmlSQLStatement {
             } catch (Exception ex) {
                 ex.printStackTrace(System.err);
                 messageDetails.MsgReason.setLength(0);
-                messageDetails.MsgReason.append("ExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirst fault: " + sStackTracе.strInterruptedException(ex));
+                messageDetails.MsgReason.append("ExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirst fault: " + sStackTrace.strInterruptedException(ex));
 
                 return -1;
             }
         }catch (JDOMException | IOException ex) {
             ex.printStackTrace(System.err);
             messageDetails.MsgReason.setLength(0);
-            messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: " + sStackTracе.strInterruptedException(ex));
+            messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: " + sStackTrace.strInterruptedException(ex));
         }
 
 /******************** ПОТОМ
@@ -167,7 +167,7 @@ public class XmlSQLStatement {
 
             }
         } catch (SQLException e) {
-            MessegeSend_Log.error("Queue_Id=[" + messageQueueVO.getQueue_Id() + "] :" + sStackTracе.strInterruptedException(e));
+            MessegeSend_Log.error("Queue_Id=[" + messageQueueVO.getQueue_Id() + "] :" + sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             return nn;
         }

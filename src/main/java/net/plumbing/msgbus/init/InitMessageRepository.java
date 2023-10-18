@@ -1,7 +1,7 @@
 package net.plumbing.msgbus.init;
 
 import net.plumbing.msgbus.common.DataAccess;
-import net.plumbing.msgbus.common.sStackTracе;
+import net.plumbing.msgbus.common.sStackTrace;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.model.MessageDirectionsVO;
 import net.plumbing.msgbus.model.MessageDirections;
@@ -104,7 +104,7 @@ public class InitMessageRepository {
             DataAccess.Hermes_Connection.commit();
 
         } catch (Exception e) {
-            AppThead_log.error("ReReadMsgTypes fault: " + sStackTracе.strInterruptedException(e));
+            AppThead_log.error("ReReadMsgTypes fault: " + sStackTrace.strInterruptedException(e));
             if ( rs != null ) rs.close();
             if ( stmtMsgTypeReRead != null) stmtMsgTypeReRead.close();
             DataAccess.Hermes_Connection.rollback();
@@ -213,7 +213,7 @@ public class InitMessageRepository {
             DataAccess.Hermes_Connection.commit();
             // stmtMsgTemplate.close();
         } catch (Exception e) {
-            AppThead_log.error("ReReadMsgTemplates fault: " + sStackTracе.strInterruptedException(e));
+            AppThead_log.error("ReReadMsgTemplates fault: " + sStackTrace.strInterruptedException(e));
             DataAccess.Hermes_Connection.rollback();
             if ( stmtMsgTemplateReRead != null ) stmtMsgTemplateReRead.close();
             // e.printStackTrace();

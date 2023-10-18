@@ -4,6 +4,7 @@
 /_Logz
 /target
 mvn*
+*.log
 src/main/resources/application.*
 Sender.HE-4349.*
 application.properties

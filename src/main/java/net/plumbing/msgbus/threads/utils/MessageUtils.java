@@ -1,5 +1,6 @@
 package net.plumbing.msgbus.threads.utils;
 
+import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.threads.TheadDataAccess;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jdom2.*;
@@ -9,7 +10,6 @@ import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.common.XMLchars;
-import net.plumbing.msgbus.common.sStackTracе;
 import net.plumbing.msgbus.model.MessageDetailVO;
 import net.plumbing.msgbus.model.MessageDetails;
 import net.plumbing.msgbus.model.MessageDirections;
@@ -95,7 +95,7 @@ public class MessageUtils {
             // MessegeReceive_Log.info(  ">" + theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] done");
 
         } catch (SQLException e) {
-            MessegeReceive_Log.error(theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
+            MessegeReceive_Log.error(theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();
@@ -119,7 +119,7 @@ public class MessageUtils {
     {
         String ErrorExceptionMessage;
         if ( e != null ) {
-            ErrorExceptionMessage = sStackTracе.strInterruptedException(e);
+            ErrorExceptionMessage = sStackTrace.strInterruptedException(e);
         }
         else ErrorExceptionMessage = ";";
 
@@ -165,7 +165,7 @@ public class MessageUtils {
     {
         String ErrorExceptionMessage;
         if ( e != null ) {
-            ErrorExceptionMessage = sStackTracе.strInterruptedException(e);
+            ErrorExceptionMessage = sStackTrace.strInterruptedException(e);
         }
         else ErrorExceptionMessage = ";";
 
@@ -179,7 +179,7 @@ public class MessageUtils {
     {
         String ErrorExceptionMessage;
         if ( e != null ) {
-            ErrorExceptionMessage = sStackTracе.strInterruptedException(e);
+            ErrorExceptionMessage = sStackTrace.strInterruptedException(e);
         }
         else ErrorExceptionMessage = ";";
 
@@ -493,7 +493,7 @@ public class MessageUtils {
                 // MessegeSend_Log.info( "Tag_Id:" + rs.getString("Tag_Id") + " [" + rs.getString("Tag_Value") + "]");
             }
         } catch (SQLException e) {
-            MessegeSend_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
+            MessegeSend_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             return messageDetails.MessageRowNum;
         }
@@ -915,7 +915,7 @@ public class MessageUtils {
             theadDataAccess.stmt_INSERT_Message_Details.executeBatch();
 
         } catch (SQLException e) {
-            MessegeSend_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "] :" + sStackTracе.strInterruptedException(e));
+            MessegeSend_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();
@@ -1065,8 +1065,8 @@ public class MessageUtils {
             // Insert data in Oracle with Java … Batched mode
             theadDataAccess.stmt_INSERT_Message_Details.executeBatch();
         } catch ( Exception e) {
-            MessegeSend_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "]["+ iNumberRecordInConfirmation +"] :" + sStackTracе.strInterruptedException(e));
-            messageDetails.MsgReason.append( "ReplaceConfirmation ["+ iNumberRecordInConfirmation +"] " + sStackTracе.strInterruptedException(e) );
+            MessegeSend_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "]["+ iNumberRecordInConfirmation +"] :" + sStackTrace.strInterruptedException(e));
+            messageDetails.MsgReason.append( "ReplaceConfirmation ["+ iNumberRecordInConfirmation +"] " + sStackTrace.strInterruptedException(e) );
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();

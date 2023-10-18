@@ -12,7 +12,7 @@ public class xlstErrorListener implements ErrorListener
 
     @Override
     public void warning(TransformerException exception) throws TransformerException {
-        XSLTerr = sStackTracе.strInterruptedException(exception);
+        XSLTerr = sStackTrace.strInterruptedException(exception);
         xlstError_Log.error( "ErrorListener.warning: " + XSLTerr);
         exception.printStackTrace();
         throw (exception);
@@ -20,7 +20,7 @@ public class xlstErrorListener implements ErrorListener
 
     @Override
     public void error(TransformerException exception) throws TransformerException {
-        XSLTerr = sStackTracе.strInterruptedException(exception);
+        XSLTerr = sStackTrace.strInterruptedException(exception);
         xlstError_Log.error( "ErrorListener.error: " + XSLTerr);
         exception.printStackTrace();
         throw (exception);
@@ -28,7 +28,7 @@ public class xlstErrorListener implements ErrorListener
 
     @Override
     public void fatalError(TransformerException exception) throws TransformerException {
-        XSLTerr = sStackTracе.strInterruptedException(exception);
+        XSLTerr = sStackTrace.strInterruptedException(exception);
         xlstError_Log.error( "ErrorListener.fatalError: " + XSLTerr);
         exception.printStackTrace();
         throw (exception);

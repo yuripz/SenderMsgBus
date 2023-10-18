@@ -8,7 +8,7 @@ import org.jdom2.input.JDOMParseException;
 import org.jdom2.input.SAXBuilder;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.common.XMLchars;
-//import sStackTracе;
+//import sStackTrace;
 import net.plumbing.msgbus.model.MessageDetailVO;
 import net.plumbing.msgbus.model.MessageDetails;
 //import MessageQueueVO;
@@ -80,15 +80,15 @@ public class MessageSoapSend {
 			MessegeSend_Log.info("client.post:Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
 			// client.wait(100);
 		} catch (Exception e) {
-			MessegeSend_Log.error("sendSOAPMessage.SoapClient.post fault: " + sStackTracе.strInterruptedException(e));
-			messageDetails.MsgReason.append(" sendSOAPMessage.SoapClient.post fault: " + sStackTracе.strInterruptedException(e));
+			MessegeSend_Log.error("sendSOAPMessage.SoapClient.post fault: " + sStackTrace.strInterruptedException(e));
+			messageDetails.MsgReason.append(" sendSOAPMessage.SoapClient.post fault: " + sStackTrace.strInterruptedException(e));
 			int messageRetry_Count = messageQueueVO.getRetry_Count();
 			if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() ) {
 				messageRetry_Count += 1; // увеличили счетчик попыток
 				messageQueueVO.setRetry_Count(messageRetry_Count);
 				// переводим время следующей обработки на  ShortRetryInterval вперёд , сохраняя тот же MessageQueue_Direction
 				theadDataAccess.doUPDATE_MessageQueue_DirectionAsIS(messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getShortRetryInterval(),
-						"Next attempt after " + messageDetails.MessageTemplate4Perform.getShortRetryInterval() + " sec., sendSOAPMessage.SoapClient.post fault: " + sStackTracе.strInterruptedException(e), 1236,
+						"Next attempt after " + messageDetails.MessageTemplate4Perform.getShortRetryInterval() + " sec., sendSOAPMessage.SoapClient.post fault: " + sStackTrace.strInterruptedException(e), 1236,
 						messageRetry_Count, MessegeSend_Log
 				);
 				return -1;
@@ -98,13 +98,13 @@ public class MessageSoapSend {
 				messageQueueVO.setRetry_Count(messageRetry_Count);
 				// переводим время следующей обработки на  LongRetryInterval вперёд , сохраняя тот же MessageQueue_Direction
 				theadDataAccess.doUPDATE_MessageQueue_DirectionAsIS(messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getLongRetryInterval(),
-						"Next attempt after " + messageDetails.MessageTemplate4Perform.getLongRetryInterval() + " sec., sendSOAPMessage.SoapClient.post fault: " + sStackTracе.strInterruptedException(e), 1237,
+						"Next attempt after " + messageDetails.MessageTemplate4Perform.getLongRetryInterval() + " sec., sendSOAPMessage.SoapClient.post fault: " + sStackTrace.strInterruptedException(e), 1237,
 						messageRetry_Count, MessegeSend_Log
 				);
 				return -1;
 			}
 			theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-					"sendSOAPMessage.SoapClient.post fault: " + sStackTracе.strInterruptedException(e), 1232,
+					"sendSOAPMessage.SoapClient.post fault: " + sStackTrace.strInterruptedException(e), 1232,
 					messageQueueVO.getRetry_Count(), MessegeSend_Log);
 			return -1;
 		}
@@ -115,8 +115,8 @@ public class MessageSoapSend {
 			// client.wait(100);
 
 		} catch (Exception e) {
-			MessegeSend_Log.error("sendSOAPMessage.getResponseBody fault: " + sStackTracе.strInterruptedException(e));
-			messageDetails.MsgReason.append(" sendSOAPMessage.getResponseBod fault: " + sStackTracе.strInterruptedException(e));
+			MessegeSend_Log.error("sendSOAPMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
+			messageDetails.MsgReason.append(" sendSOAPMessage.getResponseBod fault: " + sStackTrace.strInterruptedException(e));
 			int messageRetry_Count = messageQueueVO.getRetry_Count();
 			if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() ) {
 				messageRetry_Count += 1; // увеличили счетчик попыток

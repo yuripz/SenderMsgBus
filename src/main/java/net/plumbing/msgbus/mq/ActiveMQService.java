@@ -2,6 +2,7 @@ package net.plumbing.msgbus.mq;
 
 import javax.jms.*;
 
+import net.plumbing.msgbus.common.sStackTrace;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 
@@ -12,7 +13,6 @@ import org.apache.activemq.command.ActiveMQQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
-import net.plumbing.msgbus.common.sStackTracе;
 
 import java.io.File;
 import java.util.Arrays;
@@ -68,7 +68,7 @@ public class ActiveMQService {
             if ( MQbroker != null ) MQbroker.deleteAllMessages();
         }
         catch (java.io.IOException e) {
-            sStackTracе.strInterruptedException(e);
+            sStackTrace.strInterruptedException(e);
         }
     }
 
