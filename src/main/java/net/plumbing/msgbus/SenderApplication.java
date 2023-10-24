@@ -318,8 +318,15 @@ public class SenderApplication implements CommandLineRunner {
 						AppThead_log.info(" New InitDate=" + DataAccess.dateFormat.format(DataAccess.InitDate));
 
 						// если в
-						if ( (psqlFunctionRun != null) && (!psqlFunctionRun.equalsIgnoreCase("NONE")) )
-							DataAccess.moveERROUT2RESOUT(psqlFunctionRun, AppThead_log);
+						try {
+							if ((psqlFunctionRun != null) && (!psqlFunctionRun.equalsIgnoreCase("NONE")))
+								DataAccess.doPSQL_Function_Run(psqlFunctionRun, AppThead_log);
+						} catch ( SQLException e) {
+							AppThead_log.error("проблема при вызове" + psqlFunctionRun + ": " + e.getMessage());
+							System.err.println("проблема при вызове" + psqlFunctionRun + ": " + e.getMessage());
+							e.printStackTrace();
+							break;
+						}
 					}
 				}
 				else

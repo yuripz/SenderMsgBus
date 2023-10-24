@@ -213,9 +213,9 @@ public  class DataAccess {
 
     }
 
-    public static Integer moveERROUT2RESOUT(@NotNull String pSQL_function, @NotNull Logger dataAccess_log ) {
+    public static Integer doPSQL_Function_Run(@NotNull String pSQL_function, @NotNull Logger dataAccess_log ) throws java.sql.SQLException {
         CallableStatement callableStatement =null;
-        // Integer count;
+        int count;
         String sErrorDescription;
 
         // # HE-5467 Необходимо обеспечить обработку ПРИЁМА ответов на ИСХОДЯЩИЕ события для инициации вызова прикладного обработчика при любых ошибках и сбоях внешней системы при интеграции
@@ -225,25 +225,35 @@ public  class DataAccess {
 
         } catch (Exception e) {
             dataAccess_log.error("prepareCall(" + pSQL_function + " fault: " + sStackTrace.strInterruptedException(e));
+            DataAccess.Hermes_Connection.rollback();
             return -2;
         }
-        try {
+   try {
             dataAccess_log.info("try executeCall(" + pSQL_function);
         // register OUT parameter
         callableStatement.registerOutParameter(1, Types.VARCHAR);
 
         // Step 2.C: Executing CallableStatement
             try {
-        callableStatement.execute();
-            } catch (SQLException e) {
-                dataAccess_log.error(", SQLException callableStatement.execute(" + pSQL_function + " ):=" + e.toString());
-                callableStatement.close();
-                return -3;
-            }
+            callableStatement.execute();
+                } catch (SQLException e) {
+                    dataAccess_log.error(", SQLException callableStatement.execute(" + pSQL_function + " ):=" + e.toString());
+                    callableStatement.close();
+                    DataAccess.Hermes_Connection.rollback();
+                    return -3;
+               }
 
         // get count and print in console
             sErrorDescription = callableStatement.getString(1);
             dataAccess_log.info( pSQL_function + " = " + sErrorDescription);
+            SQLWarning warning = callableStatement.getWarnings();
+            count = 0;
+            while (warning != null) {
+                count = count +1;
+                // System.out.println(warning.getMessage());
+                dataAccess_log.warn("[" + count + " ] callableStatement.SQLWarning: " + warning.getMessage());
+                warning = warning.getNextWarning();
+            }
 
             callableStatement.close();
 
@@ -254,10 +264,10 @@ public  class DataAccess {
             }catch (SQLException eSQL) {
                 dataAccess_log.error("callableStatement.close(" + pSQL_function + ") fault: " + sStackTrace.strInterruptedException(e));
             }
-
+            DataAccess.Hermes_Connection.rollback();
             return -4;
         }
-
+        DataAccess.Hermes_Connection.commit();
         return 0;
     }
 /*

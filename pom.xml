@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.2.23.10.03-SNAPSHOT</version>
+	<version>0.2.23.10.23-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
