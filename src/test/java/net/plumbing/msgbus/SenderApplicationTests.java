@@ -1,5 +1,5 @@
 
-package ru.hermes.sender;
+package net.plumbing.msgbus;
 /******
 import org.junit.Test;
 import org.junit.runner.RunWith;

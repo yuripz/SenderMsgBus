@@ -585,7 +585,7 @@ public class TheadDataAccess {
                     Statement stmt = Hermes_Connection.createStatement();
 
                     // get the postgresql serial field value with this query
-                    ResultSet rs = stmt.executeQuery("select cast(currval('message_queuelog_seq')as varchar)");
+                    ResultSet rs = stmt.executeQuery("select cast(currval('"+ dbSchema + ".message_queuelog_seq')as varchar)");
                     if (rs.next()) {
                         ROWID_QUEUElog = rs.getString(1);
                     }
