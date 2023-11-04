@@ -21,12 +21,75 @@ public class InitMessageRepository {
     //private static PreparedStatement stmtMsgDirectionReRead;
     //private static PreparedStatement stmtMsgTemplateReRead;
 
-/* Перечитывать перечень систем бессмысленно, потоки и их конфигурация уже сформированы
-    public static  int ReReadMsgDirections( String HrmsSchema, Long intervalReInit, Long CurrentTime,
-            int ShortRetryCount, int ShortRetryInterval, int LongRetryCount, int LongRetryInterval,
-            Logger AppThead_log )
-    {         }
-*/
+/* Перечитывать перечень систем нужно для обновления параментров, динамически используемых при обращении к веншним системам
+   а например, потоки бессмысленно, т.к. потоки и их конфигурация уже сформированы*/
+    public static  int ReReadMsgDirections( Long intervalReInit,  Logger AppThead_log )
+    {
+        if ( DataAccess.Hermes_Connection == null )
+        {  AppThead_log.error("DataAccess.Hermes_Connection == null");
+            return -3;
+        }
+        ResultSet rs = null;
+        String SQLMsgDirectionReRead;
+        if ( DataAccess.rdbmsVendor.equalsIgnoreCase("oracle"))
+            //  Oracle  - YYYY-MM-DD HH24:MI:SS
+            SQLMsgDirectionReRead = "SELECT " +
+                    " f.msgdirection_id, f.msgdirection_cod, f.msgdirection_desc, f.app_server, f.wsdl_name, f.msgdir_own, f.operator_id, f.type_connect," +
+                    " f.db_name, f.db_user, f.db_pswd, f.subsys_cod," +
+                    " NVL(f.Short_retry_count,0) Short_retry_count, NVL(f.Short_retry_interval,0) Short_retry_interval, NVL(f.Long_retry_count,0) Long_retry_count,  NVL(f.Long_retry_interval,0) Long_retry_interval" +
+                    " from " + DataAccess.HrmsSchema + ".Message_Directions f " +
+                    "where  f.LAST_UPDATE_DT > ( sysDate - ( 36020 + " + intervalReInit + " )/(24*3600)  )" +
+                    "order by f.msgdirection_iD,  f.subsys_cod,  f.msgdirection_cod";
+        else //  PostGree
+            SQLMsgDirectionReRead = "SELECT " +
+                " f.msgdirection_id, f.msgdirection_cod, f.msgdirection_desc, f.app_server, f.wsdl_name, f.msgdir_own, f.operator_id, f.type_connect," +
+                " f.db_name, f.db_user, f.db_pswd, f.subsys_cod," +
+                " coalesce(f.Short_retry_count,0) Short_retry_count, coalesce(f.Short_retry_interval,0) Short_retry_interval, coalesce(f.Long_retry_count,0) Long_retry_count,  coalesce(f.Long_retry_interval,0) Long_retry_interval" +
+                " from " + DataAccess.HrmsSchema + ".Message_Directions f " +
+                    "where  f.LAST_UPDATE_DT > ( now() AT TIME ZONE 'Europe/Moscow' - Interval '1 Second' * ( 36020 + " + intervalReInit + " )  )" +
+                    "order by f.msgdirection_iD,  f.subsys_cod,  f.msgdirection_cod";
+        try {
+            PreparedStatement stmtMsgDirectionReRead = DataAccess.Hermes_Connection.prepareStatement( SQLMsgDirectionReRead );
+            AppThead_log.info( "ReReadMsgDirections: " + SQLMsgDirectionReRead + " ;" );
+
+            rs = stmtMsgDirectionReRead.executeQuery();
+            while (rs.next()) {
+                String msgDirectionCod = rs.getString("msgdirection_cod");
+                int msgDirectionId = rs.getInt("msgdirection_id");
+                String subSysCod = rs.getString("subsys_cod");
+
+                int MsgDirectionVO_Key = MessageRepositoryHelper.look4MessageDirectionsVO_2_Perform( msgDirectionId ,subSysCod, AppThead_log   );
+                if ( MsgDirectionVO_Key < 0) {
+
+                    AppThead_log.warn(" Alert: Add system `" + msgDirectionCod + "` [" + msgDirectionId + " ,`" + subSysCod+ "`] to AllMessageDirections: (MessageDirections.AllMessageDirections.size()= " + MessageDirections.RowNum + ") not supported");
+
+                    MessageDirections.RowNum += 1;
+                }
+                else {
+                    AppThead_log.info("Update MessageDirections[" +   MsgDirectionVO_Key + "]: msgdirection_cod=" + rs.getString("msgdirection_cod") + ", "+ rs.getString("Msgdirection_Desc") );
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setWSDL_Name( rs.getString("wsdl_name"));
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setDb_pswd( rs.getString("db_pswd") );
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setDb_user(rs.getString("db_user"));
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setShort_retry_count(rs.getInt("short_retry_count"));
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setShort_retry_interval(rs.getInt("short_retry_interval"));
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setLong_retry_count(rs.getInt("long_retry_count"));
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setLong_retry_interval(rs.getInt("long_retry_interval"));
+                    MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).setType_Connect(rs.getInt("type_connect"));
+                }
+                // log.info(" MessageDirections[" +   MessageDirections.AllMessageDirections.size() + "]: longRetryInterval=" + messageDirectionsVO.getLong_retry_interval() + ", "+ messageDirectionsVO.getMsgDirection_Desc() );
+
+            }
+            rs.close();
+            DataAccess.Hermes_Connection.commit();
+        } catch (Exception e) {
+            AppThead_log.error("ReReadMsgDirections fault: " + e.getMessage());
+             e.printStackTrace();
+            return -2;
+        }
+
+        return MessageDirections.RowNum;
+    }
+
     public static  int ReReadMsgTypes(Long intervalReInit, Logger AppThead_log ) throws SQLException {
 
         int MessageTypeVOkey;
@@ -256,11 +319,13 @@ public class InitMessageRepository {
                         " order by f.msgdirection_iD,  f.subsys_cod,  f.msgdirection_cod");
                 
             } catch (Exception e) {
+                AppThead_log.error("`SELECT f.msgdirection_cod, f.msgdirection_desc, f.msgdirection_id FROM " + DataAccess.HrmsSchema + ".Message_Directions` fault " + e.getMessage());
                 e.printStackTrace();
                 return -2;
             }
         else
         {
+            AppThead_log.error("DataAccess.Hermes_Connection == null");
             return -3;
         }
 
@@ -307,13 +372,12 @@ public class InitMessageRepository {
                 AppThead_log.info( "RowNum[" + MessageDirections.RowNum + "] =" + messageDirectionsVO.LogMessageDirections() );
 
                 MessageDirections.RowNum += 1;
-
                 // log.info(" MessageDirections[" +   MessageDirections.AllMessageDirections.size() + "]: longRetryInterval=" + messageDirectionsVO.getLong_retry_interval() + ", "+ messageDirectionsVO.getMsgDirection_Desc() );
-
             }
             rs.close();
             stmtMsgDirection.close();
         } catch (SQLException e) {
+            AppThead_log.error("Read from `SELECT f.msgdirection_cod, f.msgdirection_desc, f.msgdirection_id FROM " + DataAccess.HrmsSchema + ".Message_Directions` fault " + e.getMessage());
             e.printStackTrace();
             return -2;
         }
@@ -349,7 +413,7 @@ public class InitMessageRepository {
                 return -2;
             }
         else
-        {
+        {  AppThead_log.error("DataAccess.Hermes_Connection == null");
             return -3;
         }
     try {
@@ -430,7 +494,7 @@ public class InitMessageRepository {
                 return -2;
             }
         else
-        {
+        {  AppThead_log.error("DataAccess.Hermes_Connection == null");
             return -3;
         }
 

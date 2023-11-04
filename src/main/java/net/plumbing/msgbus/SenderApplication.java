@@ -310,8 +310,8 @@ public class SenderApplication implements CommandLineRunner {
 					timeToReInit = (CurrentTime - DataAccess.InitDate.getTime()) / 1000;
 					if ( timeToReInit > intervalReInit ) {
 						AppThead_log.info("CurrentTimeString=" + CurrentTimeString + " (CurrentTime - DataAccess.InitDate.getTime())/1000: " + timeToReInit.toString());
-						// Перечитывать перечень систем бессмысленно, потоки и их конфигурация уже сформированы
-						// InitMessageRepository.ReReadMsgDirections(CurrentTime, ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval, AppThead_log);
+						// Перечитывать перечень систем нужно для обновления параментров, динамически используемых при обращении к веншним системам
+						InitMessageRepository.ReReadMsgDirections( intervalReInit, AppThead_log);
 						InitMessageRepository.ReReadMsgTypes(intervalReInit, AppThead_log);
 						InitMessageRepository.ReReadMsgTemplates(intervalReInit, AppThead_log);
 						DataAccess.InitDate.setTime(CurrentTime);
