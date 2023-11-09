@@ -323,7 +323,7 @@ public class SenderApplication implements CommandLineRunner {
 								DataAccess.doPSQL_Function_Run(psqlFunctionRun, AppThead_log);
 						} catch ( SQLException e) {
 							AppThead_log.error("проблема при вызове" + psqlFunctionRun + ": " + e.getMessage());
-							System.err.println("проблема при вызове" + psqlFunctionRun + ": " + e.getMessage());
+							System.err.println("AppThead_log: проблема при вызове" + psqlFunctionRun + ": " + e.getMessage());
 							e.printStackTrace();
 							break;
 						}
