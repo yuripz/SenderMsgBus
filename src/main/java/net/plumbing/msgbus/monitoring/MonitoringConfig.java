@@ -7,7 +7,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ComponentScan(basePackages = "ru.hermes.msgbus.*")
+@ComponentScan(basePackages = "net.plumbing.msgbus.*")
 public class MonitoringConfig {
 
     private static final Logger MntrConfig_log = LoggerFactory.getLogger(MonitoringConfig.class);
