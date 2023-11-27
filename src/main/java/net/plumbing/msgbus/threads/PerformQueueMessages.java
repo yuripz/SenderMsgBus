@@ -628,7 +628,9 @@ public class PerformQueueMessages {
 
                                 }
 
-                                final int resultSQL = XmlSQLStatement.ExecuteSQLincludedXML( theadDataAccess,  Passed_Envelope4XSLTPost, messageQueueVO, Message, MessegeSend_Log);
+                                final int resultSQL = XmlSQLStatement.ExecuteSQLincludedXML( theadDataAccess,  Passed_Envelope4XSLTPost, messageQueueVO, Message,
+                                                                                             Message.MessageTemplate4Perform.getIsDebugged(), MessegeSend_Log
+                                                                                          );
                                 if (resultSQL != 0) {
                                     MessegeSend_Log.error("["+ Queue_Id +"] Envelope4XSLTPost:" + MessageUtils.PrepareEnvelope4XSLTPost( messageQueueVO,  Message, MessegeSend_Log) );
                                     MessegeSend_Log.error("["+ Queue_Id +"] Ошибка ExecuteSQLinXML(" + resultSQL + "):" + Message.MsgReason.toString() );
@@ -859,7 +861,9 @@ public class PerformQueueMessages {
 
                         }
 
-                        final int resultSQL = XmlSQLStatement.ExecuteSQLincludedXML(theadDataAccess, Passed_Envelope4ErrTransXSLT, messageQueueVO, Message, MessegeSend_Log);
+                        final int resultSQL = XmlSQLStatement.ExecuteSQLincludedXML(theadDataAccess, Passed_Envelope4ErrTransXSLT, messageQueueVO, Message,
+                                                                                    Message.MessageTemplate4Perform.getIsDebugged(), MessegeSend_Log
+                                                                                    );
                         if (resultSQL != 0) {
                             MessegeSend_Log.error("[" + Queue_Id + "] Envelope4XSLTPost:" + MessageUtils.PrepareEnvelope4ErrTransXSLT(messageQueueVO, Message, MessegeSend_Log));
                             MessegeSend_Log.error("[" + Queue_Id + "] Ошибка ExecuteSQLinXML:" + Message.MsgReason.toString());
