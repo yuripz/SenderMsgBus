@@ -836,11 +836,16 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
 
             isNoLock = false;
         }
-        MessegeSend_Log.info( "PerfotmJMSMessage: select for update вернул rowid ="+ QueueRowId );
+        if ( QueueRowId != null )
+            MessegeSend_Log.info( "[" + Queue_Id + "] PerfotmJMSMessage: select for update вернул rowid ="+ QueueRowId );
+        else
+            MessegeSend_Log.warn( "[" + Queue_Id + "] PerfotmJMSMessage: select for update вернул rowid = NULL");
         // У "своих" из ОЧЕРЕДИ может увести сообщение только свой и он отпустит его рлмле SEND
-        // TODO : надо проверять при блокировке, а не захватил ли сообщение какой нибудь "Помощник". Такой конфтгурации пока нет, но...
-        if ( isNoLock )
-        { // запись захвачена, надо убедиться: что Queue_Direction = "OUT"
+        // надо проверять при блокировке, а не захватил ли сообщение какой нибудь ещё "Помощник". Такой конфтгурации пока нет, но... java.lang.NullPointerException: Cannot invoke "String.equals(Object)" because "Queue_Direction" is null
+        if ( ( isNoLock ) && // запись захвачена и
+             ( Queue_Direction != null )) // вдруг мог быть пустой курсор - читать было нечего
+            // fix java.lang.NullPointerException: Cannot invoke "String.equals(Object)" because "Queue_Direction" is null
+        {  //надо убедиться: что Queue_Direction = "OUT"
             if ( Queue_Direction.equals(DirectOUT) )
             {
                 // Захватываем ( "update " + HrmsSchema + ".MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" ); с учётом Кубера
@@ -934,15 +939,13 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                 // Запись уже обрабатывется, надо разблокировать
                 MessegeSend_Log.warn( "Запись уже обрабатывется, надо разблокировать Queue_Id="+ Queue_Id );
                 try {
-                    if ( rLock != null)
-                    { rLock.close();
+                     rLock.close();
                         try {
                             theadDataAccess.Hermes_Connection.rollback();
                         }
                         catch (SQLException rollback_e) {
                             MessegeSend_Log.info( "PerfotmJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:" + messageQueueVO.getQueue_Id() + " Hermes_Connection.rollback() fault, " +rollback_e.getSQLState() + " :" + rollback_e.getMessage() );
                         }
-                    }
                 } catch (SQLException e) { MessegeSend_Log.error(e.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
                     MessegeSend_Log.error( "Ошибка при закрытии SQL-ResultSet select for Update ...");
                     return -2L;
