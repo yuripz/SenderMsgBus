@@ -75,7 +75,7 @@ public class MessageSendTask  implements Runnable
     private Integer NumMessageInScan;
     private Integer ApiRestWaitTime;
     private Integer FirstInfoStreamId;
-    private Integer СuberNumId;
+    private Integer CuberNumId;
     private javax.jms.Connection JMSQueueConnection;
 
     public String getHrmsPpoint() {
@@ -111,7 +111,7 @@ public class MessageSendTask  implements Runnable
     public void setJMSQueueConnection (javax.jms.Connection JMSQueueConnection  ) { this.JMSQueueConnection = JMSQueueConnection;}
     public void setApiRestWaitTime( int ApiRestWaitTime) { this.ApiRestWaitTime = ApiRestWaitTime; }
     public void setFirstInfoStreamId( int FirstInfoStreamId) { this.FirstInfoStreamId=FirstInfoStreamId;}
-    public void setСuberNumId( int сuberNumId) { this.СuberNumId=сuberNumId;}
+    public void setCuberNumId( int cuberNumId) { this.CuberNumId=cuberNumId;}
     private int theadRunCount = 0;
     private  int  theadRunTotalCount = 1;
     private SSLContext sslContext = null;
@@ -401,7 +401,7 @@ public class MessageSendTask  implements Runnable
             return;
         }
         // инициализируемся
-        MessegeSend_Log .info("Setup Connection for thead:" + (this.FirstInfoStreamId + theadNum ) + " СuberNumId:" + СuberNumId + " rdbmsVendor=`" + rdbmsVendor + "`") ;
+        MessegeSend_Log .info("Setup Connection for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " rdbmsVendor=`" + rdbmsVendor + "`") ;
         if ( !rdbmsVendor.equals("oracle") ) {
             MessegeSend_Log .info("Try setup Connection for thead: " + (this.FirstInfoStreamId + theadNum ) + " `set SESSION time zone 3`");
             try {
@@ -416,7 +416,7 @@ public class MessageSendTask  implements Runnable
                     CurrentTime = rs.getString("currentTime");
                 }
                 rs.close();
-                MessegeSend_Log.info( "RDBMS CurrentTime for thead:" + (this.FirstInfoStreamId + theadNum ) + " СuberNumId:" + СuberNumId + " LocalDate ="+ CurrentTime );
+                MessegeSend_Log.info( "RDBMS CurrentTime for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " LocalDate ="+ CurrentTime );
             } catch (Exception e) {
                 MessegeSend_Log.error("RDBMS setup Connection: `set SESSION time zone 3` fault: " + e.toString());
                 e.printStackTrace();
@@ -450,10 +450,10 @@ public class MessageSendTask  implements Runnable
                 try {
                     ResultSet rLock = null;
                     stmtMsgQueue.setInt(1, (theadNum + this.FirstInfoStreamId) );
-                    stmtMsgQueue.setInt(2, (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000 ) );
+                    stmtMsgQueue.setInt(2, (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) );
 
                     ResultSet rs = stmtMsgQueue.executeQuery();
-                    // MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: do scanning on `" + selectMessageSQL + "` using msg_InfostreamId in (" + (theadNum + this.FirstInfoStreamId) + ", "  + (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000 ) + ")");
+                    // MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: do scanning on `" + selectMessageSQL + "` using msg_InfostreamId in (" + (theadNum + this.FirstInfoStreamId) + ", "  + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + ")");
                     while (rs.next()) {
                         num_Message4Perform +=1;
                         messageQueueVO.setMessageQueue(
@@ -463,7 +463,7 @@ public class MessageSendTask  implements Runnable
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),
-                                rs.getInt("Msg_InfoStreamId"), // TO_DO + this.СuberNumId * 1000
+                                rs.getInt("Msg_InfoStreamId"), // TO_DO + this.CuberNumId * 1000
                                 rs.getInt("Operation_Id"),
                                 rs.getString("Queue_Direction"),
                                 rs.getString("Msg_Type"),
@@ -506,10 +506,10 @@ public class MessageSendTask  implements Runnable
                                 isNoLock = false;
                             }
                             else { // запись захвачена, Ok
-                                if (СuberNumId > 0) {// надо менять InfoStreamId что бы забрать под свой экземпляр Кубера + this.СuberNumId * 1000
+                                if (CuberNumId > 0) {// надо менять InfoStreamId что бы забрать под свой экземпляр Кубера + this.CuberNumId * 1000
                                     theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId(rs.getString("ROWID"), LockedQueue_Id,
-                                            (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000), MessegeSend_Log);
-                                    messageQueueVO.setMsg_InfoStreamId( (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000) );
+                                            (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000), MessegeSend_Log);
+                                    messageQueueVO.setMsg_InfoStreamId( (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000) );
                                 }
                                 // Иначе Менять InfoStreamId не надо, это "свойй поток" нет параллельно работающих Sender'z
                                 // TheadDataAccess.doUPDATE_QUEUE_InfoStreamId( rs.getRowId("ROWID") , LockedQueue_Id ,
@@ -623,14 +623,14 @@ public class MessageSendTask  implements Runnable
                                                 + LockedQueue_Direction + "!=" + messageQueueVO.getQueue_Direction());
                                         isNoLock = false;
                                     }
-                                    else { // если запускается под управлением Cubernate надо лочить с учетом экземпляра СuberNumId
+                                    else { // если запускается под управлением Cubernate надо лочить с учетом экземпляра CuberNumId
                                         if (theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId( LockedROWID_QUEUE, LockedQueue_Id,
-                                                (theadNum + this.FirstInfoStreamId + this.СuberNumId*1000), MessegeSend_Log)
+                                                (theadNum + this.FirstInfoStreamId + this.CuberNumId*1000), MessegeSend_Log)
                                                 != 0
                                         ) // Не смогли установить свой №№ обработчика - значи, считакм, что блокировка не сработала.
                                             isNoLock = false;
                                         else
-                                            messageQueueVO.setMsg_InfoStreamId( (theadNum + this.FirstInfoStreamId+ this.СuberNumId*1000) );
+                                            messageQueueVO.setMsg_InfoStreamId( (theadNum + this.FirstInfoStreamId+ this.CuberNumId*1000) );
                                     }
                                 }
                                 catch (SQLException e) {
@@ -850,7 +850,7 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
             {
                 // Захватываем ( "update " + HrmsSchema + ".MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" ); с учётом Кубера
                 int IsUpdated;
-                IsUpdated =  theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId(QueueRowId, Queue_Id, (theadNum + this.FirstInfoStreamId + this.СuberNumId * 1000 ), MessegeSend_Log);
+                IsUpdated =  theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId(QueueRowId, Queue_Id, (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ), MessegeSend_Log);
                 if ( IsUpdated != 0) {
                     try {
                         rLock.close();

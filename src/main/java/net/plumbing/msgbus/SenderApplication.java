@@ -63,7 +63,6 @@ public class SenderApplication implements CommandLineRunner {
 
 	public void run(String... strings) throws Exception {
 		int i;
-		boolean isNotifyOk;
 		ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
 
 		AppThead_log.info("Hellow for SenderApplication ");
@@ -94,8 +93,7 @@ public class SenderApplication implements CommandLineRunner {
 
 		ThreadPoolTaskExecutor taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
 
-		/* --- monitorWriter для Графаны больше не используется , комментарим */
-		/*
+		/* --- monitorWriter для Графаны больше не используется , комментарим
 		this.monitorWriter();
 
 		AppThead_log.warn( dbLoggingProperties.toString() );
@@ -282,21 +280,19 @@ public class SenderApplication implements CommandLineRunner {
 			messageSendTask[ i ].setNumMessageInScan( NumMessageInScan );
 			messageSendTask[ i ].setApiRestWaitTime( ApiRestWaitTime );
 			messageSendTask[ i ].setFirstInfoStreamId( FirstInfoStreamId );
-			messageSendTask[ i ].setСuberNumId( CuberNumId );
+			messageSendTask[ i ].setCuberNumId( CuberNumId );
 			messageSendTask[ i ].setTheadNum(i);
 			messageSendTask[ i ].setJMSQueueConnection( JMSQueueConnection );
 			taskExecutor.execute(messageSendTask[ i ]);
 		}
-		Integer count = 0;
+		int count = 0;
 
 
 		String CurrentTimeString;
-		Long timeToReInit;
+		long timeToReInit;
 
 		for (;;) {
 			count = taskExecutor.getActiveCount();
-			// taskExecutor.execute();
-			// messageSendTask[ i ].run();
 			AppThead_log.info("Active Threads : " + count);
 			try {
 
@@ -320,7 +316,7 @@ public class SenderApplication implements CommandLineRunner {
 
 					timeToReInit = (CurrentTime - DataAccess.InitDate.getTime()) / 1000;
 					if ( timeToReInit > intervalReInit ) {
-						AppThead_log.info("CurrentTimeString=" + CurrentTimeString + " (CurrentTime - DataAccess.InitDate.getTime())/1000: " + timeToReInit.toString());
+						AppThead_log.info("CurrentTimeString=" + CurrentTimeString + " (CurrentTime - DataAccess.InitDate.getTime())/1000: " + timeToReInit);
 						// Перечитывать перечень систем нужно для обновления параментров, динамически используемых при обращении к веншним системам
 						InitMessageRepository.ReReadMsgDirections( intervalReInit, AppThead_log);
 						InitMessageRepository.ReReadMsgTypes(intervalReInit, AppThead_log);
@@ -357,7 +353,7 @@ public class SenderApplication implements CommandLineRunner {
 		// monitorWriterPool.shutdown(); -- monitorWriter для Графаны больше не используется , комментарим
 		 NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", AppThead_log );
 		System.exit(-22);
-		return;
+		//return;
 	}
 
 	/* -- monitorWriter для Графаны больше не используется , комментарим
