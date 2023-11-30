@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import net.plumbing.msgbus.model.MessageTemplate;
 import net.plumbing.msgbus.model.MessageType;
 import net.plumbing.msgbus.model.MessageQueueVO;
-import net.plumbing.msgbus.monitoring.ConcurrentQueue;
+//import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 import net.plumbing.msgbus.model.MonitoringQueueVO;
 import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
 
@@ -692,12 +692,10 @@ public class MessageSendTask  implements Runnable
                                 PerfotmJMSMessage(  stmtQueueLock4JMSconsumer,
                                         stmtGetMessage4QueueId, selectMessage4QueueIdSQL,
                                         JMSTextMessage.getText(),
-                                        Message, messageQueueVO,
-                                        monitoringQueueVO,
+                                        Message, messageQueueVO, // monitoringQueueVO,
                                         PerformQueueMessages,
                                         theadDataAccess);
                                 // Thread.sleep(WaitTimeBetweenScan * 1000);
-                                //////////////////////////////////////////////////////
                                 if ( tempDestResponce != null ) {
                                     MessageProducer ReplyProducer = JMSsession.createProducer(tempDestResponce);
                                     TextMessage ReplyMessage = JMSsession.createTextMessage("{ \"Queue_Id\": \"" + messageQueueVO.getQueue_Id() + "\", \"Queue_Direction\": \"" + messageQueueVO.getQueue_Direction() + "\" , \"TheadNum\": \"" + theadNum + "\" }");
@@ -707,7 +705,7 @@ public class MessageSendTask  implements Runnable
                                     ReplyProducer.send(ReplyMessage);
                                     ReplyProducer.close();
                                 }
-                                /////////////////////////////////////////////////////
+
                             }else {
                                 MessegeSend_Log.info("Received message: empty" );
                             }
@@ -770,7 +768,7 @@ private  boolean  LockMessage_Queue_ROW(RowId LockedROWID_QUEUE, MessageQueueVO 
                                      PreparedStatement stmtGetMessage4QueueId, String selectMessage4QueueIdSQL,
                                      String MessageText,
                                      MessageDetails Message, MessageQueueVO messageQueueVO,
-                                     MonitoringQueueVO monitoringQueueVO,
+                                     // MonitoringQueueVO monitoringQueueVO,
                                      PerformQueueMessages PerformQueueMessages,
                                      TheadDataAccess theadDataAccess) {
 
