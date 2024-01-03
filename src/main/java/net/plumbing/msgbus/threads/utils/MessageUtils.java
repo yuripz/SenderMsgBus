@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static net.plumbing.msgbus.threads.MessageSendTask.MessegeSend_Log;
+//import static net.plumbing.msgbus.threads.MessageSendTask.MessegeSend_Log;
 
 public class MessageUtils {
 
@@ -115,7 +115,7 @@ public class MessageUtils {
 
 
     public static Integer ProcessingSendError(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess,
-                                              String whyIsFault , boolean isMessageQueue_Directio_2_ErrorOUT, Exception e , Logger MessegeSend_Log)
+                                              String whyIsFault , boolean isMessageQueue_Directio_2_ErrorOUT, Exception e , Logger MessageSend_Log)
     {
         String ErrorExceptionMessage;
         if ( e != null ) {
@@ -123,20 +123,25 @@ public class MessageUtils {
         }
         else ErrorExceptionMessage = ";";
 
-
         int messageRetry_Count = messageQueueVO.getRetry_Count();
         messageRetry_Count += 1; // увеличили счетчик попыток
+
+        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError.messageRetry_Count = " + messageRetry_Count +
+                "; getShortRetryCount=" + messageDetails.MessageTemplate4Perform.getShortRetryCount() +
+                "; (getShortRetryCount+getLongRetryCount)="+ (messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) );
+
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() ) {
 
             messageQueueVO.setRetry_Count(messageRetry_Count);
             // переводим время следующей обработки на  ShortRetryInterval вперёд , сохраняя тот же MessageQueue_Direction
             theadDataAccess.doUPDATE_MessageQueue_DirectionAsIS(messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getShortRetryInterval(),
                     "Next attempt after " + messageDetails.MessageTemplate4Perform.getShortRetryInterval() + " sec.," + whyIsFault + "fault: " + ErrorExceptionMessage, 1236,
-                    messageRetry_Count, MessegeSend_Log
+                    messageRetry_Count, MessageSend_Log
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            return -1;
+            MessageSend_Log.info("Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+            return messageRetry_Count;
         }
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() ) {
 
@@ -144,20 +149,22 @@ public class MessageUtils {
             // переводим время следующей обработки на  LongRetryInterval вперёд , сохраняя тот же MessageQueue_Direction
             theadDataAccess.doUPDATE_MessageQueue_DirectionAsIS(messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getLongRetryInterval(),
                     "Next attempt after " + messageDetails.MessageTemplate4Perform.getLongRetryInterval() + " sec.," + whyIsFault + "fault: " + ErrorExceptionMessage, 1237,
-                    messageRetry_Count, MessegeSend_Log
+                    messageRetry_Count, MessageSend_Log
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            return -1;
+            return messageRetry_Count;
         }
-        if ( isMessageQueue_Directio_2_ErrorOUT ) // Если это не Транспортная ошибка, то выставляем ERROROUT
-        {
+        if (( isMessageQueue_Directio_2_ErrorOUT ) // Если это не Транспортная ошибка( выставили признак ERROROUT)
+            || ( messageRetry_Count >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() )
+          )
+        {  // не увеличивае счётчик повторов, выставляем ERROUT
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                     whyIsFault + " fault: " + ErrorExceptionMessage, 1239,
-                    messageQueueVO.getRetry_Count(), MessegeSend_Log);
+                     messageQueueVO.getRetry_Count(), MessageSend_Log);
             messageQueueVO.setQueue_Direction(XMLchars.DirectERROUT);
         }
-        return -1;
+        return messageRetry_Count;
     }
 
     public static Integer ProcessingOut2ErrorOUT(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess,
@@ -596,7 +603,7 @@ public class MessageUtils {
                                    messageDetails.Message.get(Current_Elm_Key).Tag_Value +
                                    "; Tag_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Num +
                                    "; Tag_Par_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Par_Num;
-                           MessegeSend_Log.error(messageException);
+                         //  MessegeSend_Log.error(messageException);
                            throw new NullPointerException( messageException);
                         }
                     }
@@ -622,7 +629,7 @@ public class MessageUtils {
                                 messageDetails.Message.get(Current_Elm_Key).Tag_Value +
                                 "; Tag_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Num +
                                 "; Tag_Par_Num=" + messageDetails.Message.get(Current_Elm_Key).Tag_Par_Num;
-                        MessegeSend_Log.error(messageException);
+                        // MessegeSend_Log.error(messageException);
                         throw new NullPointerException( messageException);
                     }
                 }

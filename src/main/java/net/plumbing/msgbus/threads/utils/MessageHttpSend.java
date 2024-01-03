@@ -2,9 +2,8 @@ package net.plumbing.msgbus.threads.utils;
 
 import com.jayway.jsonpath.*;
 import com.google.common.collect.ImmutableMap;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.exceptions.UnirestException;
+import kong.unirest.*;
+import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.json.JSONException;
 import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
@@ -20,7 +19,11 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 */
 //import oracle.jdbc.internal.OracleRowId;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -47,6 +50,8 @@ import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 
 import javax.validation.constraints.NotNull;
+//import javax.xml.parsers.DocumentBuilderFactory;
+//import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -55,13 +60,16 @@ import java.nio.charset.StandardCharsets;
 //import java.sql.RowId;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 // import com.google.common.escape.Escaper;
 // import com.google.common.net.UrlEscapers;
 
 import static net.plumbing.msgbus.common.XMLchars.OpenTag;
+import static net.plumbing.msgbus.threads.utils.MessageUtils.stripNonValidXMLCharacters;
 
 public class MessageHttpSend {
 
@@ -82,11 +90,10 @@ public class MessageHttpSend {
         return sslContext;
     }
 
-    public static int sendSoapMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, MonitoringQueueVO monitoringQueueVO, Logger MessageSend_Log) {
+    public static int sendSoapMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         // рассчитываем размер SoapEnvelope
         int SoapEnvelopeSize ;
         if ( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) >= 0 )
-
             SoapEnvelopeSize= XMLchars.Envelope_Begin.length() + messageDetails.XML_MsgSEND.length() + XMLchars.Envelope_End.length() +16 ;
         else
             SoapEnvelopeSize=(XMLchars.Envelope_Begin.length() + XMLchars.Header_Begin.length() + messageDetails.Soap_HeaderRequest.length() + XMLchars.Header_End.length() +
@@ -127,7 +134,8 @@ public class MessageHttpSend {
         // TODO : for Ora RowId ROWID_QUEUElog=null;
         String ROWID_QUEUElog=null;
         String RestResponse=null;
-        InputStream Response;
+         HttpResponse <byte[]> Response ;
+        // kong.unirest.RequestBodyEntity Response ;
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
@@ -141,12 +149,10 @@ public class MessageHttpSend {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] UnsupportedEncodingException");
                 encodingExc.printStackTrace();
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + encodingExc);
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTrace.strInterruptedException(encodingExc));
+                messageDetails.MsgReason.append(" sendSoapMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTrace.strInterruptedException(encodingExc));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
-                        "HttpGetMessage.Unirest.post", true, encodingExc, MessageSend_Log);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(),
-                        null, //" HttpGetMessage.post.to" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: ",
-                        monitoringQueueVO, MessageSend_Log);
+                        "sendSoapMessage.Unirest.post", true, encodingExc, MessageSend_Log);
+                // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null, monitoringQueueVO, MessageSend_Log);
                 return -1;
             }
         }
@@ -155,18 +161,18 @@ public class MessageHttpSend {
 
         try {
             //  устанавливаем "своего" HttpClient с предварительно выставленными тайм-аутами из шаблона и SSL
-            Unirest.setHttpClient( messageDetails.SimpleHttpClient);
+            Unirest.config( ).httpClient( messageDetails.SimpleHttpClient);
 
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
                     ";.readTimeoutInMillis=" + ReadTimeoutInMillis +
                     ";.PropUser=" + messageDetails.MessageTemplate4Perform.getPropUser() +
                     ";.PropPswd=" + messageDetails.MessageTemplate4Perform.getPropPswd() +
                     ";."+ messageDetails.MessageTemplate4Perform.SOAP_ACTION_11 + "=" + messageDetails.MessageTemplate4Perform.getSOAPAction()
             );
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post[" + SoapEnvelope + "]" );
-                    messageDetails.Confirmation.clear();
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post[" + SoapEnvelope + "]" );
+            messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
             String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
 
@@ -177,43 +183,46 @@ public class MessageHttpSend {
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog( messageQueueVO.getQueue_Id(), SoapEnvelope.toString(), MessageSend_Log );
 
-            ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(),
-                    null, monitoringQueueVO, MessageSend_Log);
-
+            // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(), null, monitoringQueueVO, MessageSend_Log);
             if ( PropUser != null  ) {
-                    Response =
+                   Response  =
                         Unirest.post(EndPointUrl)
                                 .header("Content-Type", "text/xml;charset=UTF-8")
                                 .header(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
-                                .header("User-Agent", "Hermes/Java-11")
+                                .header("User-Agent", "msgBus/Java-17")
                                 .header("Accept", "*/*")
                                 .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
                                 .body(RequestBody)
-                                .asBinary()
-                                .getRawBody();
-
+                                 .asBytes()
+                                ; // .getRawBody();
             }
             else {
                     Response =
                         Unirest.post(EndPointUrl)
                                 .header("Content-Type", "text/xml;charset=UTF-8")
-                                .header("User-Agent", "Hermes/Java-11")
+                                .header("User-Agent", "msgBus/Java-17")
                                 .header("Accept", "*/*")
                                 .header(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
                                 .body(RequestBody)
-                                .asBinary()
-                                .getRawBody();
-
+                                .asBytes();
+                          //      .asBinary().getRawBody();
             }
+            // int r_size = Response.();
+            int restResponseStatus = Response.getStatus();
+            // Headers headers = Response.getHeaders();
+            // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendSoapMessage.Unirest.Response.getBody().length" + Response.getBody().length );
+            //  byte [] RequestBodyContent = new Response.toString();
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8
             // Response => RestResponse;
             try {
                 if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
                     ( !messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equals("UTF-8" )) ) {
-                    RestResponse = IOUtils.toString(Response, messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
+                    // RestResponse = IOUtils.toString(Response, messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
+                    RestResponse = IOUtils.toString( Response.getBody(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
                 }
-                else RestResponse = IOUtils.toString(Response, StandardCharsets.UTF_8);
+                else RestResponse = IOUtils.toString( Response.getBody(), "UTF-8" ); //StandardCharsets.UTF_8);
             }
             catch (Exception ioExc) {
                 System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
@@ -221,22 +230,20 @@ public class MessageHttpSend {
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from " +
                         ( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out() )
                         + " to_UTF_8 fault:" + ioExc );
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 fault: ").append ( sStackTrace.strInterruptedException(ioExc));
+                messageDetails.MsgReason.append(" sendSoapMessage.post.to_UTF_8 fault: ").append ( sStackTrace.strInterruptedException(ioExc));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
-                        "HttpGetMessage.Unirest.post", true,  ioExc ,  MessageSend_Log);
+                        "sendSoapMessage.Unirest.post", true,  ioExc ,  MessageSend_Log);
                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
-                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                //        "HttpGetMessage.post.to_UTF_8 fault: " + sStackTrace.strInterruptedException(e), monitoringQueueVO, MessageSend_Log);
                 return -1;
             }
 
 //            сохраняем в XML_MsgResponse SOAP-конверт уже в UTF_8
-            messageDetails.XML_MsgResponse.append( RestResponse ); // cj,cn
+            messageDetails.XML_MsgResponse.append( RestResponse ); // XML_MsgResponse был очищен
 
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HTTP status: " + restResponseStatus + " sendSoapMessage.Unirest.Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
 
@@ -254,7 +261,8 @@ public class MessageHttpSend {
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "Retry_Count ("+messageQueueVO.getRetry_Count()+")>= " +
                     "( ShortRetryCount=" +messageDetails.MessageTemplate4Perform.getShortRetryCount() +
                     " LongRetryCount=" + messageDetails.MessageTemplate4Perform.getLongRetryCount() + ")" );
-            if ( messageQueueVO.getRetry_Count() +1  >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() ) {
+            if ( messageQueueVO.getRetry_Count() +1  >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() )
+            {
                 // количество порыток исчерпано, формируем результат для выхода из повторов
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post (" + EndPointUrl + ") fault:" + e);
                 messageDetails.XML_MsgResponse.setLength(0);
@@ -267,28 +275,21 @@ public class MessageHttpSend {
                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
 
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
-                        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") ", false,  e ,  MessageSend_Log);
-                ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
-                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), messageDetails.XML_MsgResponse.toString(), monitoringQueueVO, MessageSend_Log);
+                        "sendSoapMessage.Unirest.post (" + EndPointUrl + "), do re-Send: ", false,  e ,  MessageSend_Log);
             }
             else {
                 // HE-4892 Если транспорт отвалился , то Шина выставляет RESOUT - коммент ProcessingSendError & return -1;
                  MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "sendSoapMessage.Unirest.post (" + EndPointUrl + ") ", true,  e ,  MessageSend_Log);
-                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
-                //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(),
-                //        "sendSoapMessage.Unirest.post (" + EndPointUrl + ") " + sStackTrace.strInterruptedException(e), monitoringQueueVO, MessageSend_Log);
                  return -1;
             }
         }
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, SoapEnvelope.toString(), messageDetails.XML_MsgResponse.toString(), monitoringQueueVO, MessageSend_Log);
-        //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
 
         try {
             // Получили ответ от сервиса, инициируем обработку SOAP getResponseBody()
-            MessageSoapSend.getResponseBody (messageDetails, MessageSend_Log);
+            MessageSoapSend.getResponseBody (messageDetails, null, MessageSend_Log);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
             MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
             else {// HE-9187
@@ -317,8 +318,72 @@ public class MessageHttpSend {
         // когда всё хорошо, увеличивать счётчик нет смысла
         // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
         return 0;
-    }
+    } // sendSoapMessage
+    private static CloseableHttpClient getCloseableHttpClient( MessageQueueVO messageQueueVO, MessageDetails Message , TheadDataAccess theadDataAccess,
+                                                       PoolingHttpClientConnectionManager syncConnectionManager, int ApiRestWaitTime,
+                                                       Logger MessegeReceive_Log) {
+        int ReadTimeoutInMillis = ApiRestWaitTime * 1000;
+        int ConnectTimeoutInMillis = 5 * 1000;
+        SSLContext sslContext = MessageHttpSend.getSSLContext(  );
+        if ( sslContext == null ) {
+            MessegeReceive_Log.error("["+ messageQueueVO.getQueue_Id()+"] " + "SSLContextBuilder fault: (" +  Message.MsgReason.toString() + ")");
+            Message.MsgReason.append("Внутренняя Ошибка SSLContextBuilder fault: (" +  Message.MsgReason.toString() + ")" ) ;
 
+            MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
+                    "Внутренняя Ошибка SSLContextBuilder fault: (" +  Message.MsgReason.toString() + ")",
+                    true, null , MessegeReceive_Log );
+            return null;
+        }
+
+        /// это в вызывающем методе !- syncConnectionManager = new PoolingHttpClientConnectionManager();
+        syncConnectionManager.setMaxTotal((Integer) 4);
+        syncConnectionManager.setDefaultMaxPerRoute((Integer) 2);
+        RequestConfig rc;
+
+        rc = RequestConfig.custom()
+                .setConnectionRequestTimeout(ConnectTimeoutInMillis)
+                .setConnectTimeout(ConnectTimeoutInMillis)
+                .setSocketTimeout( ReadTimeoutInMillis)
+                .build();
+
+        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create()
+                .disableDefaultUserAgent()
+                .disableRedirectHandling()
+                .disableAutomaticRetries()
+                .setUserAgent("Mozilla/5.0")
+                .setSSLContext(sslContext)
+                .disableAuthCaching()
+                .disableConnectionState()
+                .disableCookieManagement()
+                // .useSystemProperties() // HE-5663  https://stackoverflow.com/questions/5165126/without-changing-code-how-to-force-httpclient-to-use-proxy-by-environment-varia
+                .setConnectionManager(syncConnectionManager)
+                .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                .setConnectionTimeToLive( ApiRestWaitTime + 5, TimeUnit.SECONDS)
+                .evictIdleConnections((long) (ApiRestWaitTime + 5)*2, TimeUnit.SECONDS);
+        httpClientBuilder.setDefaultRequestConfig(rc);
+
+        CloseableHttpClient
+                ApiRestHttpClient = httpClientBuilder.build();
+        if ( ApiRestHttpClient == null) {
+            try {
+                syncConnectionManager.shutdown();
+                syncConnectionManager.close();
+            } catch ( Exception e) {
+                MessegeReceive_Log.error("["+ messageQueueVO.getQueue_Id()  +"] " + "Внутренняя ошибка - httpClientBuilder.build() не создал клиента. И ещё проблема с syncConnectionManager.shutdown()...");
+                System.err.println("["+ messageQueueVO.getQueue_Id()  +"] " + "Внутренняя ошибка - httpClientBuilder.build() не создал клиента. И ещё проблема с syncConnectionManager.shutdown()..." + e.getMessage()); //e.printStackTrace();
+            }
+            MessegeReceive_Log.error("["+ messageQueueVO.getQueue_Id()  +"] " + "httpClientBuilder.build() fault");
+            Message.MsgReason.append("Внутренняя Ошибка httpClientBuilder.build() fault");
+
+
+            MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
+                    "Внутренняя Ошибка httpClientBuilder.build() fault: (" +  Message.MsgReason.toString() + ")",
+                    true, null , MessegeReceive_Log );
+            return null;
+        }
+        return ApiRestHttpClient  ;
+
+    }
     public static int sendPostMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         //
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
@@ -332,165 +397,319 @@ public class MessageHttpSend {
 
         int ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
-        String RestResponse=null;
-        InputStream Response;
+        String RestResponse;
+        String AckXSLT_4_make_JSON = messageTemplate4Perform.getAckXSLT() ;
+
+        HttpResponse <byte[]> Response ;
+        PoolingHttpClientConnectionManager syncConnectionManager = new PoolingHttpClientConnectionManager();
+        // Ставим своенго клиента !
+        CloseableHttpClient
+                ApiRestHttpClient = getCloseableHttpClient(  messageQueueVO,  messageDetails ,  theadDataAccess,
+                syncConnectionManager, ReadTimeoutInMillis,
+                MessageSend_Log);
+        if ( ApiRestHttpClient == null) {
+            // syncConnectionManager.shutdown() и syncConnectionManager.close();
+            // производится внутри getCloseableHttpClient() при неудаче
+            return -36;
+        }
+
+        Integer restResponseStatus;
+
         byte[] RequestBody;
 
         Map<String, String> httpHeaders= new HashMap<>();
         String headerParams[];
-        httpHeaders.put("Content-Type", "text/xml;charset=UTF-8");
+        httpHeaders.put("User-Agent", "msgBus/Java-17");
+        httpHeaders.put("Accept", "*/*");
+        httpHeaders.put("Connection", "close");
+        if ( AckXSLT_4_make_JSON != null )
+        { httpHeaders.put("Content-Type","text/json;charset=UTF-8");
+        }
+        else
+        { httpHeaders.put("Content-Type", "text/xml;charset=UTF-8"); }
 
-        if ( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) == -1 )// NOT Header_is_empty
+        if (( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) == -1 )// NOT Header_is_empty
+           && ( ! messageDetails.Soap_HeaderRequest.isEmpty() ))
         {
             headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post headerParams.length=" + headerParams.length );
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post headerParams.length=" + headerParams.length );
             for (int i = 0; i < headerParams.length; i++)
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post headerParams[" + i + "] = " + headerParams[i] );
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post headerParams[" + i + "] = " + headerParams[i] );
 
             if (headerParams.length > 1  )
             for (int i = 0; i < headerParams.length; i++)
                 httpHeaders.put(headerParams[0], headerParams[1]);
         }
         else
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) );
-        MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HeaderRequest.Unirest.post `" + messageDetails.Soap_HeaderRequest + "` httpHeaders.size=" + httpHeaders.size() );
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) );
+        // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post `" + messageDetails.Soap_HeaderRequest + "` httpHeaders.size=" + httpHeaders.size() );
         //+                 "; headerParams= " + headerParams.toString() );
+    try {
 
-        if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
-                ( !messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8" ) )) {
+        if ((messageDetails.MessageTemplate4Perform.getPropEncoding_Out() != null) &&
+                (!messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8"))) {
             try {
-                RequestBody = messageDetails.XML_MsgSEND.getBytes( messageDetails.MessageTemplate4Perform.getPropEncoding_Out());
+                RequestBody = messageDetails.XML_MsgSEND.getBytes(messageDetails.MessageTemplate4Perform.getPropEncoding_Out());
             } catch (UnsupportedEncodingException e) {
-                System.err.println("[" + messageQueueVO.getQueue_Id() + "] UnsupportedEncodingException");
+                System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage: UnsupportedEncodingException");
                 e.printStackTrace();
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + e);
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to" ).append( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ).append(  " fault: ").append( sStackTrace.strInterruptedException(e));
+                messageDetails.MsgReason.append(" sendPostMessage.post.to").append(messageDetails.MessageTemplate4Perform.getPropEncoding_Out()).append(" fault: ").append(sStackTrace.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
-                        "HttpGetMessage.Unirest.post", true, e, MessageSend_Log);
+                        "sendPostMessage.Unirest.post", true, e, MessageSend_Log);
                 return -1;
             }
-        }
-        else
-            RequestBody = messageDetails.XML_MsgSEND.getBytes ( StandardCharsets.UTF_8 );
+        } else
+            RequestBody = messageDetails.XML_MsgSEND.getBytes(StandardCharsets.UTF_8);
+
 
         try {
-            Unirest.setHttpClient( messageDetails.SimpleHttpClient);
-
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
-                    ";.readTimeoutInMillis=ReadTimeoutInMillis= " + ReadTimeoutInMillis);
+            Unirest.config().httpClient(ApiRestHttpClient); //( messageDetails.SimpleHttpClient);
+            String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
+                    ";.readTimeoutInMillis=ReadTimeoutInMillis= " + ReadTimeoutInMillis + " PropUser:" + PropUser);
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
-            String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
-            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog( messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.toString(), MessageSend_Log );
 
-            if ( PropUser != null  )
-               Response =
-                    Unirest.post(EndPointUrl)
-                            .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
-                            .headers(httpHeaders) // возможно несколько заголовков!
-                            //.header("Content-Type", "text/xml;charset=UTF-8")
-                            .body( RequestBody )
-                            .asBinary()
-                            .getRawBody();
+            if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.toString(), MessageSend_Log);
+
+            if (PropUser != null)
+                Response =
+                        Unirest.post(EndPointUrl)
+                                .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
+                                .headers(httpHeaders) // возможно несколько заголовков!
+                                .body(RequestBody)
+                                .asBytes() //.asBytes()
+                        ;//.asBinary() .getRawBody();
             else
                 Response =
                         Unirest.post(EndPointUrl)
                                 .headers(httpHeaders) // возможно несколько заголовков!
-                                 //.header("Content-Type", "text/xml;charset=UTF-8")
-                                .body( RequestBody )
-                                .asBinary()
-                                .getRawBody(); //.asString() //.getBody();
+                                .body(RequestBody)
+                                .asBytes()
+                        ; //.getRawBody();//.asString() //.getBody();
+            // Response = httpResponse.getBody();
+            restResponseStatus = Response.getStatus();
+            byte[] Test;
+            //Test = Response.getBody();
+            //Headers headers = Response.getHeaders();
+            //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Response httpCode=" + restResponseStatus + " getBody().length=" + Response.getBody().length);
+            // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getBody()=" + Arrays.toString(Test) +" getBody().length=" + Test.length );
 
-        } catch ( UnirestException e) {
-            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "]  Exception" );
-            e.printStackTrace();
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post ("+EndPointUrl+") fault:" + e );
-            messageDetails.MsgReason.append(" sendPostMessage.Unirest.post fault: " ).append( sStackTrace.strInterruptedException(e));
-            MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
-                    "sendPostMessage.Unirest.post("+EndPointUrl+")", true,  e ,  MessageSend_Log);
-            return -1;
-        }
-        // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8
-        try {
-        if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
-                (! messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8") )) {
-             RestResponse = IOUtils.toString(Response, messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
-        }
-        else RestResponse = IOUtils.toString(Response, StandardCharsets.UTF_8);
+            // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8 RestResponse = Response.getBody();
+            try {
+                if ((messageDetails.MessageTemplate4Perform.getPropEncoding_Out() != null) &&
+                        (!messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8"))) {
+                    RestResponse = IOUtils.toString(Response.getBody(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out()); //StandardCharsets.UTF_8);
+                } else
+                    RestResponse = stripNonValidXMLCharacters(IOUtils.toString(Response.getBody(), "UTF-8")); // StandardCharsets.UTF_8);
 
-            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
+                if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
 
-        }
-        catch (Exception e) {
-            String PropEncoding_Out;
-            if ( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null)  PropEncoding_Out = "UTF_8";
-            else PropEncoding_Out = messageDetails.MessageTemplate4Perform.getPropEncoding_Out();
-            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException: Encoding `" + PropEncoding_Out +"`");
-            e.printStackTrace();
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from `" + PropEncoding_Out + "` to_UTF_8 fault:" + e);
-            messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `" + PropEncoding_Out +"` :" ).append( sStackTrace.strInterruptedException(e));
-            MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
-                    "HttpGetMessage.Unirest.post", true,  e ,  MessageSend_Log);
-            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log );
-            return -1;
-        }
+            } catch (Exception ioExc) {
+                String PropEncoding_Out;
+                if (messageDetails.MessageTemplate4Perform.getPropEncoding_Out() == null) PropEncoding_Out = "UTF_8";
+                else PropEncoding_Out = messageDetails.MessageTemplate4Perform.getPropEncoding_Out();
+                System.err.println("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString.UnsupportedEncodingException: Encoding `" + PropEncoding_Out + "`");
+                ioExc.printStackTrace();
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from `" + PropEncoding_Out + "` to_UTF_8 fault:" + ioExc);
+                messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `" + PropEncoding_Out + "` :").append(sStackTrace.strInterruptedException(ioExc));
+                MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                        "HttpGetMessage.Unirest.post", true, ioExc, MessageSend_Log);
+                if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(ioExc), MessageSend_Log);
+                return -1;
+            }
+            /**/
 
-        if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post RestResponse=(" + RestResponse + ")");
-
-        //  формируем в XML_MsgResponse ответ а-ля SOAP
-        try {
+            //  формируем в XML_MsgResponse ответ а-ля SOAP
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
             messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
 
-            if ( RestResponse.startsWith( "<?xml") || RestResponse.startsWith( "<?XML") )
+            if (RestResponse.isEmpty()) {  // добавляем <HttpStatusCode>httpStatus</HttpStatusCode>
+                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag);
+                messageDetails.XML_MsgResponse.append(XMLchars.NameTagHttpStatusCode);
+                messageDetails.XML_MsgResponse.append(XMLchars.CloseTag);
+                messageDetails.XML_MsgResponse.append(restResponseStatus);
+                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag);
+                messageDetails.XML_MsgResponse.append(XMLchars.EndTag);
+                messageDetails.XML_MsgResponse.append(XMLchars.NameTagHttpStatusCode);
+                messageDetails.XML_MsgResponse.append(XMLchars.CloseTag);
+                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+            } else // получили НЕпустой ответ, пробуем его разобрать
             {
-                int index2 = RestResponse.indexOf("?>"); //6
-                messageDetails.XML_MsgResponse.append(RestResponse.substring( index2 + 2 ) );
-            }
-            else {
-                if ( RestResponse.startsWith("<") ) { // чтитаем, что в ответе XML
-                    messageDetails.XML_MsgResponse.append(RestResponse);
-                }
-                else { // возможно, Json
-                    if (RestResponse.startsWith("{")) { // Разбираем Json
-                        JSONObject RestResponseJSON = new JSONObject(RestResponse);
-                        messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
+                if (RestResponse.startsWith("<?xml") || RestResponse.startsWith("<?XML")) {
+                    int index2 = RestResponse.indexOf("?>"); //6
 
-                    } else { // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]</MsgData>
-                        messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag).append(XMLchars.CDATAopen);
+                    messageDetails.XML_MsgResponse.append(RestResponse.substring(index2 + 2));
+                } else {
+                    if (RestResponse.startsWith("<")) { // чтитаем, что в ответе XML
                         messageDetails.XML_MsgResponse.append(RestResponse);
-                        messageDetails.XML_MsgResponse.append(XMLchars.CDATAclose).append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+
+                    } else { // возможно, Json
+                        if (RestResponse.startsWith("{")) { // Разбираем Json
+                            try {
+                                JSONObject RestResponseJSON = new JSONObject(RestResponse);
+                                messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
+                            } catch (Exception JSONe) { // получили непонятно что
+                                // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
+                                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag).append(XMLchars.CDATAopen);
+                                messageDetails.XML_MsgResponse.append(RestResponse);
+                                messageDetails.XML_MsgResponse.append(XMLchars.CDATAclose).append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+                            }
+
+                        } else {
+                            // ответ и не `{` и не `<` - опять же получили непонятно что
+                            // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
+                            messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag).append(XMLchars.CDATAopen);
+                            messageDetails.XML_MsgResponse.append(RestResponse);
+                            messageDetails.XML_MsgResponse.append(XMLchars.CDATAclose).append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+                        }
                     }
                 }
             }
 
             messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
-            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.post Envelope_MsgResponse=(" + messageDetails.XML_MsgResponse.toString() + ")");
+            if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post Envelope_MsgResponse=(" + messageDetails.XML_MsgResponse.toString() + ")");
+
+
+            // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
+            // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
+
+        } catch (UnirestException e) {
+            System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
+            e.printStackTrace();
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post (" + EndPointUrl + ") fault, UnirestException:" + e);
+            messageDetails.MsgReason.append(" sendPostMessage.Unirest.post fault: ").append(sStackTrace.strInterruptedException(e));
+
+            // Журналируем UnirestException-ответ как есть
+            if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
+
+            // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
+            // НАДО проверять количество порыток !!!
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "Retry_Count (" + messageQueueVO.getRetry_Count() + ")>= " +
+                    "( ShortRetryCount=" + messageDetails.MessageTemplate4Perform.getShortRetryCount() +
+                    " LongRetryCount=" + messageDetails.MessageTemplate4Perform.getLongRetryCount() + ")");
+            if (messageQueueVO.getRetry_Count() + 1 >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) {
+                // количество порыток исчерпано, формируем результат для выхода из повторов
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post (" + EndPointUrl + ") fault:" + e);
+                messageDetails.XML_MsgResponse.setLength(0);
+                messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
+                messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
+                messageDetails.XML_MsgResponse.append(XMLchars.Fault_Begin);
+                messageDetails.XML_MsgResponse.append("sendPostMessage (").append(EndPointUrl).append(") fault:").append(e.getMessage());
+                messageDetails.XML_MsgResponse.append(XMLchars.Fault_End);
+                messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
+
+                MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                        "sendPostMessage.Unirest.post (" + EndPointUrl + "), do re-Send: ", false, e, MessageSend_Log);
+            } else {
+                // HE-4892 Если транспорт отвалился , то Шина выставляет RESOUT - коммент ProcessingSendError & return -1;
+                MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                        "sendPostMessage.Unirest.post (" + EndPointUrl + ") ", true, e, MessageSend_Log);
+                return -1;
+            }
+            MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    "sendPostMessage.Unirest.post(" + EndPointUrl + ")", true, e, MessageSend_Log);
+            return -1;
+        }
+
+        if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post httpStatus=[" + restResponseStatus + "], RestResponse=(" + RestResponse + ")");
+
+        try {
             // Получили ответ от сервиса, инициируем обработку getResponseBody()
-            getResponseBody(messageDetails, MessageSend_Log);
-            if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessageSend_Log.info("Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+            InputStream parsedRestResponseStream;
+            parsedRestResponseStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+            SAXBuilder documentBuilder = new SAXBuilder();
+            Document XMLdocument;
+
+            try {
+                XMLdocument = documentBuilder.build(parsedRestResponseStream);
+            } catch (JDOMException RestResponseE) {
+                XMLdocument = null;
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.documentBuilder fault: " + sStackTrace.strInterruptedException(RestResponseE));
+                // формируем искуственный XML_MsgResponse из Fault
+                messageDetails.XML_MsgResponse.setLength(0);
+                messageDetails.XML_MsgResponse.trimToSize();
+                messageDetails.XML_MsgResponse.append(XMLchars.Fault_ExtResponse_Begin);
+                messageDetails.XML_MsgResponse.append(restResponseStatus);
+                messageDetails.XML_MsgResponse.append(XMLchars.FaultExtResponse_FaultString);
+                messageDetails.XML_MsgResponse.append(RestResponse);
+                messageDetails.XML_MsgResponse.append(XMLchars.FaultExtResponse_End);
+            }
+
+            MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
+
+            if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                MessageSend_Log.info("Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
             // client.wait(100);
 
         } catch (Exception e) {
-            System.err.println( "["+ messageQueueVO.getQueue_Id()  + "]  Exception" );
+            System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
             e.printStackTrace();
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
-            messageDetails.MsgReason.append(" sendPostMessage.getResponseBody fault: ").append( sStackTrace.strInterruptedException(e));
+            messageDetails.MsgReason.append(" sendPostMessage.getResponseBody fault: ").append(sStackTrace.strInterruptedException(e));
 
-            MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
-                    "sendPostMessage.getResponseBody", true, e ,  MessageSend_Log);
+            MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    "sendPostMessage.getResponseBody", true, e, MessageSend_Log);
             return -3;
         }
+        if (restResponseStatus != 200) // Rest вызов считаем успешным только при получении
+        {
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.restResponseStatus != 200: " + restResponseStatus);
+            messageDetails.MsgReason.append(" sendPostMessage.restResponseStatus != 200: ").append(restResponseStatus);
 
+            int messageRetry_Count = MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    "sendPostMessage.restResponseStatus != 200 ", false, null, MessageSend_Log);
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.messageRetry_Count = " + messageRetry_Count);
+            return -5;
+        } else
+            return 0;
+     } catch ( Exception allE) {
+        try {
+            ApiRestHttpClient.close();
+
+        } catch ( java.io.IOException IOE ) {
+            MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE);
+        }
+        ApiRestHttpClient = null;
+        try {
+            syncConnectionManager.shutdown();
+            syncConnectionManager.close();
+        } catch ( Exception anyE ) {
+            MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
+        }
+        syncConnectionManager = null;
+
+    } finally {
+        MessageSend_Log.warn("[" + "]" + "sendPostMessage.Unirest.ApiRestHttpClient.close finally" );
+        if (ApiRestHttpClient != null)
+            try {
+                ApiRestHttpClient.close();
+
+            } catch ( java.io.IOException IOE ) {
+                MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE);
+            }
+        ApiRestHttpClient = null;
+        if (syncConnectionManager != null)
+            try {
+                syncConnectionManager.shutdown();
+                syncConnectionManager.close();
+            } catch ( Exception anyE ) {
+                MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.syncConnectionManager.close finally fault, UnirestException:" + anyE);
+            }
+        syncConnectionManager = null;
+    }
         return 0;
     }
 
@@ -508,6 +727,8 @@ public class MessageHttpSend {
 		int ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
 		int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
         String RestResponse=null;
+        HttpResponse <String> RestResponseGet;
+        Integer restResponseStatus;
 
         HashMap<String, String > HttpGetParams = new HashMap<String, String >();
 
@@ -534,7 +755,7 @@ public class MessageHttpSend {
         // RowId ROWID_QUEUElog=null;
         String ROWID_QUEUElog=null;
 		try {
-            Unirest.setHttpClient( messageDetails.SimpleHttpClient);
+            Unirest.config().httpClient( messageDetails.SimpleHttpClient);
 
 			MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.get(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
 					";.readTimeoutInMillis=ReadTimeoutInMillis= " + ReadTimeoutInMillis +
@@ -552,20 +773,23 @@ public class MessageHttpSend {
 
             // Map<String, Object> stringObjectMap = new Map< String, String >();
             if ( PropUser != null )
-             RestResponse =	Unirest.get(EndPointUrl)
+                RestResponseGet =  Unirest.get(EndPointUrl)
                          // .header("Accept", "application/json,text/html,application/xhtml+xml,application/xml;*/*")
 						.queryString("queue_id", messageQueueVO.getQueue_Id() )
                         .queryString( ImmutableMap.copyOf( HttpGetParams) )
 						.basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
-						.asString().getBody();
+                        .asString(); //.getBody();
             else // Без basicAuth !
-                RestResponse = Unirest.get(EndPointUrl)
+                RestResponseGet =  Unirest.get(EndPointUrl)
                                 .queryString("queue_id", messageQueueVO.getQueue_Id() )
                                 .queryString( ImmutableMap.copyOf( HttpGetParams) )
-                                .asString().getBody();
+                                .asString(); //.getBody();
+            RestResponse = RestResponseGet.getBody(); //.toString();
+            // messageDetails.SimpleHttpClient.
+            restResponseStatus = RestResponseGet.getStatus();
 
-
-			messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
+            // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
+			// messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendGetMessage.Unirest.get RestResponse=(" + RestResponse + ")");
             // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.get escapeXml.RestResponse=(" + XML.escape(RestResponse) + ")");
@@ -602,6 +826,8 @@ public class MessageHttpSend {
             theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
 
 		try {
+            Document XMLdocument;
+            try {
             JSONObject RestResponseJSON = new JSONObject( RestResponse );
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
             messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
@@ -610,8 +836,27 @@ public class MessageHttpSend {
             messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
             MessageSend_Log.info("client.post:Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
+
+            ByteArrayInputStream parsedRestResponseStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+            SAXBuilder documentBuilder = new SAXBuilder();
+
+                XMLdocument = documentBuilder.build( parsedRestResponseStream );
+            }
+            catch ( JDOMException RestResponseE) {
+
+                System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.JSONObject Exception" + RestResponseE.getMessage() );
+                RestResponseE.printStackTrace();
+                System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.RestResponse[" + RestResponse + "]" );
+                MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTrace.strInterruptedException( RestResponseE ));
+                XMLdocument = null;
+                messageDetails.XML_MsgResponse.setLength(0); messageDetails.XML_MsgResponse.trimToSize();
+                messageDetails.XML_MsgResponse.append( XMLchars.Fault_ExtResponse_Begin); messageDetails.XML_MsgResponse.append( restResponseStatus );
+                messageDetails.XML_MsgResponse.append( XMLchars.FaultExtResponse_FaultString); messageDetails.XML_MsgResponse.append( RestResponse);
+                messageDetails.XML_MsgResponse.append( XMLchars.FaultExtResponse_End );
+            }
 			// Получили ответ от сервиса, инициируем обработку getResponseBody()
-			getResponseBody(messageDetails, MessageSend_Log);
+
+            MessageSoapSend.getResponseBody (messageDetails, XMLdocument, MessageSend_Log);
 			MessageSend_Log.info("client.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
 			// client.wait(100);
 
@@ -670,13 +915,24 @@ public class MessageHttpSend {
         return nOfParams;
     }
 
-    public static String getResponseBody(@NotNull MessageDetails messageDetails, Logger MessageSend_Log) throws JDOMException, IOException, XPathExpressionException {
-		SAXBuilder documentBuilder = new SAXBuilder();
-		//DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		InputStream parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
-		Document document = documentBuilder.build(parsedConfigStream);
+    public static String getResponseBody(@NotNull MessageDetails messageDetails, Document p_XMLdocument, Logger MessageSend_Log) throws JDOMException, IOException, XPathExpressionException {
 
-		Element SoapEnvelope = document.getRootElement();
+        SAXBuilder documentBuilder;
+        InputStream parsedConfigStream;
+        Document XMLdocument;
+        //  Если прарсинг ответа НЕ прошел, то тут уже псевдо-ответ от обработчика ошибки парсера
+        if ( p_XMLdocument == null ) {
+            documentBuilder = new SAXBuilder();
+            parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+            XMLdocument = documentBuilder.build(parsedConfigStream);
+        }
+        else //  Прарсинг ответа прошел, используем присланное
+            XMLdocument = p_XMLdocument;
+		// --//  DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		//InputStream parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+		// Document XMLdocument = documentBuilder.build(parsedConfigStream);
+
+		Element SoapEnvelope = XMLdocument.getRootElement();
 		boolean isSoapBodyFinded = false;
 		if ( SoapEnvelope.getName().equals(XMLchars.Envelope) ) {
 			// String deftarget = Envelope.getAttributeValue("default", "all");
@@ -751,7 +1007,7 @@ public class MessageHttpSend {
                 EndPointUrl = "http://" + messageTemplate4Perform.getPropHostPostExec() +
                         messageTemplate4Perform.getPropUrlPostExec();
             // Ставим своенго клиента ! ?
-            Unirest.setHttpClient( RestHermesAPIHttpClient);
+            Unirest.config( ).httpClient( RestHermesAPIHttpClient);
             HttpResponse RestResponseGet =
                     Unirest.get(EndPointUrl)
                             .queryString("queue_id", String.valueOf( Queue_Id  ))

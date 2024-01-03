@@ -148,19 +148,35 @@ public class MessageSoapSend {
 		return 0;
 	}
 */
-	public static String getResponseBody(@NotNull MessageDetails messageDetails, Logger MessegeSend_Log) throws JDOMParseException,JDOMException, IOException, XPathExpressionException {
-		SAXBuilder documentBuilder = new SAXBuilder();
-		//DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		InputStream parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+	public static String getResponseBody(@NotNull MessageDetails messageDetails, Document p_XMLdocument, Logger MessegeSend_Log) throws JDOMParseException,JDOMException, IOException, XPathExpressionException {
+		///////////////////////////////////////////
+		SAXBuilder documentBuilder;
+		InputStream parsedConfigStream;
 		Document document = null;
-		try {
-		document = (Document) documentBuilder.build(parsedConfigStream); // .parse(parsedConfigStream);
+		//  Если прарсинг ответа НЕ прошел, то тут уже псевдо-ответ от обработчика ошибки парсера
+		if ( p_XMLdocument == null ) {
+			documentBuilder = new SAXBuilder();
+			parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+			try {
+				document =  documentBuilder.build(parsedConfigStream); // .parse(parsedConfigStream);
+			}
+			catch ( JDOMParseException e)
+			{
+				MessegeSend_Log.error("documentBuilder.build (" + messageDetails.XML_MsgResponse.toString() + ") fault"  );
+				throw new JDOMParseException("client.post:getResponseBody=(" + messageDetails.XML_MsgResponse.toString() + ")", e);
+			}
 		}
-		catch ( JDOMParseException e)
-		{
-			MessegeSend_Log.error("documentBuilder.build (" + messageDetails.XML_MsgResponse.toString() + ")fault"  );
-			throw new JDOMParseException("client.post:getResponseBody=(" + messageDetails.XML_MsgResponse.toString() + ")", e);
-		}
+		else //  Прарсинг ответа прошел, используем присланное
+			document = p_XMLdocument;
+
+
+		///////////////////////////////////////////
+
+		// SAXBuilder documentBuilder = new SAXBuilder();
+		//                /*DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();*/
+		//InputStream parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+		//Document document = null;
+
 
 		Element SoapEnvelope = document.getRootElement();
 		int XML_MsgResponseLen = messageDetails.XML_MsgResponse.length();

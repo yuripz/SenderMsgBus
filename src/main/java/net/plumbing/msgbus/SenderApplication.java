@@ -66,6 +66,9 @@ public class SenderApplication implements CommandLineRunner {
 		ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
 
 		AppThead_log.info("Hellow for SenderApplication ");
+		// NotifyByChannel.test_Post(AppThead_log ); - для проверки
+		//		System.exit(11);
+
 		NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
 		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		String propJDBC = connectionProperties.gethrmsPoint();
@@ -194,8 +197,16 @@ public class SenderApplication implements CommandLineRunner {
 
 		// Зачитываем MessageDirection
 
-		InitMessageRepository.SelectMsgDirections(ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval,
+		int num_of_Systems = InitMessageRepository.SelectMsgDirections(ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval,
 				AppThead_log );
+		if ( num_of_Systems < 1 )
+		{
+			taskExecutor.shutdown();
+			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
+			MQbroker.stop();
+			NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Application on " + InetAddress.getLocalHost().getHostAddress() + " , *нет связи с БД*", AppThead_log );
+			System.exit(-22);
+		}
 		//AppThead_log.info("keysAllMessageDirections: " + MessageDirections.AllMessageDirections.get(1).getMsgDirection_Desc() );
 		// Устанвливаем очереди для каждой из СисТЕМ!
 		for (i=0; i< MessageDirections.AllMessageDirections.size(); i++)

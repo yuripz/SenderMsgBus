@@ -242,14 +242,14 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("full") )
                             )
                             {
-                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=lover[" + properties.getProperty(key) + "]" );
+                              //  MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=lover[" + properties.getProperty(key) + "]" );
                                 this.isDebugged=true;
                             }
                             if (( properties.getProperty(key).equalsIgnoreCase("ON") ) ||
                                     ( properties.getProperty(key).equalsIgnoreCase("FULL") )
                             )
                             {
-                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=UPPER[" + properties.getProperty(key) + "]" );
+                               // MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=UPPER[" + properties.getProperty(key) + "]" );
                                 this.isDebugged=true;
                             }
                         }
@@ -331,6 +331,7 @@ public class MessageTemplate4Perform {
             this.MsgAnswXSLT = messageTemplateVO.getMsgAnswXSLT();
             this.MessageXSD = messageTemplateVO.getMessageXSD();
             this.ErrTransXSLT = messageTemplateVO.getErrTransXSLT();
+            this.AckXSLT = messageTemplateVO.getAckXSLT();
     }
     public  String getPropReplacement() { return this.PropReplacement; }
     public  String getPropSearchString() { return this.PropSearchString; }
@@ -417,6 +418,8 @@ public class MessageTemplate4Perform {
     public String getHeaderXSLT () {  return this.HeaderXSLT ; }
     public String getMsgAnswXSLT() {  return this.MsgAnswXSLT ; }
     public String getEnvelopeNS () { return this.EnvelopeNS ; }
+
+    public String getAckXSLT () { return this.AckXSLT; }
 
     public String getPropShellScriptExeFullPathName() {  return this.ShellScriptExeFullPathName ; }
     public String getPropXPathParams() {  return this. XPathParams; }

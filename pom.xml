@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.2.23.11.30-SNAPSHOT</version>
+	<version>0.2.23.12.30f-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -167,18 +167,18 @@
 			<version>2.3.0-jaxb-1.0.6</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
+		<!-- https://mvnrepository.com/artifact/com.konghq/unirest-java -->
 		<dependency>
+			<groupId>com.konghq</groupId>
+			<artifactId>unirest-java</artifactId>
+			<version>3.14.5</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
+		<!--dependency>
 			<groupId>com.mashape.unirest</groupId>
 			<artifactId>unirest-java</artifactId>
 			<version>1.4.9</version>
-		</dependency>
-		<!--
-		 <dependency>
-			<groupId>com.konghq</groupId>
-			<artifactId>unirest-java</artifactId>
-			<version>3.13.8</version>
-		</dependency>  -->
+		</dependency> -->
 
 		<dependency>
 			<groupId>org.jetbrains</groupId>

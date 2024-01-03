@@ -710,7 +710,7 @@ public class TheadDataAccess {
             stmt_UPDATE_MessageQueue_DirectionAsIS.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info("[" + Queue_Id + "] commit:" + UPDATE_MessageQueue_DirectionAsIS + " = " + Queue_Id.toString() + " Retry_Count=" + Retry_Count );
+           // dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_DirectionAsIS commit:" + UPDATE_MessageQueue_DirectionAsIS + " = " + Queue_Id.toString() + " Retry_Count=" + Retry_Count );
 
         } catch (Exception e) {
 

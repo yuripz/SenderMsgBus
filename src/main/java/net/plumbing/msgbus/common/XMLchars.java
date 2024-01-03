@@ -27,6 +27,10 @@ public class XMLchars {
     public static final String Body_End="</env:Body>";
     public static final String Fault_Begin="<env:Fault><faultcode>env:Client</faultcode><faultstring>";
     public static final String Fault_End="</faultstring></env:Fault>";
+    public static final String Fault_ExtResponse_Begin="<Envelope><Body><Fault><faultcode>";
+    public static final String FaultExtResponse_FaultString="</faultcode><faultstring><![CDATA[";
+    public static final String FaultExtResponse_End="]]></faultstring></Fault></Body></Envelope>";
+
     final public static String TagContext     = "Context";
     final public static String TagEventInit   = "EventInitiator";
     final public static String TagEventKey    = "EventKey";
@@ -58,7 +62,7 @@ public class XMLchars {
     public static final String TagNext ="Next";
 
     public static final String NameTagResult       = "Result";
-    public static final String NameTagResultCod    = "Cod";
+    public static final String NameTagHttpStatusCode    = "HttpResponseStatusCode";
     public static final String NameTagResultText   = "Text";
 
     public static final String NameTagFaultResult  = "ResultCode";
@@ -93,7 +97,7 @@ public class XMLchars {
     public static final String EmptyXSLT_Result ="<?xml version=\"1.0\" encoding=\"utf-8\"?><nan></nan>";
       public static final String nanXSLT_Result ="<nan></nan>";
 
-    final public static int MAX_TAG_VALUE_BYTE_SIZE=3966;
+    final public static int MAX_TAG_VALUE_BYTE_SIZE=3988;
 
     public static byte @NotNull [] cutUTF8ToMAX_TAG_VALUE_BYTE_SIZE(@NotNull String s)  {
         byte[] utf8;
