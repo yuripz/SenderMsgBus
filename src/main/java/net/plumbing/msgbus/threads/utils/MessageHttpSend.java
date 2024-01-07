@@ -424,6 +424,7 @@ public class MessageHttpSend {
         httpHeaders.put("Connection", "close");
         if ( AckXSLT_4_make_JSON != null )
         { httpHeaders.put("Content-Type","text/json;charset=UTF-8");
+          MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post JSON `" + messageDetails.XML_MsgSEND + "`" );
         }
         else
         { httpHeaders.put("Content-Type", "text/xml;charset=UTF-8"); }
@@ -651,7 +652,7 @@ public class MessageHttpSend {
             MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
 
             if (messageDetails.MessageTemplate4Perform.getIsDebugged())
-                MessageSend_Log.info("Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
             // client.wait(100);
 
         } catch (Exception e) {
@@ -672,7 +673,10 @@ public class MessageHttpSend {
             int messageRetry_Count = MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                     "sendPostMessage.restResponseStatus != 200 ", false, null, MessageSend_Log);
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.messageRetry_Count = " + messageRetry_Count);
-            return -5;
+            if ( messageDetails.XML_ClearBodyResponse.length() > XMLchars.nanXSLT_Result.length() )
+                return 0; // ответ от внешней системы разобран в виде XML , надо продолжить обработку
+            else
+                return -5; // и restResponseStatus != 200 и ответ неразбрчив
         } else
             return 0;
      } catch ( Exception allE) {

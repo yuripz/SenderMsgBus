@@ -470,16 +470,16 @@ public class PerformQueueMessages {
                                     if (Message.MessageTemplate4Perform.getIsDebugged())
                                         MessageSend_Log.info("[" + Queue_Id + "] PropWebMetod is `post`, AckXSLT_4_make_JSON (" + AckXSLT_4_make_JSON + ")");
                                     try {
-                                        Message.XML_MsgResponse.append( // переиспользуем для временного храненияж
+                                        String make_JSON =
                                                 ConvXMLuseXSLT(messageQueueVO.getQueue_Id(),
                                                         Message.XML_MsgSEND, // то, что подготовлено для передачи во внешнюю систему в формате XML
                                                         AckXSLT_4_make_JSON,  // через HeaderXSLT
                                                         Message.MsgReason, MessageSend_Log,
                                                         Message.MessageTemplate4Perform.getIsDebugged()
-                                                )
-                                                        .substring(XMLchars.xml_xml.length()) // берем после <?xml version="1.0" encoding="UTF-8"?>
-                                        );
-                                        Message.XML_MsgSEND = Message.XML_MsgResponse.toString(); // сохраняем для отправки результат преобразования
+                                                );
+                                        Message.XML_MsgSEND = make_JSON; // сохраняем для отправки результат преобразования
+                                        if (Message.MessageTemplate4Perform.getIsDebugged())
+                                            MessageSend_Log.info("[" + Queue_Id + "] PropWebMetod is `post`as JSON (" + Message.XML_MsgResponse + ")");
 
                                     } catch (TransformerException exception) {
                                         MessageSend_Log.error("SEND [" + messageQueueVO.getQueue_Id() + "] XSLT-преобразователь для JSON :{"
@@ -1086,7 +1086,7 @@ public class PerformQueueMessages {
         StreamResult result;
         ByteArrayInputStream xmlInputStream=null;
         //BufferedInputStream  _xmlInputStream;
-        ByteArrayOutputStream fout=new ByteArrayOutputStream();
+        ByteArrayOutputStream fOut=new ByteArrayOutputStream();
         String res=XMLchars.EmptyXSLT_Result;
         ConvXMLuseXSLTerr="";
         try {
@@ -1120,7 +1120,7 @@ public class PerformQueueMessages {
                 MsgResult.append( "ConvXMLuseXSLT:");  MsgResult.append( ConvXMLuseXSLTerr );
                 return XMLchars.EmptyXSLT_Result ;
             }
-        result = new StreamResult(fout);
+        result = new StreamResult(fOut);
         try
         {
             TransformerFactory XSLTransformerFactory = TransformerFactory.newInstance();
@@ -1139,7 +1139,7 @@ public class PerformQueueMessages {
             else result = null;
 
             if ( result != null) {
-                res = fout.toString();
+                res = fOut.toString();
                 // System.err.println("result != null, res:" + res );
                 if ( res.length() < XMLchars.EmptyXSLT_Result.length()) {
                     if ( IsDebugged )
@@ -1153,7 +1153,7 @@ public class PerformQueueMessages {
                 res = XMLchars.EmptyXSLT_Result;
                 // System.err.println("result= null, res:" + res );
             }
-        try { fout.close();}
+        try { fOut.close();}
            catch( IOException IOexc)  {
             System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.Transformer IOException" );
             IOexc.printStackTrace(); }

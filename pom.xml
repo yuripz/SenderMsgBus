@@ -11,8 +11,8 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.msgbus</groupId>
-	<artifactId>Sender</artifactId>
-	<version>0.2.23.12.30f-SNAPSHOT</version>
+	<artifactId>Sender_aSynk</artifactId>
+	<version>0.2.23.12.31-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
