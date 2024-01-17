@@ -31,6 +31,10 @@ public class XMLchars {
     public static final String FaultExtResponse_FaultString="</faultcode><faultstring><![CDATA[";
     public static final String FaultExtResponse_End="]]></faultstring></Fault></Body></Envelope>";
 
+    public static final String Success_ExtResponse_Begin="<Envelope><Body><MsgData><HttpResponseStatusCode>";
+    public static final String Success_ExtResponse_PayloadString="</HttpResponseStatusCode><payload><![CDATA[";
+    public static final String Success_ExtResponse_End="]]></payload></MsgData></Body></Envelope>";
+
     final public static String TagContext     = "Context";
     final public static String TagEventInit   = "EventInitiator";
     final public static String TagEventKey    = "EventKey";

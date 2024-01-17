@@ -82,7 +82,7 @@ public class SenderApplication implements CommandLineRunner {
 				 propJDBC = propJDBC.substring(0, propJDBC.indexOf("/"));
 			}
 		}
-		 NotifyByChannel.Telegram_sendMessage( "*Starting* Sender Application on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + ", db " + propJDBC+ " ) ", AppThead_log );
+		 NotifyByChannel.Telegram_sendMessage( "Starting *Sender* Application v.0.2.23.12.33 on " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`)", AppThead_log );
 		String propConnectMsgBus = connectionProperties.getconnectMsgBus();
 		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://0.0.0.0:61016";
 
@@ -362,7 +362,7 @@ public class SenderApplication implements CommandLineRunner {
 		}
 		taskExecutor.shutdown();
 		// monitorWriterPool.shutdown(); -- monitorWriter для Графаны больше не используется , комментарим
-		 NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostAddress() + " , *exit!*", AppThead_log );
+		 NotifyByChannel.Telegram_sendMessage( "Shutdown *Sender* Applicationon `" + InetAddress.getLocalHost().getHostAddress() + "` , *exit!*", AppThead_log );
 		System.exit(-22);
 		//return;
 	}

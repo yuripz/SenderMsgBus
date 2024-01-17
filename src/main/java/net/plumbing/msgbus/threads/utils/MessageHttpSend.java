@@ -32,7 +32,7 @@ import net.plumbing.msgbus.common.json.JSONObject;
 import net.plumbing.msgbus.common.json.XML;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.common.XMLchars;
-import net.plumbing.msgbus.monitoring.ConcurrentQueue;
+//import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -60,7 +60,7 @@ import java.nio.charset.StandardCharsets;
 //import java.sql.RowId;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
+//import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,10 +131,24 @@ public class MessageHttpSend {
         int  ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
 
+
+        PoolingHttpClientConnectionManager syncConnectionManager = new PoolingHttpClientConnectionManager();
+        // Ставим своенго клиента !
+        CloseableHttpClient
+                ApiRestHttpClient = getCloseableHttpClient(  messageQueueVO,  messageDetails ,  theadDataAccess,
+                syncConnectionManager, ReadTimeoutInMillis,
+                MessageSend_Log);
+        if ( ApiRestHttpClient == null) {
+            // syncConnectionManager.shutdown() и syncConnectionManager.close();
+            // производится внутри getCloseableHttpClient() при неудаче
+            return -36;
+        }
+
         // TODO : for Ora RowId ROWID_QUEUElog=null;
         String ROWID_QUEUElog=null;
         String RestResponse=null;
          HttpResponse <byte[]> Response ;
+
         // kong.unirest.RequestBodyEntity Response ;
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
@@ -161,7 +175,7 @@ public class MessageHttpSend {
 
         try {
             //  устанавливаем "своего" HttpClient с предварительно выставленными тайм-аутами из шаблона и SSL
-            Unirest.config( ).httpClient( messageDetails.SimpleHttpClient);
+            Unirest.config( ).httpClient( ApiRestHttpClient );
 
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + ConnectTimeoutInMillis +
@@ -384,6 +398,7 @@ public class MessageHttpSend {
         return ApiRestHttpClient  ;
 
     }
+
     public static int sendPostMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         //
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
@@ -532,51 +547,42 @@ public class MessageHttpSend {
             messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
 
             if (RestResponse.isEmpty()) {  // добавляем <HttpStatusCode>httpStatus</HttpStatusCode>
-                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
-                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag);
-                messageDetails.XML_MsgResponse.append(XMLchars.NameTagHttpStatusCode);
-                messageDetails.XML_MsgResponse.append(XMLchars.CloseTag);
-                messageDetails.XML_MsgResponse.append(restResponseStatus);
-                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag);
-                messageDetails.XML_MsgResponse.append(XMLchars.EndTag);
-                messageDetails.XML_MsgResponse.append(XMLchars.NameTagHttpStatusCode);
-                messageDetails.XML_MsgResponse.append(XMLchars.CloseTag);
-                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
-            } else // получили НЕпустой ответ, пробуем его разобрать
+                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , null );
+                 } else // получили НЕпустой ответ, пробуем его разобрать
             {
                 if (RestResponse.startsWith("<?xml") || RestResponse.startsWith("<?XML")) {
                     int index2 = RestResponse.indexOf("?>"); //6
 
                     messageDetails.XML_MsgResponse.append(RestResponse.substring(index2 + 2));
+                    messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                    messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
                 } else {
                     if (RestResponse.startsWith("<")) { // чтитаем, что в ответе XML
                         messageDetails.XML_MsgResponse.append(RestResponse);
+                        messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                        messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
 
                     } else { // возможно, Json
                         if (RestResponse.startsWith("{")) { // Разбираем Json
                             try {
                                 JSONObject RestResponseJSON = new JSONObject(RestResponse);
                                 messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
+                                messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                                messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
                             } catch (Exception JSONe) { // получили непонятно что
                                 // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
-                                messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag).append(XMLchars.CDATAopen);
-                                messageDetails.XML_MsgResponse.append(RestResponse);
-                                messageDetails.XML_MsgResponse.append(XMLchars.CDATAclose).append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
-                            }
+                                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
+                                }
 
                         } else {
                             // ответ и не `{` и не `<` - опять же получили непонятно что
                             // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
-                            messageDetails.XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag).append(XMLchars.CDATAopen);
-                            messageDetails.XML_MsgResponse.append(RestResponse);
-                            messageDetails.XML_MsgResponse.append(XMLchars.CDATAclose).append(XMLchars.OpenTag).append(XMLchars.EndTag).append(XMLchars.NameRootTagContentJsonResponse).append(XMLchars.CloseTag);
+                            append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
                         }
                     }
                 }
             }
 
-            messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
-            messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
             if (messageDetails.MessageTemplate4Perform.getIsDebugged())
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post Envelope_MsgResponse=(" + messageDetails.XML_MsgResponse.toString() + ")");
 
@@ -602,14 +608,8 @@ public class MessageHttpSend {
             if (messageQueueVO.getRetry_Count() + 1 >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) {
                 // количество порыток исчерпано, формируем результат для выхода из повторов
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post (" + EndPointUrl + ") fault:" + e);
-                messageDetails.XML_MsgResponse.setLength(0);
-                messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
-                messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
-                messageDetails.XML_MsgResponse.append(XMLchars.Fault_Begin);
-                messageDetails.XML_MsgResponse.append("sendPostMessage (").append(EndPointUrl).append(") fault:").append(e.getMessage());
-                messageDetails.XML_MsgResponse.append(XMLchars.Fault_End);
-                messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
-                messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
+                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, 506 ,
+                        "sendPostMessage (").append(EndPointUrl).append(") fault:").append(e.getMessage() );
 
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "sendPostMessage.Unirest.post (" + EndPointUrl + "), do re-Send: ", false, e, MessageSend_Log);
@@ -636,17 +636,14 @@ public class MessageHttpSend {
 
             try {
                 XMLdocument = documentBuilder.build(parsedRestResponseStream);
+                if (messageDetails.MessageTemplate4Perform.getIsDebugged())
+                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage documentBuilder=[" + XMLdocument.toString() + "], XML_MsgResponse=(" + messageDetails.XML_MsgResponse + ")");
+
             } catch (JDOMException RestResponseE) {
                 XMLdocument = null;
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.documentBuilder fault: " + sStackTrace.strInterruptedException(RestResponseE));
-                // формируем искуственный XML_MsgResponse из Fault
-                messageDetails.XML_MsgResponse.setLength(0);
-                messageDetails.XML_MsgResponse.trimToSize();
-                messageDetails.XML_MsgResponse.append(XMLchars.Fault_ExtResponse_Begin);
-                messageDetails.XML_MsgResponse.append(restResponseStatus);
-                messageDetails.XML_MsgResponse.append(XMLchars.FaultExtResponse_FaultString);
-                messageDetails.XML_MsgResponse.append(RestResponse);
-                messageDetails.XML_MsgResponse.append(XMLchars.FaultExtResponse_End);
+                // формируем искуственный XML_MsgResponse из Fault ,  меняем XML_MsgResponse
+                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
             }
 
             MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
@@ -716,6 +713,36 @@ public class MessageHttpSend {
     }
         return 0;
     }
+
+
+    private static StringBuilder append_Http_ResponseStatus_and_PlaneResponse ( @NotNull StringBuilder XML_MsgResponse, @NotNull Integer restResponseStatus, String restResponse )
+    {
+        XML_MsgResponse.setLength(0);
+        XML_MsgResponse.trimToSize();
+        if ( (restResponseStatus < 200) || (restResponseStatus > 299)  ) {
+
+            XML_MsgResponse.append(XMLchars.Fault_ExtResponse_Begin)
+                            .append(restResponseStatus)
+                            .append(XMLchars.FaultExtResponse_FaultString);
+            if (restResponse!= null)
+            XML_MsgResponse.append(restResponse);
+            //else XML_MsgResponse.append("");
+            XML_MsgResponse.append(XMLchars.FaultExtResponse_End);
+        }
+        else {
+
+            XML_MsgResponse.append(XMLchars.Success_ExtResponse_Begin)
+                        .append(restResponseStatus)
+                        .append(XMLchars.Success_ExtResponse_PayloadString);
+            if (restResponse!= null)
+                XML_MsgResponse.append(restResponse);
+            //else XML_MsgResponse.append("");
+            XML_MsgResponse.append(XMLchars.Success_ExtResponse_End);
+        }
+
+        return XML_MsgResponse;
+    }
+
 
 ///////////////////////////////////// HttpGetMessage //////////////////////////////////////////////////////////////////////////////////////////////////////
 

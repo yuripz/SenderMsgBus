@@ -23,7 +23,7 @@ public class ShutdownHook {
         ShutdownHook_log.info("###STOPing###");
 
         try {
-            NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*", ShutdownHook_log );
+            NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon v.0.2.23.12.33 on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*", ShutdownHook_log );
             ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*" );
             // Thread.sleep(1 * 1000); InterruptedException |
         } catch ( UnknownHostException e) {
