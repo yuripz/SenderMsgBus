@@ -8,6 +8,7 @@ mvn*
 src/main/resources/application.*
 Sender.HE-4349.*
 application.properties*
+S*application.properties*
 Sender.iml
 HE-4349.Sender_BUS.start.Java-17.sh
 HE-4349.Sender_BUS.start.Java-17.cmd

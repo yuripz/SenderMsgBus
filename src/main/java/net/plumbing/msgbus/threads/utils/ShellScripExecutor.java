@@ -163,9 +163,7 @@ public class ShellScripExecutor {
         messageDetails.XML_ClearBodyResponse.append(OpenTag).append( XMLchars.EndTag ).append( "responseBody" ).append( XMLchars.CloseTag);
         messageDetails.XML_ClearBodyResponse.append(OpenTag).append( XMLchars.EndTag ).append( "ResponseCallScript" ).append( XMLchars.CloseTag);
         if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessegeSend_Log.info("Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
-
-
+            MessegeSend_Log.info( "[" + messageQueueVO.getQueue_Id() + "]" + "execShell:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
         return 0;
     }
 }

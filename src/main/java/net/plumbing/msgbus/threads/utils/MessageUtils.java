@@ -140,7 +140,7 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            MessageSend_Log.info("Unirest.post:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
             return messageRetry_Count;
         }
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() ) {

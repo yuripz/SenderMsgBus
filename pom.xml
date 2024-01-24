@@ -11,20 +11,21 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.msgbus</groupId>
-	<artifactId>Sender_aSynk</artifactId>
-	<version>0.2.23.12.33-SNAPSHOT</version>
+	<artifactId>Sender</artifactId>
+	<version>0.2.23.12.35-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
 	<dependencies>
-		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
+
+		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-core</artifactId>
 			<version>1.4.12</version>
-		</dependency>
+		</dependency>-->
 
 		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api
 		<dependency>
