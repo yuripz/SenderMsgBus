@@ -25,12 +25,9 @@ import net.plumbing.msgbus.model.MessageDirections;
 //import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 //import MonitoringConfig;
 import net.plumbing.msgbus.mq.ActiveMQService;
-//import NotifyByChannel;
-//import ShutdownHook;
 import net.plumbing.msgbus.threads.MessageSendTask;
 
 import java.net.InetAddress;
-
 import java.sql.SQLException;
 import java.util.Properties;
 import org.apache.activemq.broker.BrokerService;
@@ -57,6 +54,7 @@ public class SenderApplication implements CommandLineRunner {
 	public TelegramProperties telegramProperties;
 
 	public static String propJDBC;
+	public static final String ApplicationName="*Sender* Application v.2.23.12.37";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -70,7 +68,7 @@ public class SenderApplication implements CommandLineRunner {
 		//		System.exit(11);
 
 		NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
-		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "Starting *Sender* Application v.0.2.23.12.36 on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
+		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "Starting " + ApplicationName + " on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		propJDBC = connectionProperties.gethrmsPoint();
 		if ( propJDBC == null)  propJDBC = "jdbc UNKNOWN ! ";
 		else {
@@ -82,7 +80,7 @@ public class SenderApplication implements CommandLineRunner {
 				 propJDBC = propJDBC.substring(0, propJDBC.indexOf("/"));
 			}
 		}
-		 NotifyByChannel.Telegram_sendMessage( "Starting *Sender* Application v.0.2.23.12.36 on " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`)", AppThead_log );
+		 NotifyByChannel.Telegram_sendMessage( "Starting " + ApplicationName + " on " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`)", AppThead_log );
 		String propConnectMsgBus = connectionProperties.getconnectMsgBus();
 		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://0.0.0.0:61016";
 
@@ -171,7 +169,7 @@ public class SenderApplication implements CommandLineRunner {
 			taskExecutor.shutdown();
 			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
 			MQbroker.stop();
-			NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Application on "
+			NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " on "
 					+ InetAddress.getLocalHost().getHostName() + " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *нет связи с БД*", AppThead_log );
 			// + InetAddress.getLocalHost().getHostAddress() + " , *нет связи с БД*", AppThead_log );
 			System.exit(-22);
@@ -206,7 +204,7 @@ public class SenderApplication implements CommandLineRunner {
 			taskExecutor.shutdown();
 			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
 			MQbroker.stop();
-			NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Application on "
+			NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " on "
 					+ InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *нет связи с БД*", AppThead_log );
 					//+ InetAddress.getLocalHost().getHostAddress() + " , *нет связи с БД*", AppThead_log );
 			System.exit(-22);
@@ -325,7 +323,7 @@ public class SenderApplication implements CommandLineRunner {
 					AppThead_log.info(" `free memory`( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process after GC is : " + freeMemory );
 
 					if ( count != TotalNumTasks )
-						NotifyByChannel.Telegram_sendMessage( "*Количество потоков=*" + count +" !=" + TotalNumTasks +" у Sender Application on "
+						NotifyByChannel.Telegram_sendMessage( "*Количество потоков=*" + count +" !=" + TotalNumTasks +" у " + ApplicationName + " on "
 								+ InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`)", AppThead_log );
 								//InetAddress.getLocalHost().getHostAddress(), AppThead_log );
 
@@ -368,7 +366,7 @@ public class SenderApplication implements CommandLineRunner {
 		}
 		taskExecutor.shutdown();
 		// monitorWriterPool.shutdown(); -- monitorWriter для Графаны больше не используется , комментарим
-		 NotifyByChannel.Telegram_sendMessage( "Shutdown *Sender* Applicationon `"
+		 NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " on "
 				 + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`) , *exit!*", AppThead_log );
 				 //+ InetAddress.getLocalHost().getHostAddress() + "` , *exit!*", AppThead_log );
 		System.exit(-22);
@@ -398,4 +396,5 @@ public class SenderApplication implements CommandLineRunner {
 	 externSystemCallPool.setThreadNamePrefix("CronD-");
 	 AppThead_log.info("ThreadPoolTaskExecutor for externSystemCall prepared: CorePoolSize("+ numberMessageType_4_Scheduled + "), MaxPoolSize(" + (numberMessageType_4_Scheduled+1) + "); ");
  }
+
 }
