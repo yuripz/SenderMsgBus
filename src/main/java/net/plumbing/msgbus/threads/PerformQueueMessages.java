@@ -23,7 +23,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 //import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+//import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
@@ -139,7 +139,6 @@ public class PerformQueueMessages {
             return -12L;
         }
 
-
         Message.MessageTemplate4Perform = new MessageTemplate4Perform(MessageTemplate.AllMessageTemplate.get(Template_Id),
                 URL_SOAP_Send, //  хвост для добавления к getWSDL_Name() из MessageDirections
                 MessageDirections.AllMessageDirections.get(MsgDirectionVO_Key).getWSDL_Name(),
@@ -155,27 +154,8 @@ public class PerformQueueMessages {
         );
         MessageSend_Log.info("[" + Queue_Id + "] MessageTemplate4Perform[" + Message.MessageTemplate4Perform.printMessageTemplate4Perform() );
 
+        /* CloseableHttpClient для создания запроса во внешнюю системк создаётся непосредвенно в момент отправки
         CloseableHttpClient SimpleHttpClient; // Message.SimpleHttpClient;
-/*        if ( SimpleHttpClient != null ) {
-            try {
-                SimpleHttpClient.close();
-            } catch (IOException e) {
-                MessageSend_Log.error("и еще ошибка SimpleHttpClient.close(): " + e.getMessage());
-                return -22L;
-            }
-        }
-*/
-
-
-        String isProxySet = System.getProperty("http.proxySet");
-        if ( (isProxySet != null) && (isProxySet.equals("true")) )
-            SimpleHttpClient = getProxedHttpClient(
-                    Message.sslContext, Message.MessageTemplate4Perform,
-                    //Message.MessageTemplate4Perform.getPropTimeout_Read() * 1000,
-                    //Message.MessageTemplate4Perform.getPropTimeout_Conn() * 1000,
-                    MessageSend_Log
-            );
-            else
         SimpleHttpClient = getCloseableHttpClient(
                 Message.sslContext, Message.MessageTemplate4Perform,
                 //Message.MessageTemplate4Perform.getPropTimeout_Read() * 1000,
@@ -183,13 +163,14 @@ public class PerformQueueMessages {
                 MessageSend_Log
         );
 
-
         if ( SimpleHttpClient == null) {
             theadDataAccess.doUPDATE_MessageQueue_Out2ErrorOUT(messageQueueVO, "внутренняя ошибка - не смогли создать CloseableHttpClient ]", MessageSend_Log);
             // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, messageQueueVO.getMsg_Type(), String.valueOf(messageQueueVO.getQueue_Id()),  monitoringQueueVO, MessageSend_Log);
             return -22L;
         }
         Message.SimpleHttpClient = SimpleHttpClient;
+
+         */
         /* - Exception java.lang.UnsupportedOperationException
         MessageHttpSend.setHttpConnectionParams( SimpleHttpClient,
                 Message.MessageTemplate4Perform.getPropTimeout_Read() * 1000, Message.MessageTemplate4Perform.getPropTimeout_Conn() * 1000
@@ -910,144 +891,6 @@ public class PerformQueueMessages {
         return messageQueueVO.getQueue_Id();
     }
 
-    public CloseableHttpClient getCloseableHttpClient( SSLContext sslContext, MessageTemplate4Perform messageTemplate4Perform,
-                                                                                               Logger getHttpClient_Log) {
-        int SocketTimeout =  messageTemplate4Perform.getPropTimeout_Read() * 1000;
-        int ConnectTimeout = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
-
-        if ( this.client == null ) {
-            this.client = new DefaultHttpClient( this.ExternalConnectionManager );
-        }
-        HttpParams httpParameters = new BasicHttpParams();
-
-        HttpConnectionParams.setConnectionTimeout(httpParameters, ConnectTimeout) ; // connectTimeoutInMillis);
-        HttpConnectionParams.setSoTimeout(httpParameters, SocketTimeout );  //readTimeoutInMillis;
-        this.client.setParams(httpParameters);
-
-        /* proxy is not USED !
-        HttpHost proxyHost;
-        //String isProxySet = System.getProperty("http.proxySet");
-        //getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxySet\") [" + isProxySet + "]");
-        if ( (isProxySet != null) && (isProxySet.equals("true")) ) {
-            getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxyHost\") [" + System.getProperty("http.proxyHost") + "]");
-            getHttpClient_Log.info("getCloseableHttpClient(): System.getProperty(\"http.proxyPort\") [" + System.getProperty("http.proxyPort") + "]");
-            proxyHost = new HttpHost( System.getProperty("http.proxyHost"), Integer.parseInt(System.getProperty("http.proxyPort")) );
-            ConnRouteParams.setDefaultProxy(httpParameters, proxyHost );
-            getHttpClient_Log.info("ConnRouteParams.DEFAULT_PROXY[" + ConnRouteParams.DEFAULT_PROXY + "]");
-        }
-
-        this.client.setParams(httpParameters);
-        /*
-        String EndPointUrl;
-
-        if ( StringUtils.substring(messageTemplate4Perform.getEndPointUrl(),0,"http".length()).equalsIgnoreCase("http") )
-            EndPointUrl = messageTemplate4Perform.getEndPointUrl();
-        else
-            EndPointUrl = "http://" + messageTemplate4Perform.getEndPointUrl();
-        // https work ovet ngnix
-
-        if ( StringUtils.substring(EndPointUrl,0,"https".length()).equalsIgnoreCase("https") ) {
-            SSLSocketFactory factory;
-            int port;
-            endpointProperties = Security.builder().build();
-            URI Uri_4_Request;
-            try {
-                try {
-                    Uri_4_Request = new URI(EndPointUrl);
-
-                } catch (URISyntaxException ex) {
-                    throw new SoapClientException(String.format("URI [%s] is malformed", EndPointUrl) + ex.getMessage(), ex);
-                }
-                factory = SSLUtils.getFactory(endpointProperties);
-                port = Uri_4_Request.getPort();
-                registerTlsScheme(factory, port);
-
-            } catch (GeneralSecurityException ex) {
-                throw new SoapClientException(ex);
-            }
-        }
-        */
-
-        return  this.client;
-
-    }
-    //private URI endpointUri;
-
-
-    public CloseableHttpClient getProxedHttpClient( SSLContext sslContext, MessageTemplate4Perform messageTemplate4Perform,
-                                                       Logger getHttpClient_Log) {
-        int SocketTimeout =  messageTemplate4Perform.getPropTimeout_Read() * 1000;
-        int ConnectTimeout = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
-        CloseableHttpClient  safeHttpClient=null;
-        if ( this.httpClient != null )
-            try {  this.httpClient.close();
-                   this.httpClient = null;
-            } catch ( IOException e) {
-                getHttpClient_Log.error("под конец  ошибка httpClient.close(): " + e.getMessage() );
-                this.httpClient = null;
-                return null;     }
-
-            RequestConfig rc;
-            HttpHost proxyHost;
-            String isProxySet = System.getProperty("http.proxySet");
-            getHttpClient_Log.info("getProxedHttpClient(): System.getProperty(\"http.proxySet\") [" + isProxySet + "]");
-            // if ( (isProxySet != null) && (isProxySet.equals("true")) ) {
-                getHttpClient_Log.info("getProxedHttpClient(): System.getProperty(\"http.proxyHost\") [" + System.getProperty("http.proxyHost") + "]");
-                getHttpClient_Log.info("getProxedHttpClient(): System.getProperty(\"http.proxyPort\") [" + System.getProperty("http.proxyPort") + "]");
-                proxyHost = new HttpHost( System.getProperty("http.proxyHost"), Integer.parseInt(System.getProperty("http.proxyPort")) );
-
-            // }
-        /*
-        try {
-            SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustSelfSignedStrategy() {
-                public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                    return true;
-                }
-            }).build();
-*/
-            rc = RequestConfig.custom()
-                    .setConnectionRequestTimeout(ConnectTimeout)
-                    .setConnectTimeout(ConnectTimeout)
-                    .setSocketTimeout(SocketTimeout)
-                    .build();
-            //threadSafeClientConnManager = new HttpClientConnectionManager();
-            //threadSafeClientConnManager.setMaxTotal((Integer) 99);
-            //threadSafeClientConnManager.setDefaultMaxPerRoute((Integer) 99);
-            CredentialsProvider credentialsPovider = new BasicCredentialsProvider();
-            credentialsPovider.setCredentials(new AuthScope(System.getProperty("http.proxyHost"), Integer.parseInt(System.getProperty("http.proxyPort")) ), new
-                    UsernamePasswordCredentials(System.getProperty("http.proxyUser"), System.getProperty("http.proxyPassword")));
-
-            HttpClientBuilder httpClientBuilder = HttpClientBuilder.create()
-                    .disableDefaultUserAgent()
-                    .disableRedirectHandling()
-                    .disableAutomaticRetries()
-                    .setUserAgent("Mozilla/5.0")
-                    .setSSLContext(sslContext)
-                    .disableAuthCaching()
-                    .disableConnectionState()
-                    .disableCookieManagement()
-                    .setProxy(proxyHost)
-                    .setDefaultCredentialsProvider(credentialsPovider)
-                    .useSystemProperties() // HE-5663  https://stackoverflow.com/questions/5165126/without-changing-code-how-to-force-httpclient-to-use-proxy-by-environment-varia
-                    //      .setConnectionManager( threadSafeClientConnManager )
-                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                    .setConnectionTimeToLive(SocketTimeout + 5, TimeUnit.SECONDS)
-                    .evictIdleConnections((long) (SocketTimeout + 5) * 2, TimeUnit.SECONDS);
-
-            httpClientBuilder.setDefaultRequestConfig(rc);
-            PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-            cm.setMaxTotal(50 * 2);
-            cm.setDefaultMaxPerRoute(2);
-            cm.setValidateAfterInactivity(1200 * 1000);
-            httpClientBuilder.setConnectionManager(cm);
-
-            safeHttpClient = httpClientBuilder.build();
-
-            this.httpClient = safeHttpClient;
-
-        return safeHttpClient;
-
-    }
    // private Security endpointProperties;
 /*
     private void registerTlsScheme(SchemeLayeredSocketFactory factory, int port) {

@@ -32,7 +32,7 @@ public class MessageDetails {
 
     public int Message_Tag_Num = 0; // счетчик XML элнментов в Message
     public int Confirmation_Tag_Num = 0; // счетчик XML элнментов в Confirmation
-    public CloseableHttpClient SimpleHttpClient;
+    // public CloseableHttpClient SimpleHttpClient;
     public CloseableHttpClient RestHermesAPIHttpClient;
     public SSLContext sslContext;
     public HttpClientBuilder httpClientBuilder;
@@ -49,9 +49,9 @@ public class MessageDetails {
         this.MsgReason.setLength(0); this.MsgReason.trimToSize();
         this.XML_MsgConfirmation.setLength(0);
     }
-    public void SetHttpClient( CloseableHttpClient simpleHttpClient ) {
-        this.SimpleHttpClient= simpleHttpClient;
-    }
+    // public void SetHttpClient( CloseableHttpClient simpleHttpClient ) {
+    //    this.SimpleHttpClient= simpleHttpClient;
+    //}
     public void ReInitMessageDetails( SSLContext sslContext, HttpClientBuilder  httpClientBuilder , CloseableHttpClient simpleHttpClient, CloseableHttpClient RestHermesAPIHttpClient  ) {
         this.Message.clear();
         this.MessageIndex_by_Tag_Par_Num.clear();
@@ -64,7 +64,7 @@ public class MessageDetails {
         this.XML_MsgConfirmation.setLength(0); this.XML_MsgConfirmation.trimToSize();
         this.sslContext = sslContext;
         this.httpClientBuilder = httpClientBuilder;
-        this.SimpleHttpClient= simpleHttpClient; //  парметры соединения есть только в щаблоне
+        // this.SimpleHttpClient= simpleHttpClient; //  парметры соединения есть только в щаблоне
         this.RestHermesAPIHttpClient= RestHermesAPIHttpClient;
     }
 }
