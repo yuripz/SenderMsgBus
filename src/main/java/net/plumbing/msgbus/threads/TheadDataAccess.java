@@ -174,6 +174,7 @@ public class TheadDataAccess {
             // Handle any errors that may have occurred.
         } catch (Exception e) {
             dataAccess_log.error(e.getMessage());
+            System.err.println("DriverManager.getConnection fault: " );
             e.printStackTrace();
             return ((Connection) null);
         }

@@ -54,7 +54,7 @@ public class SenderApplication implements CommandLineRunner {
 	public TelegramProperties telegramProperties;
 
 	public static String propJDBC;
-	public static final String ApplicationName="*Sender_BUS* v.4.02.22";
+	public static final String ApplicationName="*Sender_BUS* v.4.03.10";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}

@@ -4,6 +4,7 @@
 /_Logz
 /target
 mvn*
+mvnw.cmd
 *.log
 src/main/resources/application.*
 Sender.HE-4349.*
