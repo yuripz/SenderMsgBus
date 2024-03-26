@@ -116,7 +116,7 @@ public class InitMessageRepository {
             //  Oracle  - YYYY-MM-DD HH24:MI:SS
             selectMsgTypeReRead = "select t.interface_id, " +
                     "t.operation_id, t.msg_type, t.msg_type_own, t.msg_typedesc, t.msg_direction, " +
-                    "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time " +
+                    "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time, t.Last_Update_Dt " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
                         "where (1=1) and t.msg_direction like '%OUT%' " +
                         "and t.LAST_UPDATE_DT > ( sysDate - ( 120 + " + intervalReInit + " )/(24*3600)  )" +
@@ -124,7 +124,7 @@ public class InitMessageRepository {
         else //  PostGree
             selectMsgTypeReRead = "select t.interface_id, " +
                     "t.operation_id, t.msg_type, t.msg_type_own, t.msg_typedesc, t.msg_direction, " +
-                    "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time " +
+                    "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time, t.Last_Update_Dt " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
                         "where (1=1) " +
                         "and t.LAST_UPDATE_DT > ( now() AT TIME ZONE 'Europe/Moscow' - Interval '1 Second' * ( 120 + " + intervalReInit + " )  )" +
