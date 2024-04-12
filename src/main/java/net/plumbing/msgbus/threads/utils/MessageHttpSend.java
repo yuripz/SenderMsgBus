@@ -23,7 +23,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+//import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -180,9 +180,9 @@ public class MessageHttpSend {
             Unirest.config( ).httpClient( ApiRestHttpClient );
 
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
-                    ";.readTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Read() +
-                    ";.PropUser=" + messageDetails.MessageTemplate4Perform.getPropUser() +
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.uniRest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
+                    ".000;.readTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Read() +
+                    ".000;.PropUser=" + messageDetails.MessageTemplate4Perform.getPropUser() +
                     ";.PropPswd=" + messageDetails.MessageTemplate4Perform.getPropPswd() +
                     ";."+ messageDetails.MessageTemplate4Perform.SOAP_ACTION_11 + "=" + messageDetails.MessageTemplate4Perform.getSOAPAction()
             );
@@ -339,25 +339,25 @@ public class MessageHttpSend {
             ApiRestHttpClient.close();
 
         } catch ( java.io.IOException IOE ) {
-            MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE);
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE);
         }
         ApiRestHttpClient = null;
         try {
             syncConnectionManager.shutdown();
             syncConnectionManager.close();
         } catch ( Exception anyE ) {
-            MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
         }
         syncConnectionManager = null;
 
     } finally {
-        MessageSend_Log.warn("[" + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally" );
+        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally" );
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
             } catch ( java.io.IOException IOE ) {
-                MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE);
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE);
             }
         ApiRestHttpClient = null;
         if (syncConnectionManager != null)
@@ -365,7 +365,7 @@ public class MessageHttpSend {
                 syncConnectionManager.shutdown();
                 syncConnectionManager.close();
             } catch ( Exception anyE ) {
-                MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.syncConnectionManager.close finally fault, UnirestException:" + anyE);
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "HttpGetMessage.Unirest.syncConnectionManager.close finally fault, UnirestException:" + anyE);
             }
         syncConnectionManager = null;
     }
@@ -455,7 +455,7 @@ public class MessageHttpSend {
         String AckXSLT_4_make_JSON = messageTemplate4Perform.getAckXSLT() ;
 
         HttpResponse <byte[]> Response ;
-        BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager(); //PoolingHttpClientConnectionManager();
+        BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager(); // PoolingHttpClientConnectionManager(); //
         // Ставим своенго клиента !
         CloseableHttpClient
                 ApiRestHttpClient = getCloseableHttpClient(  messageQueueVO,  messageDetails ,  theadDataAccess,
@@ -822,7 +822,7 @@ public class MessageHttpSend {
             return -1;
         }
 
-        BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager(); //PoolingHttpClientConnectionManager();
+        BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager(); //PoolingHttpClientConnectionManager(); //
         // Ставим своенго клиента !
         CloseableHttpClient
                 ApiRestHttpClient = getCloseableHttpClient(  messageQueueVO,  messageDetails ,  theadDataAccess,
@@ -840,6 +840,7 @@ public class MessageHttpSend {
   try {
 
       try {
+
           Unirest.config().httpClient(ApiRestHttpClient);
           MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.get(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
                   ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() +
