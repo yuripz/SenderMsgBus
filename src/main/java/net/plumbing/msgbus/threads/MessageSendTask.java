@@ -1,20 +1,8 @@
 package net.plumbing.msgbus.threads;
 
 //import com.sun.istack.internal.NotNull;
-//import org.apache.http.HttpHost;
 import net.plumbing.msgbus.common.DataAccess;
 import net.plumbing.msgbus.model.MessageDetails;
-import net.plumbing.msgbus.threads.utils.MessageHttpSend;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-//import org.apache.http.params.CoreConnectionPNames;
-//import org.apache.http.params.HttpConnectionParams;
-//import org.apache.http.params.BasicHttpParams;
-//import org.apache.http.params.HttpParams;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
@@ -27,19 +15,15 @@ import net.plumbing.msgbus.model.MessageQueueVO;
 //import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 import net.plumbing.msgbus.model.MonitoringQueueVO;
 import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
-
 import net.plumbing.msgbus.common.json.JSONObject;
 
 import javax.jms.*;
-import javax.net.ssl.SSLContext;
 import java.sql.*;
 import java.sql.Connection;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
-
 import static net.plumbing.msgbus.common.XMLchars.DirectOUT;
-
 
 @Component
 @Scope("prototype")
@@ -63,7 +47,7 @@ public class MessageSendTask  implements Runnable
     private ApplicationContext context;
     public static final Logger MessegeSend_Log = LoggerFactory.getLogger(MessageSendTask.class);
 
-    private ThreadSafeClientConnManager externalConnectionManager;
+    //private ThreadSafeClientConnManager externalConnectionManager;
 
     private String HrmsSchema;
     private String HrmsPoint;
@@ -114,9 +98,9 @@ public class MessageSendTask  implements Runnable
     public void setCuberNumId( int cuberNumId) { this.CuberNumId=cuberNumId;}
     private int theadRunCount = 0;
     private  int  theadRunTotalCount = 1;
-    private SSLContext sslContext = null;
-    private HttpClientBuilder httpClientBuilder  = null;
-    private CloseableHttpClient ApiRestHttpClient = null;
+    // private SSLContext sslContext = null;
+    //private HttpClientBuilder httpClientBuilder  = null;
+    // private java.net.http.HttpClient ApiRestHttpClient = null;
 
     @Bean( name = "MessageSendTaskRun")
     // @Scheduled(initialDelay = 100, fixedRate = 1000)
@@ -136,8 +120,8 @@ public class MessageSendTask  implements Runnable
                 MessegeSend_Log.info("MessageType: " + MessageType.AllMessageType.get(i).getMsg_TypeDesc());
             }
         }
-        int ReadTimeoutInMillis = ApiRestWaitTime * 1000;
-        int ConnectTimeoutInMillis = 5 * 1000;
+        //int ReadTimeoutInMillis = ApiRestWaitTime * 1000;
+        // int ConnectTimeoutInMillis = 5 * 1000;
         Integer MessageType_Connect= null;
         Session JMSsession = null;
         Destination JMSdestination = null;
@@ -185,6 +169,8 @@ public class MessageSendTask  implements Runnable
             MessegeSend_Log.error("НЕ удалось Установить соединение , что бы зачитывать очередь, либо подготовить запросы к БД ");
             return;
         }
+
+/*
         sslContext = MessageHttpSend.getSSLContext();
         if ( sslContext == null ) {
             return;
@@ -225,6 +211,7 @@ public class MessageSendTask  implements Runnable
         if ( ApiRestHttpClient == null) {
             return;
         }
+        */
 
         //SimpleHttpClient..setConnectTimeout(ConnectTimeoutInMillis);
         //HttpParams paramZ =  SimpleHttpClient.getParams();
@@ -423,8 +410,9 @@ public class MessageSendTask  implements Runnable
             }
         }
         PerformQueueMessages PerformQueueMessages = new PerformQueueMessages();
-        PerformQueueMessages.setExternalConnectionManager( externalConnectionManager );
+        //PerformQueueMessages.setExternalConnectionManager( externalConnectionManager );
         MessageDetails Message = new MessageDetails();
+        Message.ApiRestWaitTime = ApiRestWaitTime;
         MessageQueueVO messageQueueVO = new MessageQueueVO();
         MonitoringQueueVO monitoringQueueVO = new MonitoringQueueVO();
         //Date moment = new Date(1451665447567L); // Задаем количество миллисекунд Unix-time с того-самого-момента
@@ -532,7 +520,7 @@ public class MessageSendTask  implements Runnable
                         { // запись захвачена
                             // -- это графана, не нужно -- ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, messageQueueVO.getMsg_Type(), String.valueOf(messageQueueVO.getQueue_Id()),  monitoringQueueVO, MessegeSend_Log);
                             // Очистили Message от всего, что там было
-                            Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
+                            Message.ReInitMessageDetails( ApiRestWaitTime );
                             try {
                                 MessegeSend_Log.warn( "Main Thread: (530:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
                                 PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
@@ -551,7 +539,7 @@ public class MessageSendTask  implements Runnable
                 } catch (Exception e) {
                     MessegeSend_Log.error(e.getMessage());
                     e.printStackTrace();
-                    MessegeSend_Log.error( "что то пошло совсем не так...");
+                    MessegeSend_Log.error( "что то пошло совсем не так... см.:" + e.toString() );
                     return;
                 }
                 if ( num_Message4Perform <  NumMessageInScan ) // если в курсор был НЕ полон
@@ -642,7 +630,7 @@ public class MessageSendTask  implements Runnable
                                 if ( isNoLock )
                                 { // запись
                                     // Очистили Message от всего, что там было
-                                    Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
+                                    Message.ReInitMessageDetails(ApiRestWaitTime);
                                     try {
                                         num_HelpedMessage4Perform +=1; // отмечаем, что конкретно помогаем
                                         MessegeSend_Log.warn( "Helped Thread: (628:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
@@ -877,7 +865,7 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                 }
                 */
                 // Очистили Message от всего, что там было
-                Message.ReInitMessageDetails(sslContext, httpClientBuilder, null, ApiRestHttpClient);
+                Message.ReInitMessageDetails(ApiRestWaitTime);
                 try {
                     stmtGetMessage4QueueId.setLong(1, Queue_Id ); //setString(1, QueueRowId ); // TODO : for Ora .setRowId( QueueRowId );
                     ResultSet rs = stmtGetMessage4QueueId.executeQuery();

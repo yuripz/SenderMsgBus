@@ -12,15 +12,13 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.3.24.04.10b-SNAPSHOT</version>
+	<version>0.3.24.04.14f-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
-
-
 
 		<dependency>
 		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
@@ -74,6 +72,7 @@
 
 		<dependency> <groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
+			<version>3.2.4</version>
 		</dependency>
 
 		<dependency>
@@ -124,6 +123,7 @@
 			<version>1.2.0</version>
 		</dependency>
 
+		<!-- Not user yet!
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
@@ -134,7 +134,7 @@
 					<artifactId>commons-logging</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
+		</dependency>-->
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -169,23 +169,24 @@
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.konghq/unirest-java -->
+		<!-- Not user yet!
 		<dependency>
 			<groupId>com.konghq</groupId>
 			<artifactId>unirest-java</artifactId>
 			<version>3.14.5</version>
-		</dependency>
+		</dependency>-->
 		<!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
 		<!--dependency>
 			<groupId>com.mashape.unirest</groupId>
 			<artifactId>unirest-java</artifactId>
 			<version>1.4.9</version>
 		</dependency> -->
-
+		<!-- https://mvnrepository.com/artifact/org.jetbrains/annotations
 		<dependency>
 			<groupId>org.jetbrains</groupId>
 			<artifactId>annotations</artifactId>
 			<version>24.0.1</version>
-		</dependency>
+		</dependency>-->
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
@@ -196,7 +197,7 @@
 		<dependency>
 		    <groupId>com.oracle.database.jdbc</groupId>
 		    <artifactId>ojdbc11</artifactId>
-		    <version>21.6.0.0.1</version>
+		    <version>21.13.0.0</version>
 		</dependency>
 
 		<dependency>
@@ -218,6 +219,7 @@
 			<artifactId>json-path</artifactId>
 			<version>2.9.0</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot</artifactId>

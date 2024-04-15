@@ -191,7 +191,7 @@ public class MessageTemplate4Perform {
             this.HeaderXSLT = messageTemplateVO.getHeaderXSLT();
             this.EnvelopeXSLTExt = messageTemplateVO.getEnvelopeXSLTExt();
             this.PropUser = Db_user;
-            this.PropPswd = Db_pswd != null ? Db_pswd : null;
+            this.PropPswd = Db_pswd; // Db_pswd != null ? Db_pswd : null;
 
 
             this.ConfigExecute = messageTemplateVO.getConfigExecute();
@@ -437,7 +437,6 @@ public class MessageTemplate4Perform {
     public String getPropUrl() {  return this.PropUrl; }
     public String getType_Connection() {  return this. Type_Connection; }
 
-
     public int getShortRetryCount(){ return this.ShortRetryCount;}
     public int getShortRetryInterval(){ return this.ShortRetryInterval;}
     public int getLongRetryCount(){ return this.LongRetryCount;}
@@ -447,8 +446,6 @@ public class MessageTemplate4Perform {
     public int getShortRetryIntervalPostExec(){ return this.ShortRetryIntervalPostExec;}
     public int getLongRetryCountPostExec(){ return this.LongRetryCountPostExec;}
     public int getLongRetryIntervalPostExec(){ return this.LongRetryIntervalPostExec;}
-
-
 
     public void setConfigExecute (String ConfigExecute) { this.ConfigExecute = ConfigExecute; }
     public void setConfigPostExec (String ConfigPostExec) { this.ConfigPostExec = ConfigPostExec ; }

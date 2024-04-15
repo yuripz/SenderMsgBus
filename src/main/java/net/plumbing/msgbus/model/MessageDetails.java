@@ -1,6 +1,4 @@
 package net.plumbing.msgbus.model;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.util.ArrayList;
@@ -29,13 +27,14 @@ public class MessageDetails {
     public int MsgStatus=0;
     public StringBuilder MsgReason = new StringBuilder();
     public Integer X_Total_Count =0;
+    public int ApiRestWaitTime=120;
 
     public int Message_Tag_Num = 0; // счетчик XML элнментов в Message
     public int Confirmation_Tag_Num = 0; // счетчик XML элнментов в Confirmation
     // public CloseableHttpClient SimpleHttpClient;
-    public CloseableHttpClient RestHermesAPIHttpClient;
-    public SSLContext sslContext;
-    public HttpClientBuilder httpClientBuilder;
+    // public java.net.http.HttpClient RestHermesAPIHttpClient;
+    //public SSLContext sslContext;
+    //public HttpClientBuilder httpClientBuilder;
 
 
     public  MessageDetails() {
@@ -52,7 +51,9 @@ public class MessageDetails {
     // public void SetHttpClient( CloseableHttpClient simpleHttpClient ) {
     //    this.SimpleHttpClient= simpleHttpClient;
     //}
-    public void ReInitMessageDetails( SSLContext sslContext, HttpClientBuilder  httpClientBuilder , CloseableHttpClient simpleHttpClient, CloseableHttpClient RestHermesAPIHttpClient  ) {
+    public void ReInitMessageDetails( int ApiRestWaitTime // SSLContext sslContext, HttpClientBuilder  httpClientBuilder , CloseableHttpClient simpleHttpClient, java.net.http.HttpClient RestHermesAPIHttpClient
+    //         HttpClient создаётся всегла по месту, его бодбше не требуется инициализировать
+                                    ) {
         this.Message.clear();
         this.MessageIndex_by_Tag_Par_Num.clear();
         this.Confirmation.clear();
@@ -62,9 +63,10 @@ public class MessageDetails {
         this.XML_MsgRESOUT.setLength(0); this.XML_MsgRESOUT.trimToSize();
         this.MsgReason.setLength(0); this.MsgReason.trimToSize();
         this.XML_MsgConfirmation.setLength(0); this.XML_MsgConfirmation.trimToSize();
-        this.sslContext = sslContext;
-        this.httpClientBuilder = httpClientBuilder;
+        this.ApiRestWaitTime = ApiRestWaitTime;
+        //this.sslContext = sslContext;
+        // this.httpClientBuilder = httpClientBuilder;
         // this.SimpleHttpClient= simpleHttpClient; //  парметры соединения есть только в щаблоне
-        this.RestHermesAPIHttpClient= RestHermesAPIHttpClient;
+        // this.RestHermesAPIHttpClient= RestHermesAPIHttpClient; // парметры соединения есть  в щаблоне , логин и пароль, их надо учитывать при
     }
 }

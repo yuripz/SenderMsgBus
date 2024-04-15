@@ -1,30 +1,18 @@
 package net.plumbing.msgbus.threads.utils;
 
+import com.google.common.escape.Escaper;
 import com.jayway.jsonpath.*;
-import com.google.common.collect.ImmutableMap;
-import kong.unirest.*;
-import net.plumbing.msgbus.common.ApplicationProperties;
+//import com.google.common.collect.ImmutableMap;
+//import kong.unirest.UnirestException;
+//import kong.unirest.Unirest;
+
+//import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.json.JSONException;
 import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.TheadDataAccess;
 import org.apache.commons.io.IOUtils;
-/*
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-*/
-//import oracle.jdbc.internal.OracleRowId;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-//import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -37,18 +25,21 @@ import net.plumbing.msgbus.common.XMLchars;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+//import java.security.KeyManagementException;
+//import java.security.KeyStoreException;
+//import java.security.NoSuchAlgorithmException;
 
-import javax.net.ssl.SSLContext;
-// import javax.security.cert.CertificateException;
+//import javax.net.ssl.SSLContext;
+//import javax.security.cert.CertificateException;
 //import javax.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
-import org.apache.http.ssl.SSLContextBuilder;
+//import java.security.cert.CertificateException;
+//import java.security.cert.X509Certificate;
 
 import javax.validation.constraints.NotNull;
 //import javax.xml.parsers.DocumentBuilderFactory;
@@ -59,22 +50,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 //import java.sql.RowId;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 //import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+//import java.util.concurrent.TimeUnit;
 // import com.google.common.escape.Escaper;
-// import com.google.common.net.UrlEscapers;
+import com.google.common.net.UrlEscapers;
 
 import static net.plumbing.msgbus.common.XMLchars.OpenTag;
 import static net.plumbing.msgbus.threads.utils.MessageUtils.stripNonValidXMLCharacters;
 
 public class MessageHttpSend {
 
-    public static SSLContext getSSLContext() {
+    /*public static SSLContext getSSLContext() {
         SSLContext sslContext;
         try {
              sslContext = new SSLContextBuilder()
@@ -90,6 +82,7 @@ public class MessageHttpSend {
         }
         return sslContext;
     }
+    */
 
     public static int sendSoapMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         // рассчитываем размер SoapEnvelope
@@ -132,9 +125,9 @@ public class MessageHttpSend {
         // int ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         // int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
 
-        BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager();
+        //BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager();
         // Ставим своенго клиента !
-        CloseableHttpClient
+        /*CloseableHttpClient
                 ApiRestHttpClient = getCloseableHttpClient(  messageQueueVO,  messageDetails ,  theadDataAccess,
                 syncConnectionManager, messageTemplate4Perform.getPropTimeout_Conn(), messageTemplate4Perform.getPropTimeout_Read(),
                 MessageSend_Log);
@@ -143,11 +136,37 @@ public class MessageHttpSend {
             // производится внутри getCloseableHttpClient() при неудаче
             return -36;
         }
+        */
+        HttpClient ApiRestHttpClient;
+        Authenticator authenticator;
+        String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+        if ( PropUser != null  ) {
+            authenticator = new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(
+                            PropUser,
+                            messageDetails.MessageTemplate4Perform.getPropPswd().toCharArray());
+                }
+            };
+            ApiRestHttpClient = HttpClient.newBuilder()
+                                    .authenticator(authenticator)
+                                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                                    .version(HttpClient.Version.HTTP_1_1)
+                                    .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                                    .build();
+        }
+        else
+            ApiRestHttpClient =HttpClient.newBuilder()
+                                .version(HttpClient.Version.HTTP_1_1)
+                                .followRedirects(HttpClient.Redirect.ALWAYS)
+                                .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                                .build();
 
         // TODO : for Ora RowId ROWID_QUEUElog=null;
         String ROWID_QUEUElog=null;
         String RestResponse=null;
-         HttpResponse <byte[]> Response ;
+         // HttpResponse <byte[]> Response ;
 
         // kong.unirest.RequestBodyEntity Response ;
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -177,7 +196,7 @@ public class MessageHttpSend {
 
         try {
             //  устанавливаем "своего" HttpClient с предварительно выставленными тайм-аутами из шаблона и SSL
-            Unirest.config( ).httpClient( ApiRestHttpClient );
+            //Unirest.config( ).httpClient( ApiRestHttpClient );
 
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.uniRest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
@@ -190,7 +209,6 @@ public class MessageHttpSend {
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post[" + SoapEnvelope + "]" );
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
-            String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
 
             String SOAPAction=messageDetails.MessageTemplate4Perform.getSOAPAction();
             if ( SOAPAction == null)
@@ -199,14 +217,25 @@ public class MessageHttpSend {
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog( messageQueueVO.getQueue_Id(), SoapEnvelope.toString(), MessageSend_Log );
 
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                            .POST( HttpRequest.BodyPublishers.ofByteArray(RequestBody) )
+                            .uri(URI.create(EndPointUrl))
+                            .setHeader("Content-Type", "text/xml;charset=UTF-8")
+                            .setHeader("User-Agent", "msgBus/Java-21") // add request header
+                            .setHeader(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
+                            .setHeader("Accept", "*/*")
+                            .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
+                            .build();
+
             // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(), null, monitoringQueueVO, MessageSend_Log);
+            /*
             if ( PropUser != null  ) {
                    Response  =
                         Unirest.post(EndPointUrl)
                                 .header("Content-Type", "text/xml;charset=UTF-8")
                                 .header(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
-                                .header("User-Agent", "msgBus/Java-17")
-                                .header("Accept", "*/*")
+                                .header("User-Agent", "msgBus/Java-21")
+                                .header("Accept", "* /*")
                                 .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
                                 .body(RequestBody)
                                  .asBytes()
@@ -217,18 +246,19 @@ public class MessageHttpSend {
                         Unirest.post(EndPointUrl)
                                 .header("Content-Type", "text/xml;charset=UTF-8")
                                 .header("User-Agent", "msgBus/Java-17")
-                                .header("Accept", "*/*")
+                                .header("Accept", "* /*")
                                 .header(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
                                 .body(RequestBody)
                                 .asBytes();
                           //      .asBinary().getRawBody();
-            }
-            // int r_size = Response.();
-            int restResponseStatus = Response.getStatus();
+            }*/
+            HttpResponse<byte[]> Response = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
+            int restResponseStatus = Response.statusCode();
+
             // Headers headers = Response.getHeaders();
             // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendSoapMessage.Unirest.Response.getBody().length" + Response.getBody().length );
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendSoapMessage.Unirest.Response.getBody().length" + Response.body().length );
             //  byte [] RequestBodyContent = new Response.toString();
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8
             // Response => RestResponse;
@@ -236,9 +266,9 @@ public class MessageHttpSend {
                 if (( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() !=null ) &&
                     ( !messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equals("UTF-8" )) ) {
                     // RestResponse = IOUtils.toString(Response, messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
-                    RestResponse = IOUtils.toString( Response.getBody(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
+                    RestResponse = IOUtils.toString( Response.body(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ); //StandardCharsets.UTF_8);
                 }
-                else RestResponse = IOUtils.toString( Response.getBody(), "UTF-8" ); //StandardCharsets.UTF_8);
+                else RestResponse = IOUtils.toString( Response.body(), "UTF-8" ); //StandardCharsets.UTF_8);
             }
             catch (Exception ioExc) {
                 System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
@@ -263,7 +293,7 @@ public class MessageHttpSend {
             if ( messageDetails.MessageTemplate4Perform.getIsDebugged() )
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
 
-        } catch ( UnirestException e) {
+        } catch ( Exception e) {
             // Журналируем ответ как есть
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.Unirest.post ("+EndPointUrl+") fault:" + e );
             messageDetails.MsgReason.append(" sendSoapMessage.Unirest.post (" ).append ( EndPointUrl )
@@ -335,31 +365,33 @@ public class MessageHttpSend {
         // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
     } // делаем, всё,  что можно и нужно
     catch ( Exception allE) {
+        if (ApiRestHttpClient != null)
         try {
+            ApiRestHttpClient.shutdown();
             ApiRestHttpClient.close();
 
-        } catch ( java.io.IOException IOE ) {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE);
+        } catch ( Exception IOE ) {
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close fault, Exception:" + IOE.getMessage());
         }
         ApiRestHttpClient = null;
-        try {
-            syncConnectionManager.shutdown();
+        /*try {
             syncConnectionManager.close();
         } catch ( Exception anyE ) {
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
         }
-        syncConnectionManager = null;
+        syncConnectionManager = null;*/
 
     } finally {
-        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally" );
+        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close finally" );
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
-            } catch ( java.io.IOException IOE ) {
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE);
+            } catch ( Exception IOE ) {
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close finally fault, Exception:" + IOE.getMessage());
             }
         ApiRestHttpClient = null;
+        /*
         if (syncConnectionManager != null)
             try {
                 syncConnectionManager.shutdown();
@@ -368,9 +400,11 @@ public class MessageHttpSend {
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "HttpGetMessage.Unirest.syncConnectionManager.close finally fault, UnirestException:" + anyE);
             }
         syncConnectionManager = null;
+        */
     }
         return 0;
     } // sendSoapMessage
+    /*
     private static CloseableHttpClient getCloseableHttpClient( MessageQueueVO messageQueueVO, MessageDetails Message , TheadDataAccess theadDataAccess,
                                                                BasicHttpClientConnectionManager syncConnectionManager, int Timeout_Conn, int Timeout_Read,
                                                        Logger MessegeReceive_Log) {
@@ -437,6 +471,7 @@ public class MessageHttpSend {
         return ApiRestHttpClient  ;
 
     }
+    */
 
     public static int sendPostMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         //
@@ -452,9 +487,10 @@ public class MessageHttpSend {
         // int ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
         // int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
         String RestResponse;
+        int restResponseStatus;
         String AckXSLT_4_make_JSON = messageTemplate4Perform.getAckXSLT() ;
 
-        HttpResponse <byte[]> Response ;
+        /*
         BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager(); // PoolingHttpClientConnectionManager(); //
         // Ставим своенго клиента !
         CloseableHttpClient
@@ -466,14 +502,38 @@ public class MessageHttpSend {
             // производится внутри getCloseableHttpClient() при неудаче
             return -36;
         }
-
-        Integer restResponseStatus;
+*/
+        HttpClient ApiRestHttpClient;
+        Authenticator authenticator;
+        String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+        if ( PropUser != null  ) {
+            authenticator = new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(
+                            PropUser,
+                            messageDetails.MessageTemplate4Perform.getPropPswd().toCharArray());
+                }
+            };
+            ApiRestHttpClient = HttpClient.newBuilder()
+                    .authenticator(authenticator)
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                    .build();
+        }
+        else
+            ApiRestHttpClient =HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                    .build();
 
         byte[] RequestBody;
 
         Map<String, String> httpHeaders= new HashMap<>();
         String headerParams[];
-        httpHeaders.put("User-Agent", "msgBus/Java-17");
+        httpHeaders.put("User-Agent", "msgBus/Java-21");
         httpHeaders.put("Accept", "*/*");
         httpHeaders.put("Connection", "close");
         if ( AckXSLT_4_make_JSON != null )
@@ -519,8 +579,8 @@ public class MessageHttpSend {
 
 
         try {
-            Unirest.config().httpClient(ApiRestHttpClient); //( messageDetails.SimpleHttpClient);
-            String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+            // Unirest.config().httpClient(ApiRestHttpClient); //( messageDetails.SimpleHttpClient);
+
             MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
                     ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() + " PropUser:" + PropUser);
             messageDetails.Confirmation.clear();
@@ -528,7 +588,7 @@ public class MessageHttpSend {
 
             if (messageDetails.MessageTemplate4Perform.getIsDebugged())
                 ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.toString(), MessageSend_Log);
-
+/*
             if (PropUser != null)
                 Response =
                         Unirest.post(EndPointUrl)
@@ -544,23 +604,52 @@ public class MessageHttpSend {
                                 .body(RequestBody)
                                 .asBytes()
                         ; //.getRawBody();//.asString() //.getBody();
+            */
             // Response = httpResponse.getBody();
-            restResponseStatus = Response.getStatus();
-            byte[] Test;
+            StringBuilder queryString= new StringBuilder(messageDetails.XML_MsgSEND.length());
+
+            HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
+            //HttpRequest.Builder preBuilder;
+
+            // добавляем все заголовки как есть через HttpRequest.Builder
+            for (Map.Entry<String, String> entry: httpHeaders.entrySet()) {
+                requestBuilder = requestBuilder
+                                .header(entry.getKey(),entry.getValue());
+                // queryString.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+            java.net.http.HttpRequest request = requestBuilder
+                    .POST( HttpRequest.BodyPublishers.ofByteArray(RequestBody) )
+                    .uri(URI.create(EndPointUrl))
+                    .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
+                    .build();
+
+            /*java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .POST( HttpRequest.BodyPublishers.ofByteArray(RequestBody) )
+                    .uri(URI.create(EndPointUrl))
+                    .header("User-Agent", "msgBus/Java-17")
+                    .header("Accept", "* /*")
+                    .header("Connection", "close")
+                    // .headers( httpHeaders.toString() ) // возможно несколько заголовков!
+                    .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
+                    .build();
+            */
+            HttpResponse<byte[]> Response = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
+            restResponseStatus = Response.statusCode();
+
             //Test = Response.getBody();
             //Headers headers = Response.getHeaders();
             //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Response httpCode=" + restResponseStatus + " getBody().length=" + Response.getBody().length);
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Response httpCode=" + restResponseStatus + " getBody().length=" + Response.body().length);
             // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getBody()=" + Arrays.toString(Test) +" getBody().length=" + Test.length );
 
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8 RestResponse = Response.getBody();
             try {
                 if ((messageDetails.MessageTemplate4Perform.getPropEncoding_Out() != null) &&
                         (!messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8"))) {
-                    RestResponse = IOUtils.toString(Response.getBody(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out()); //StandardCharsets.UTF_8);
+                    RestResponse = IOUtils.toString(Response.body(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out()); //StandardCharsets.UTF_8);
                 } else
-                    RestResponse = stripNonValidXMLCharacters(IOUtils.toString(Response.getBody(), "UTF-8")); // StandardCharsets.UTF_8);
+                    RestResponse = stripNonValidXMLCharacters(IOUtils.toString(Response.body(), "UTF-8")); // StandardCharsets.UTF_8);
 
                 if (messageDetails.MessageTemplate4Perform.getIsDebugged())
                     theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
@@ -629,7 +718,7 @@ public class MessageHttpSend {
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
 
-        } catch (UnirestException e) {
+        } catch (Exception e) {
             System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
             e.printStackTrace();
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Unirest.post (" + EndPointUrl + ") fault, UnirestException:" + e);
@@ -716,39 +805,41 @@ public class MessageHttpSend {
         } else
             return 0;
      } catch ( Exception allE) {
+        if (ApiRestHttpClient != null)
         try {
             ApiRestHttpClient.close();
 
-        } catch ( java.io.IOException IOE ) {
-            MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE);
+        } catch ( Exception IOE ) {
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.ApiRestHttpClient.close fault, Exception:" + IOE.getMessage());
         }
         ApiRestHttpClient = null;
+        /*
         try {
             syncConnectionManager.shutdown();
             syncConnectionManager.close();
         } catch ( Exception anyE ) {
-            MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
         }
-        syncConnectionManager = null;
+        syncConnectionManager = null;*/
 
     } finally {
-        MessageSend_Log.warn("[" + "]" + "sendPostMessage.Unirest.ApiRestHttpClient.close finally" );
+        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.Unirest.ApiRestHttpClient.close finally" );
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
-            } catch ( java.io.IOException IOE ) {
-                MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE);
+            } catch ( Exception IOE ) {
+                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE.getMessage());
             }
         ApiRestHttpClient = null;
-        if (syncConnectionManager != null)
+        /*if (syncConnectionManager != null)
             try {
                 syncConnectionManager.shutdown();
                 syncConnectionManager.close();
             } catch ( Exception anyE ) {
                 MessageSend_Log.error("[" + "]" + "sendPostMessage.Unirest.syncConnectionManager.close finally fault, UnirestException:" + anyE);
             }
-        syncConnectionManager = null;
+        syncConnectionManager = null;*/
     }
         return 0;
     }
@@ -822,6 +913,32 @@ public class MessageHttpSend {
             return -1;
         }
 
+        HttpClient ApiRestHttpClient;
+        Authenticator authenticator;
+        String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+        if ( PropUser != null  ) {
+            authenticator = new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(
+                            PropUser,
+                            messageDetails.MessageTemplate4Perform.getPropPswd().toCharArray());
+                }
+            };
+            ApiRestHttpClient = HttpClient.newBuilder()
+                    .authenticator(authenticator)
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                    .build();
+        }
+        else
+            ApiRestHttpClient =HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                    .build();
+        /*
         BasicHttpClientConnectionManager syncConnectionManager = new BasicHttpClientConnectionManager(); //PoolingHttpClientConnectionManager(); //
         // Ставим своенго клиента !
         CloseableHttpClient
@@ -833,15 +950,14 @@ public class MessageHttpSend {
             // производится внутри getCloseableHttpClient() при неудаче
             return -36;
         }
-
+*/
         //  TODO for Oracle ROWID, в случае Postgree String :
         // RowId ROWID_QUEUElog=null;
         String ROWID_QUEUElog=null;
   try {
 
       try {
-
-          Unirest.config().httpClient(ApiRestHttpClient);
+          //Unirest.config().httpClient(ApiRestHttpClient);
           MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.get(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
                   ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() +
                   "; User=" + messageDetails.MessageTemplate4Perform.getPropUser() +
@@ -850,16 +966,27 @@ public class MessageHttpSend {
           messageDetails.Confirmation.clear();
           messageDetails.XML_MsgResponse.setLength(0);
 
-          String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+          StringBuilder queryString= new StringBuilder(messageDetails.XML_MsgSEND.length());
 
+          queryString.append("?queue_id=").append(messageQueueVO.getQueue_Id());
+          for (Map.Entry<String, String> entry: HttpGetParams.entrySet()) {
+              queryString.append("&");
+              queryString.append(entry.getKey()).append("=").append(entry.getValue());
 
-          if (messageDetails.MessageTemplate4Perform.getIsDebugged())
-              ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), HttpGetParams.toString(), MessageSend_Log);
+          }
+          Escaper restElmntEscaper = UrlEscapers.urlFragmentEscaper();
+          restElmntEscaper.escape(queryString.toString());
+          URI URI_4_GET = URI.create(EndPointUrl + restElmntEscaper.escape(queryString.toString()));
+
+          if (messageDetails.MessageTemplate4Perform.getIsDebugged()) {
+              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendGetMessage.get URI=`" + EndPointUrl + restElmntEscaper.escape(queryString.toString()) + "`");
+              ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), queryString.toString(), MessageSend_Log);
+          }
 
           // Map<String, Object> stringObjectMap = new Map< String, String >();
-          if (PropUser != null)
+          /*if (PropUser != null)
               RestResponseGet = Unirest.get(EndPointUrl)
-                      // .header("Accept", "application/json,text/html,application/xhtml+xml,application/xml;*/*")
+                      // .header("Accept", "application/json,text/html,application/xhtml+xml,application/xml;* /*")
                       .queryString("queue_id", messageQueueVO.getQueue_Id())
                       .queryString(ImmutableMap.copyOf(HttpGetParams))
                       .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
@@ -869,17 +996,27 @@ public class MessageHttpSend {
                       .queryString("queue_id", messageQueueVO.getQueue_Id())
                       .queryString(ImmutableMap.copyOf(HttpGetParams))
                       .asString(); //.getBody();
-          RestResponse = RestResponseGet.getBody(); //.toString();
+          */
+          java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                  .GET( )
+                  .uri( URI_4_GET)
+                  .header("User-Agent", "msgBus/Java-21")
+                  .header("Accept", "*/*")
+                  .header("Connection", "close")
+                  .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
+                  .build();
+          RestResponseGet = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofString() );
+          RestResponse = RestResponseGet.body(); //.toString();
           // messageDetails.SimpleHttpClient.
-          restResponseStatus = RestResponseGet.getStatus();
+          restResponseStatus = RestResponseGet.statusCode();
 
           // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
           // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
           if (messageDetails.MessageTemplate4Perform.getIsDebugged())
-              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendGetMessage.Unirest.get RestResponse=(" + RestResponse + ")");
+              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendGetMessage.get RestResponse=(" + RestResponse + ")");
           // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.get escapeXml.RestResponse=(" + XML.escape(RestResponse) + ")");
 
-      } catch (UnirestException e) {
+      } catch (Exception e) {
           System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.Get `" + EndPointUrl + "` Exception");
           e.printStackTrace();
           MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage fault:" + e);
@@ -959,20 +1096,22 @@ public class MessageHttpSend {
       }
   } // делаем, всё,  что можно и нужно
   catch ( Exception allE) {
+      if (ApiRestHttpClient != null)
       try {
           ApiRestHttpClient.close();
 
-      } catch ( java.io.IOException IOE ) {
-          MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE);
+      } catch ( Exception IOE ) {
+          MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close fault, UnirestException:" + IOE.getMessage());
       }
       ApiRestHttpClient = null;
+      /*
       try {
           syncConnectionManager.shutdown();
           syncConnectionManager.close();
       } catch ( Exception anyE ) {
           MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.syncConnectionManager.close fault, UnirestException:" + anyE);
       }
-      syncConnectionManager = null;
+      syncConnectionManager = null;*/
 
       } finally {
           MessageSend_Log.warn("[" + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally" );
@@ -980,10 +1119,11 @@ public class MessageHttpSend {
               try {
                   ApiRestHttpClient.close();
 
-              } catch ( java.io.IOException IOE ) {
-                  MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE);
+              } catch ( Exception IOE ) {
+                  MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.Unirest.ApiRestHttpClient.close finally fault, UnirestException:" + IOE.getMessage());
               }
           ApiRestHttpClient = null;
+          /*
           if (syncConnectionManager != null)
               try {
                   syncConnectionManager.shutdown();
@@ -991,7 +1131,7 @@ public class MessageHttpSend {
               } catch ( Exception anyE ) {
                   MessageSend_Log.error("[" + "]" + "HttpGetMessage.Unirest.syncConnectionManager.close finally fault, UnirestException:" + anyE);
               }
-          syncConnectionManager = null;
+          syncConnectionManager = null;*/
       }
             return 0;
   }
@@ -1113,30 +1253,67 @@ public class MessageHttpSend {
     }
 
     public static long WebRestExePostExec(MessageQueueVO messageQueueVO, MessageTemplate4Perform messageTemplate4Perform,
-                           CloseableHttpClient RestHermesAPIHttpClient, TheadDataAccess theadDataAccess, Logger MessageSend_Log ) {
+                                          TheadDataAccess theadDataAccess, Logger MessageSend_Log ) {
         String EndPointUrl= null;
         String RestResponse = null;
         int restResponseStatus=0;
         long Queue_Id =  messageQueueVO.getQueue_Id();
+        HttpClient ApiRestHttpClient=null;
+        String PropUser = messageTemplate4Perform.getPropUserPostExec();
         try {
 
+            Authenticator authenticator;
+            if ( PropUser != null  ) {
+                authenticator = new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication( PropUser,
+                                                           messageTemplate4Perform.getPropPswdPostExec().toCharArray());
+                    }
+                };
+                ApiRestHttpClient = HttpClient.newBuilder()
+                        .authenticator(authenticator)
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
+                        .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                        .build();
+            }
+            else
+                ApiRestHttpClient =HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
+                        .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                        .build();
+
             if ( StringUtils.substring(messageTemplate4Perform.getPropHostPostExec(),0,"http".length()).equalsIgnoreCase("http") )
-                EndPointUrl =
-                        messageTemplate4Perform.getPropHostPostExec() +
-                                messageTemplate4Perform.getPropUrlPostExec();
+                EndPointUrl = messageTemplate4Perform.getPropHostPostExec() +
+                              messageTemplate4Perform.getPropUrlPostExec();
             else
                 EndPointUrl = "http://" + messageTemplate4Perform.getPropHostPostExec() +
-                        messageTemplate4Perform.getPropUrlPostExec();
+                                          messageTemplate4Perform.getPropUrlPostExec();
             // Ставим своенго клиента ! ?
-            Unirest.config( ).httpClient( RestHermesAPIHttpClient);
-            HttpResponse RestResponseGet =
-                    Unirest.get(EndPointUrl)
+            //Unirest.config( ).httpClient( RestHermesAPIHttpClient);
+            //HttpResponse
+
+            /*HttpResponse    RestResponseGet =
+                    kong.unirest.Unirest.get(EndPointUrl)
                             .queryString("queue_id", String.valueOf( Queue_Id  ))
                             .basicAuth(messageTemplate4Perform.getPropUserPostExec(),
                                     messageTemplate4Perform.getPropPswdPostExec())
-                            .asString();
-            RestResponse = RestResponseGet.getBody().toString();
-            restResponseStatus = RestResponseGet.getStatus();
+                            .asString();*/
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .GET( )
+                    .uri( URI.create(EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) ))
+                    .header("User-Agent", "msgBus/Java-21")
+                    .header("Accept", "*/*")
+                    .header("Connection", "close")
+                    .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
+                    .build();
+            HttpResponse<String> RestResponseGet = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofString() );
+            RestResponse = RestResponseGet.body(); //.toString();
+
+            //RestResponse =  RestResponseGet.getBody().toString(); // "{\"error\": \"Unirest disabled!\"}" ; //
+            restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
 
             if ( messageTemplate4Perform.getIsDebugged() )
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] MetodPostExec.Unirest.get(" + EndPointUrl + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
@@ -1153,15 +1330,16 @@ public class MessageHttpSend {
                                         RestResponse,  monitoringQueueVO, MessegeSend_Log);
                             */
 
-        } catch ( UnirestException e) {
+        } catch ( Exception e) {
             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
-            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + e.toString() );
+            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "), вызов от имени пользователя(`"+ PropUser + "/" + messageTemplate4Perform.getPropPswd() + "`):" + e.toString() );
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
-                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e), 123567,
+                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "), вызов от имени пользователя(`"+ PropUser +"`):" + sStackTrace.strInterruptedException(e), 123567,
                     messageQueueVO.getRetry_Count(),  MessageSend_Log);
             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
             //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
+            if ( ApiRestHttpClient !=null) ApiRestHttpClient.close();
             return -17L;
         }
         try {
@@ -1189,6 +1367,7 @@ public class MessageHttpSend {
                 theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, sQueueDirection, 0 + iMsg_Status,
                         "Пост-обработчик HttpGet (http="+restResponseStatus + ") вернул по url(" + EndPointUrl + "): JSon `" + RestResponse + "` в котором нет $.msgStatus или $.msgResult" ,
                         MessageSend_Log);
+                ApiRestHttpClient.close();
                 return -13L;
             }
             try {
@@ -1213,11 +1392,97 @@ public class MessageHttpSend {
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, messageQueueVO.getQueue_Direction(), 0 + messageQueueVO.getMsg_Status() ,
                     "Пост-обработчик HttpGet (http="+restResponseStatus + ") не вернул JSon(" + EndPointUrl + "):`" + RestResponse + "` " + messageQueueVO.getMsg_Result(),
                      MessageSend_Log);
+            ApiRestHttpClient.close();
             return 0L;
         }
+        ApiRestHttpClient.close();
         return 0L;
+
     }
 
+    public static long WebRestErrOUTPostExec(MessageQueueVO messageQueueVO, MessageTemplate4Perform messageTemplate4Perform, int ApiRestWaitTime,
+                                             TheadDataAccess theadDataAccess, Logger MessageSend_Log ) {
+        String EndPointUrl= null;
+        String RestResponse = null;
+        int restResponseStatus=0;
+        long Queue_Id =  messageQueueVO.getQueue_Id();
+        HttpClient ApiRestHttpClient=null;
+        try {
+
+            Authenticator authenticator;
+            String PropUser = messageTemplate4Perform.getPropUserPostExec();
+            if ( PropUser != null  ) {
+                authenticator = new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(
+                                PropUser,
+                                messageTemplate4Perform.getPropPswdPostExec().toCharArray());
+                    }
+                };
+                ApiRestHttpClient = HttpClient.newBuilder()
+                        .authenticator(authenticator)
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
+                        .connectTimeout(Duration.ofSeconds( 10 ))
+                        .build();
+            }
+            else
+                ApiRestHttpClient =HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
+                        .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                        .build();
+
+            if ( StringUtils.substring(messageTemplate4Perform.getPropHostPostExec(),0,"http".length()).equalsIgnoreCase("http") )
+                EndPointUrl =   messageTemplate4Perform.getPropHostPostExec() +
+                                messageTemplate4Perform.getPropUrlPostExec();
+            else
+                EndPointUrl = "http://" + messageTemplate4Perform.getPropHostPostExec() +
+                                          messageTemplate4Perform.getPropUrlPostExec();
+            // Ставим своенго клиента ! ?
+            //Unirest.config( ).httpClient( RestHermesAPIHttpClient);
+            //HttpResponse
+
+            /*HttpResponse    RestResponseGet =
+                    kong.unirest.Unirest.get(EndPointUrl)
+                            .queryString("queue_id", String.valueOf( Queue_Id  ))
+                            .basicAuth(messageTemplate4Perform.getPropUserPostExec(),
+                                    messageTemplate4Perform.getPropPswdPostExec())
+                            .asString();*/
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .GET( )
+                    .uri( URI.create(EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) ))
+                    .header("User-Agent", "msgBus/Java-21")
+                    .header("Accept", "*/*")
+                    .header("Connection", "close")
+                    .timeout( Duration.ofSeconds( ApiRestWaitTime ) )
+                    .build();
+            HttpResponse<String> RestResponseGet = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofString() );
+            RestResponse = RestResponseGet.body(); //.toString();
+
+            //RestResponse =  RestResponseGet.getBody().toString(); // "{\"error\": \"Unirest disabled!\"}" ; //
+            restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
+
+            if ( messageTemplate4Perform.getIsDebugged() )
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestErrOUTPostExec.get(" + EndPointUrl + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
+
+        } catch ( Exception e) {
+            // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
+            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки WebRestErrOUTPostExec HttpGet(" + EndPointUrl + "):" + e.toString() );
+            theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
+                    "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e), 135699,
+                    messageQueueVO.getRetry_Count(),  MessageSend_Log);
+            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessegeSend_Log);
+            //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
+            //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e),  monitoringQueueVO, MessegeSend_Log);
+            if ( ApiRestHttpClient !=null) ApiRestHttpClient.close();
+            return -171L;
+        }
+        ApiRestHttpClient.close();
+        return 0L;
+
+    }
 
 
 }

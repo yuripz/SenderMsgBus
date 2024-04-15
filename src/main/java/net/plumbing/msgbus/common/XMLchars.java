@@ -1,7 +1,8 @@
 package net.plumbing.msgbus.common;
 
-import org.jetbrains.annotations.NotNull;
+//import org.jetbrains.annotations.NotNull;
 
+import javax.validation.constraints.NotNull;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 

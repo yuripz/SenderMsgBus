@@ -1,33 +1,12 @@
 package net.plumbing.msgbus.threads;
 
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
+//import kong.unirest.Unirest;
+//import kong.unirest.UnirestException;
 //import net.msgbus.model.*;
 import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.utils.*;
 import org.apache.commons.lang3.StringUtils;
-//import org.apache.http.HttpClientConnection;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
-//import org.apache.http.conn.params.ConnRouteParams;
-//import org.apache.http.conn.scheme.Scheme;
-//import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-//import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-//import org.apache.http.conn.HttpClientConnectionManager;
-//import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.common.XMLchars;
 import net.plumbing.msgbus.common.xlstErrorListener;
@@ -38,7 +17,7 @@ import net.plumbing.msgbus.common.xlstErrorListener;
 //import net.msgbus.ws.client.core.Security;
 //import net.msgbus.ws.client.ssl.SSLUtils;
 
-import javax.net.ssl.SSLContext;
+//import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 import javax.xml.XMLConstants;
 import javax.xml.transform.*;
@@ -48,32 +27,24 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.*;
-//import java.net.URI;
-//import java.net.URISyntaxException;
-//import java.security.GeneralSecurityException;
+
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.concurrent.TimeUnit;
-
+//import java.util.concurrent.TimeUnit;
 
 import static net.plumbing.msgbus.common.sStackTrace.strInterruptedException;
-//import static ru.hermes.msgbus.ws.client.core.SoapConstants.HTTPS;
+import static net.plumbing.msgbus.threads.utils.MessageHttpSend.WebRestErrOUTPostExec;
 
 //import xlstErrorListener;
 public class PerformQueueMessages {
 
-    private DefaultHttpClient client=null;
-    private CloseableHttpClient httpClient=null;
     private xlstErrorListener XSLTErrorListener=null;
-    private ThreadSafeClientConnManager ExternalConnectionManager;
-    private String ConvXMLuseXSLTerr = "";
-  //  org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 
-    public void setExternalConnectionManager( ThreadSafeClientConnManager externalConnectionManager ) {
-        this.ExternalConnectionManager = externalConnectionManager;
-    }
+    private String ConvXMLuseXSLTerr = "";
+
+    //public void setExternalConnectionManager( ThreadSafeClientConnManager externalConnectionManager ) {this.ExternalConnectionManager = externalConnectionManager;}
     //public void setConvXMLuseXSLTerr( String p_ConvXMLuseXSLTerr) { this.ConvXMLuseXSLTerr = p_ConvXMLuseXSLTerr; }
 
     public  long performMessage(MessageDetails Message, MessageQueueVO messageQueueVO, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
@@ -714,7 +685,7 @@ public class PerformQueueMessages {
                             return -16L;
                         }
                        long result_WebRestExePostExec = MessageHttpSend.WebRestExePostExec(messageQueueVO,
-                                                                                           Message.MessageTemplate4Perform, Message.RestHermesAPIHttpClient,
+                                                                                           Message.MessageTemplate4Perform, // Message.RestHermesAPIHttpClient,
                                                                                            theadDataAccess, MessageSend_Log );
                         if ( result_WebRestExePostExec < 0L )
                             return result_WebRestExePostExec;
@@ -757,48 +728,19 @@ public class PerformQueueMessages {
                         ( Message.MessageTemplate4Perform.getPropUrlPostExec()  == null ) )
                 {
                     // Нет параметров для Rest-HttpGet - надо орать!
-                    MessageSend_Log.error("["+ Queue_Id +"] В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль");
+                    MessageSend_Log.error("["+ Queue_Id +"] В шаблоне для пост-обработки статуса " + XMLchars.DirectERROUT + " " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль");
                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
-                            "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль", 1232,
+                            "В шаблоне для пост-обработки статуса " + XMLchars.DirectERROUT + " " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль", 1232,
                             messageQueueVO.getRetry_Count(),  MessageSend_Log);
                     // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
                     //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.MessageTemplate4Perform.getPropExeMetodPostExec(),
                     //        "В шаблоне для пост-обработки " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль",  monitoringQueueVO, MessageSend_Log);
                     return -161L;
                 }
-                String EndPointUrl= null;
-                try {
-
-                    if ( StringUtils.substring(Message.MessageTemplate4Perform.getPropHostPostExec(),0,"http".length()).equalsIgnoreCase("http") )
-                        EndPointUrl =
-                                Message.MessageTemplate4Perform.getPropHostPostExec() +
-                                        Message.MessageTemplate4Perform.getPropUrlPostExec();
-                    else
-                        EndPointUrl = "http://" + Message.MessageTemplate4Perform.getPropHostPostExec() +
-                                Message.MessageTemplate4Perform.getPropUrlPostExec();
-                    // Ставим своенго клиента ! ?
-                    Unirest.config( ).httpClient( Message.RestHermesAPIHttpClient);
-                    //String RestResponse =
-                            Unirest.get(EndPointUrl)
-                                    .queryString("queue_id", Queue_Id.toString())
-                                    .basicAuth(Message.MessageTemplate4Perform.getPropUserPostExec(),
-                                            Message.MessageTemplate4Perform.getPropPswdPostExec())
-                                    .asString().getBody();
-                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                    //        RestResponse,  monitoringQueueVO, MessageSend_Log);
-                    // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
-
-                } catch ( UnirestException e) {
-                    // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
-                    MessageSend_Log.error("["+ Queue_Id +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + e.toString() );
-                    theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
-                            "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e), 135699,
-                            messageQueueVO.getRetry_Count(),  MessageSend_Log);
-                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
-                    //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, EndPointUrl + "?queue_id=" + Queue_Id.toString(),
-                    //        "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e),  monitoringQueueVO, MessageSend_Log);
-                    return -171L;
-                }
+                Long WebRestErrOUTPostExecResult= WebRestErrOUTPostExec( messageQueueVO, Message.MessageTemplate4Perform, Message.ApiRestWaitTime,
+                                                    theadDataAccess, MessageSend_Log );
+                if ( WebRestErrOUTPostExecResult != 0L )
+                    return WebRestErrOUTPostExecResult;
             }
             //---------------------
             if ( Message.MessageTemplate4Perform.getPropExeMetodPostExec() != null ) // если  пост-обработчик вообще указан !

@@ -13,37 +13,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-
-import kong.unirest.Headers;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
-import net.plumbing.msgbus.common.ApplicationProperties;
-import net.plumbing.msgbus.common.XMLchars;
-import net.plumbing.msgbus.common.sStackTrace;
-import net.plumbing.msgbus.model.MessageDetails;
-import net.plumbing.msgbus.model.MessageQueueVO;
-import net.plumbing.msgbus.threads.TheadDataAccess;
-import net.plumbing.msgbus.threads.utils.MessageHttpSend;
-import net.plumbing.msgbus.threads.utils.MessageUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
-
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.SSLParameters;
 
 import static net.plumbing.msgbus.threads.utils.MessageUtils.stripNonValidXMLCharacters;
 
@@ -91,7 +65,7 @@ public class NotifyByChannel {
                     .GET()
                     //.uri(URI.create("https://httpbin.org/get"))
                     .uri(URI.create(URI_Sring))
-                    .setHeader("User-Agent", "Java-17 HttpClient") // add request header
+                    .setHeader("User-Agent", "Java-21 HttpClient") // add request header
                     .build();
 
             HttpResponse<String> response = httpClient

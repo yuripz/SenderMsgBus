@@ -1,8 +1,10 @@
 package net.plumbing.msgbus.common;
 
 // import com.sun.istack.internal.NotNull;
-import org.jetbrains.annotations.NotNull;
+//import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+
+import javax.validation.constraints.NotNull;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
