@@ -414,7 +414,7 @@ public class MessageSendTask  implements Runnable
         MessageDetails Message = new MessageDetails();
         Message.ApiRestWaitTime = ApiRestWaitTime;
         MessageQueueVO messageQueueVO = new MessageQueueVO();
-        MonitoringQueueVO monitoringQueueVO = new MonitoringQueueVO();
+        // MonitoringQueueVO monitoringQueueVO = new MonitoringQueueVO();
         //Date moment = new Date(1451665447567L); // Задаем количество миллисекунд Unix-time с того-самого-момента
         long startTimestamp = Instant.ofEpochSecond(0L).until(Instant.now(), ChronoUnit.SECONDS);
             /*LocalDate todayLocalDate ;

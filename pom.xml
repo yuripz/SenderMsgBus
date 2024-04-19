@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.3.24.04.14f-SNAPSHOT</version>
+	<version>0.3.24.04.17-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -68,12 +68,12 @@
 			<artifactId>hawtio-springboot</artifactId>
 			<version>2.13.6</version>
 		</dependency>
-		-->
+
 
 		<dependency> <groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 			<version>3.2.4</version>
-		</dependency>
+		</dependency>-->
 
 		<dependency>
 			<groupId>javax.jms</groupId>

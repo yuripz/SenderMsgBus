@@ -21,7 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import org.springframework.boot.CommandLineRunner;
 import net.plumbing.msgbus.model.MessageDirections;
-//import net.plumbing.msgbus.monitoring.МonitoringWriterTask;
+//import net.plumbing.msgbus.monitoring.MonitoringWriterTask;
 //import net.plumbing.msgbus.monitoring.ConcurrentQueue;
 //import MonitoringConfig;
 import net.plumbing.msgbus.mq.ActiveMQService;
@@ -36,7 +36,6 @@ import javax.jms.Connection;
 
 @EnableScheduling
 @SpringBootApplication (scanBasePackages = "net.plumbing.msgbus.*")
-
 
 public class SenderApplication implements CommandLineRunner {
 
@@ -54,7 +53,7 @@ public class SenderApplication implements CommandLineRunner {
 	public TelegramProperties telegramProperties;
 
 	public static String propJDBC;
-	public static final String ApplicationName="*Sender_BUS* v.4.04.12";
+	public static final String ApplicationName="*Sender_BUS* v.4.04.17";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -98,7 +97,7 @@ public class SenderApplication implements CommandLineRunner {
 		this.monitorWriter();
 
 		AppThead_log.warn( dbLoggingProperties.toString() );
-		// МonitoringWriterTask.setMonitoringDbParam()
+		// MonitoringWriterTask.setMonitoringDbParam()
 		if ( dbLoggingProperties.gettotalNumTasks() != null) {
 			int TotalWriterTask = Integer.parseInt(dbLoggingProperties.gettotalNumTasks());
 			Integer WaitTimeBetweenWrite = Integer.parseInt(dbLoggingProperties.getwaitTimeScan());
@@ -109,9 +108,9 @@ public class SenderApplication implements CommandLineRunner {
 			if (TotalWriterTask > 0 )  // dbLoggingProperties.gettotalNumTasks() == 0 значит, выключен
 			{
 
-				МonitoringWriterTask[] monitorWriterTask = new МonitoringWriterTask[TotalWriterTask];
+				MonitoringWriterTask[] monitorWriterTask = new MonitoringWriterTask[TotalWriterTask];
 				for (i = 0; i < TotalWriterTask; i++) {
-					monitorWriterTask[i] = new МonitoringWriterTask();// (MessageSendTask) context.getBean("MessageSendTask");
+					monitorWriterTask[i] = new MonitoringWriterTask();// (MessageSendTask) context.getBean("MessageSendTask");
 					//monitorWriterTask[ i ].setContext(  MntrContext );
 					monitorWriterTask[i].setWaitTimeBetweenScan(WaitTimeBetweenWrite);
 					monitorWriterTask[i].setMonitoringDbParam(dbLoggingProperties.getdataSourceClassName(), dbLoggingProperties.getjdbcUrl(),

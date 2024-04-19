@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
+import java.net.Authenticator;
 
 public class MessageTemplate4Perform {
     private int Template_Id;
@@ -62,10 +63,13 @@ public class MessageTemplate4Perform {
     private String PropUserPostExec;
     private String PropPswdPostExec;
     private String PropUrlPostExec;
+    private String PropQueryPostExec;
     private String PropEncoding_Out;
     private String PropEncoding_In;
     private Integer PropTimeout_Conn;
     private Integer PropTimeout_Read;
+    private boolean isExtSystemAccess =false;
+    private boolean isExtSystemAccessPostExec=false;
 
     private Integer ShortRetryCount;
     private Integer ShortRetryInterval;
@@ -78,7 +82,7 @@ public class MessageTemplate4Perform {
     private Integer LongRetryIntervalPostExec;
 
     private boolean isDebugged=false;
-    private boolean isExtSystemAccess =false;
+    private boolean isPreemptive=false;
     private String  SOAPAction;
     private  String  PropSearchString ;
     private  String  PropReplacement ;
@@ -104,6 +108,7 @@ public class MessageTemplate4Perform {
     private final String  PropNameWebUser  = "user";
     private final String  PropNameWebPswd  = "pswd";
     private final String  PropNameWebUrl   = "url";
+    private final String  PropNameQuery = "queryString";
     private final String  PropNameCharOut  = "encoding_out";
     private final String  PropNameCharIn   = "encoding_in";
     private final String  PropNameConnTimeOut = "timeout_conn";
@@ -112,7 +117,8 @@ public class MessageTemplate4Perform {
 
     private final String  PropNameExeMetod     = "ExeMetod";
     private final String  PropExtSystemAccess = "extSysDbAccess";
-    private final String  PropNameParamPref     = "ParamList";
+    private final String  PropNameShName       = "script";
+    private final String  PropNameParamPref    = "ParamList";
     private final String  PropNameWebMetod     = "WebMetod";
     public final String  WebRestExeMetod="web-rest";
     public final String  JavaClassExeMetod = "java-class";
@@ -122,6 +128,7 @@ public class MessageTemplate4Perform {
     private String XPathParams;
 
     private final String  PropDebug  = "debug";
+    private final String  PropPreemptive  = "Preemptive";
     private final String  PropNameSearchString  = "SearchString";
     private final String  ProprNameReplacement  = "Replacement";
     private final String  PropNameSOAPAction_11 = "SOAPAction";
@@ -141,6 +148,7 @@ public class MessageTemplate4Perform {
                 "Dst_SubCod:" + Dst_SubCod + ", " +
                 "Msg_Type:" + Msg_Type  + ", " +
         "LastDate :" + LastDate + ", " +
+        "ExeMetodExecute:" + PropExeMetodExecute + ", " +
         "ShortRetryCount:" + ShortRetryCount + ", " +
         "ShortRetryInterval:" + ShortRetryInterval + ", " +
         "LongRetryCount:" + LongRetryCount + ", " +
@@ -153,6 +161,8 @@ public class MessageTemplate4Perform {
                 "SOAPAction:" + SOAPAction + ", " + "PropHost" + PropHost + ", " + "PropUrl" + PropUrl
         ;
     }
+    public Authenticator restPasswordAuthenticator;
+    public Authenticator postExecPasswordAuthenticator;
     public MessageTemplate4Perform( MessageTemplateVO messageTemplateVO,
                                     String URL_SOAP_Send,
                                     String WSDL_Name,
@@ -259,9 +269,20 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("ON") ) ||
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
-                            {
+                            { if (isDebugged )
                                 MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropExtSystemAccess Property[" + key +"]=[" + properties.getProperty(key) + "]" );
                                 this.isExtSystemAccess=true;
+                            }
+                        }
+                        if ( key.equals(PropPreemptive) ) {
+                            if (( properties.getProperty(key).equalsIgnoreCase("on") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("true") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("ON") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
+                            )
+                            { if (isDebugged )
+                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropExtSystemAccess Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                this.isPreemptive=true;
                             }
                         }
                       /*  else {
@@ -273,7 +294,7 @@ public class MessageTemplate4Perform {
                 }
             }
             if (( PropHost != null ) && ( PropUrl != null )) {
-                if ( PropHost.length() > 0 )
+                if (!PropHost.isEmpty())
                     EndPointUrl = PropHost + PropUrl;
             }
             else {
@@ -290,12 +311,18 @@ public class MessageTemplate4Perform {
             if ( PropTimeout_Conn == null ) PropTimeout_Conn = 10;
             if ( PropTimeout_Read == null ) PropTimeout_Read = 300;
 
+        if ( this.PropUser != null &&  this.PropPswd != null  ) {
+            RestPasswordAuthenticator restPasswordAuthenticator = new RestPasswordAuthenticator();
+            this.restPasswordAuthenticator = restPasswordAuthenticator.getPasswordAuthenticator(this.PropUser, this.PropPswd);
+        }
+        else this.restPasswordAuthenticator = null;
+
         // String Db_user,
         // String Db_pswd,
         if ( Type_Connect == 3 ) // WS-SOAP
-                    Type_Connection = "SOAP";
+             Type_Connection = "SOAP";
         if ( Type_Connect == 4 ) // HTTP-GET/POST
-            Type_Connection = "REST";
+             Type_Connection = "REST";
 
             this.MessageXSLT = messageTemplateVO.getMessageXSLT();
             this.EnvelopeNS = messageTemplateVO.getEnvelopeNS();
@@ -321,10 +348,18 @@ public class MessageTemplate4Perform {
                        // if ( key.equals(PropNameCharIn)) PropEncoding_InPostExec = properties.getProperty(key);
 
                        // if ( key.equals(PropNameWebMetod)) PropWebMetodPostExec = properties.getProperty(key);
+                        RestPasswordAuthenticator postExecrestPasswordAuthenticator= new RestPasswordAuthenticator();
+
+                        this.postExecPasswordAuthenticator  = postExecrestPasswordAuthenticator.getPasswordAuthenticator( PropUserPostExec, PropPswdPostExec );
                     }
                 }catch ( IOException ex) {
                     ex.printStackTrace(System.out);
                 }
+            }
+            else {
+                PropUserPostExec = null;
+                PropPswdPostExec = null;
+                this.postExecPasswordAuthenticator = null;
             }
 
             this.EnvelopeXSLTPost = messageTemplateVO.getEnvelopeXSLTPost();
@@ -343,14 +378,13 @@ public class MessageTemplate4Perform {
 
     public String getPropExeMetodExecute() { return this.PropExeMetodExecute; }
 
+    public boolean getIsPreemptive() {
+        return this.isPreemptive;
+    }
     public boolean getIsDebugged() {
-        // TODO: this.isDebugged=true; -- для Документирования
-        //return true;
         return this.isDebugged;
     }
     public boolean getIsExtSystemAccess() {
-        // TODO: this.isExtSystemAccess=true; -- для Документирования
-        //return true;
         return this.isExtSystemAccess;
     }
     public  Integer getPropTimeout_Conn() { return  this.PropTimeout_Conn;}
