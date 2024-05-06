@@ -147,9 +147,7 @@ public class MessageHttpSend {
         // TODO : for Ora RowId ROWID_QUEUElog=null;
         String ROWID_QUEUElog=null;
         String RestResponse=null;
-         // HttpResponse <byte[]> Response ;
 
-        // kong.unirest.RequestBodyEntity Response ;
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
@@ -175,10 +173,7 @@ public class MessageHttpSend {
     try
     {
 
-        try {
-            //  устанавливаем "своего" HttpClient с предварительно выставленными тайм-аутами из шаблона и SSL
-            //Unirest.config( ).httpClient( ApiRestHttpClient );
-
+        try { // Готовим HTTP-запрос
             if ( IsDebugged )
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.POST(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
                     ".000;.readTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Read() +
@@ -219,31 +214,6 @@ public class MessageHttpSend {
                             .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
                             .build();
 
-            // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, //SoapEnvelope.toString(), null, monitoringQueueVO, MessageSend_Log);
-            /*
-            if ( PropUser != null  ) {
-                   Response  =
-                        Unirest.post(EndPointUrl)
-                                .header("Content-Type", "text/xml;charset=UTF-8")
-                                .header(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
-                                .header("User-Agent", "msgBus/Java-21")
-                                .header("Accept", "* /*")
-                                .basicAuth(PropUser, messageDetails.MessageTemplate4Perform.getPropPswd())
-                                .body(RequestBody)
-                                 .asBytes()
-                                ; // .getRawBody();
-            }
-            else {
-                    Response =
-                        Unirest.post(EndPointUrl)
-                                .header("Content-Type", "text/xml;charset=UTF-8")
-                                .header("User-Agent", "msgBus/Java-17")
-                                .header("Accept", "* /*")
-                                .header(messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,SOAPAction)
-                                .body(RequestBody)
-                                .asBytes();
-                          //      .asBinary().getRawBody();
-            }*/
             HttpResponse<byte[]> Response = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
             int restResponseStatus = Response.statusCode();
 
@@ -919,7 +889,6 @@ public class MessageHttpSend {
   try {
 
       try {
-          //Unirest.config().httpClient(ApiRestHttpClient);
           MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.GET(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
                   ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() +
                   "; User=" + messageDetails.MessageTemplate4Perform.getPropUser() +
@@ -1314,13 +1283,8 @@ public class MessageHttpSend {
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, sQueueDirection, 0 + iMsg_Status,
                     "Пост-обработчик HttpGet (http="+restResponseStatus + ") вернул JSon(" + EndPointUrl + "):" + msgStatus.toString() + " Message:" + msgResult,
                     MessageSend_Log);
-            // client.wait(100);
 
         } catch (JSONException | InvalidJsonException  e) {
-            // System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.JSONObject Exception" );
-            // e.printStackTrace();
-            // System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] HttpGetMessage.RestResponse[" + RestResponse + "]" );
-            // MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
 
             MessageSend_Log.warn("["+ messageQueueVO.getQueue_Id() +"] Пост-обработчик HttpGet не вернул JSon(" + EndPointUrl + "):" + e.toString() );
             theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessageSend_Log );
