@@ -83,6 +83,7 @@ public class MessageTemplate4Perform {
 
     private boolean isDebugged=false;
     private boolean isPreemptive=false;
+    private boolean isPreemptivePostExec;
     private String  SOAPAction;
     private  String  PropSearchString ;
     private  String  PropReplacement ;
@@ -194,14 +195,16 @@ public class MessageTemplate4Perform {
             this.ShortRetryInterval = ShortRetryInterval;
             this.LongRetryCount= LongRetryCount;
             this.LongRetryInterval = LongRetryInterval;
-        this.ShortRetryCountPostExec = ShortRetryCount;
-        this.ShortRetryIntervalPostExec = ShortRetryInterval;
-        this.LongRetryCountPostExec= LongRetryCount;
-        this.LongRetryIntervalPostExec = LongRetryInterval;
+            this.ShortRetryCountPostExec = ShortRetryCount;
+            this.ShortRetryIntervalPostExec = ShortRetryInterval;
+            this.LongRetryCountPostExec= LongRetryCount;
+            this.LongRetryIntervalPostExec = LongRetryInterval;
             this.HeaderXSLT = messageTemplateVO.getHeaderXSLT();
             this.EnvelopeXSLTExt = messageTemplateVO.getEnvelopeXSLTExt();
             this.PropUser = Db_user;
             this.PropPswd = Db_pswd; // Db_pswd != null ? Db_pswd : null;
+            this.isPreemptivePostExec =false;
+            this.isPreemptive =false;
 
 
             this.ConfigExecute = messageTemplateVO.getConfigExecute();
@@ -281,7 +284,7 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
                             { if (isDebugged )
-                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropExtSystemAccess Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropPreemptive Property[" + key +"]=[" + properties.getProperty(key) + "]" );
                                 this.isPreemptive=true;
                             }
                         }
@@ -340,6 +343,17 @@ public class MessageTemplate4Perform {
                         if ( key.equals(PropNameWebUrl)) PropUrlPostExec = properties.getProperty(key);
                         if ( key.equals(PropNameWebUser)) PropUserPostExec = properties.getProperty(key);
                         if ( key.equals(PropNameWebPswd)) PropPswdPostExec = properties.getProperty(key);
+                        if ( key.equals(PropPreemptive) ) {
+                            if (( properties.getProperty(key).equalsIgnoreCase("on") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("true") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("ON") ) ||
+                                    ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
+                            )
+                            {
+                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PreemptivePostExec Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                this.isPreemptivePostExec=true;
+                            }
+                        }
 
                        // if ( key.equals(PropNameConnTimeOut)) PropTimeout_ConnPostExec = Integer.valueOf(properties.getProperty(key));
                       //  if ( key.equals(PropNameReadTimeOut)) PropTimeout_ReadPostExec = Integer.valueOf(properties.getProperty(key));
@@ -381,6 +395,7 @@ public class MessageTemplate4Perform {
     public boolean getIsPreemptive() {
         return this.isPreemptive;
     }
+    public boolean getPreemptivePostExec() {  return this.isPreemptivePostExec; }
     public boolean getIsDebugged() {
         return this.isDebugged;
     }

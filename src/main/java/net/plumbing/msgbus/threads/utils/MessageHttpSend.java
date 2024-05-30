@@ -1181,11 +1181,12 @@ public class MessageHttpSend {
         String PropPswd = messageTemplate4Perform.getPropPswdPostExec();
         try {
             if ( (messageTemplate4Perform.postExecPasswordAuthenticator != null)
-                    // В гермесе БАСИК-Authenticator, пока что! && (!messageTemplate4Perform.getIsPreemptive())  // adding the header to the HttpRequest and removing Authenticator
+                    // В гермесе БАСИК-Authenticator, пока что!
+                && (! messageTemplate4Perform.getPreemptivePostExec())  // adding the header to the HttpRequest and removing Authenticator
             )
             {
                 if ( IsDebugged ) {
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
                 }
                 ApiRestHttpClient = HttpClient.newBuilder()
                         .authenticator( messageTemplate4Perform.postExecPasswordAuthenticator )
@@ -1196,7 +1197,7 @@ public class MessageHttpSend {
             }
             else {
                 if ( IsDebugged )
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET PropUser== null (`" + PropUser + "`)" );
+                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.4.GET PropUser== null, PreemptivePostExec (`" + messageTemplate4Perform.getPreemptivePostExec() + "`)" );
                 ApiRestHttpClient = HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_1_1)
                         .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -1211,7 +1212,18 @@ public class MessageHttpSend {
                 EndPointUrl = "http://" + messageTemplate4Perform.getPropHostPostExec() +
                                           messageTemplate4Perform.getPropUrlPostExec();
 
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+
+            HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
+
+            if ( messageTemplate4Perform.getPreemptivePostExec() ) // adding the header to the HttpRequest
+             {  // добавляем Authorization заголовки через HttpRequest.Builder
+                 String encodedAuth = Base64.getEncoder()
+                         .encodeToString((messageTemplate4Perform.getPropUser() + ":" + messageTemplate4Perform.getPropPswd() ).getBytes(StandardCharsets.UTF_8));
+                requestBuilder = requestBuilder
+                        .header("Authorization", "Basic " + encodedAuth );
+            }
+
+            java.net.http.HttpRequest request = requestBuilder
                     .GET()
                     .uri( URI.create(EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) ))
                     .header("User-Agent", "msgBus/Java-21")
