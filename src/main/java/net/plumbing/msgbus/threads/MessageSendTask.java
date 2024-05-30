@@ -286,7 +286,7 @@ public class MessageSendTask  implements Runnable
                                     q.Prev_Queue_Direction,
                                     q.Prev_Msg_Date,
                                     COALESCE(q.queue_create_date, COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute )) as Queue_Create_Date,
-                                    q.Perform_Object_Id
+                                    q.Perform_Object_Id, Current_TimeStamp as Curr_Server_Time
                                     from\040
                                     """
                                     + HrmsSchema +
@@ -323,7 +323,7 @@ public class MessageSendTask  implements Runnable
                                     q.Prev_Queue_Direction,
                                     q.Prev_Msg_Date,
                                     COALESCE(q.queue_create_date, COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute  )) as Queue_Create_Date,
-                                    q.Perform_Object_Id
+                                    q.Perform_Object_Id, clock_timestamp() AT TIME ZONE 'Europe/Moscow' as Curr_Server_Time
                                     from\040
                             """+ HrmsSchema + """
                              .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId in ( ?, ? ) \040
@@ -362,7 +362,7 @@ public class MessageSendTask  implements Runnable
                                 " Q.Prev_Queue_Direction," +
                                 " Q.Prev_Msg_Date, " +
                                 " COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, Current_timeStamp - Interval '1' Minute  )) as Queue_Create_Date, " +
-                                " Q.Perform_Object_Id " +
+                                " Q.Perform_Object_Id, Current_TimeStamp as Curr_Server_Time " +
                                 "from " + HrmsSchema + ".MESSAGE_QUEUE Q" +
                                 " Where 1=1" +
                                 " and Q.msg_infostreamid in (" + List_Lame_Threads + ")" +
@@ -467,9 +467,12 @@ public class MessageSendTask  implements Runnable
                         );
 
                         MessegeSend_Log.info( "messageQueueVO.Queue_Id:" + rs.getLong("Queue_Id") + " [Msg_InfoStreamId=" + rs.getInt("Msg_InfoStreamId") + "]" +
-                                // TODO Oracle " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getRowId("ROWID"));
-                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getString("ROWID"));
-                        messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
+                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") +
+                                "Curr_Server_Time=`" + (rs.getTimestamp("Curr_Server_Time").toString() ) +
+                                "`,  ROWID=" + rs.getString("ROWID"));
+                        // вместо java.sql.Timestamp.valueOf(LocalDateTime.now(ZoneId.of( "Europe/Moscow"))) локального компьютера берём время от сервера БД
+                        // messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
+                        messageQueueVO.setMsg_Date( rs.getTimestamp("Curr_Server_Time") );
                         // пробуем захватить запись
                         boolean isNoLock = true;
                         try {

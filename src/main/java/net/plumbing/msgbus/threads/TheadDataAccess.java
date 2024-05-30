@@ -790,7 +790,7 @@ public class TheadDataAccess {
                         "set Queue_Date = current_timestamp, Queue_Direction = 'SEND'" +
                         ", Msg_Date= current_timestamp,  Msg_Status = 0, Retry_Count=1 " +
                         ", Prev_Queue_Direction='OUT', Prev_Msg_Date=current_timestamp " +
-                        "where 1=1 and q.Queue_Id = ?  ";
+                        "where 1=1 and q.Queue_Id = ?";
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Queue_Date4Send );
         } catch (Exception e) {
@@ -809,7 +809,7 @@ public class TheadDataAccess {
                         "set Queue_Date = current_timestamp, Queue_Direction = 'SEND', Msg_Reason = ?" +
                         ", Msg_Date= current_timestamp,  Msg_Status = 0, Retry_Count=1 " +
                         ", Prev_Queue_Direction='OUT', Prev_Msg_Date=current_timestamp " +
-                        "where 1=1 and Queue_Id = ?  ";
+                        "where 1=1 and Queue_Id = ?";
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2Send );
         } catch (Exception e) {
@@ -825,8 +825,8 @@ public class TheadDataAccess {
 
         long Queue_Id = messageQueueVO.getQueue_Id();
 
-        messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
+        messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
 
         messageQueueVO.setQueue_Direction(XMLchars.DirectSEND);
@@ -850,7 +850,7 @@ public class TheadDataAccess {
 
     public  int doUPDATE_MessageQueue_Out2Send(  MessageQueueVO  messageQueueVO,  String pMsg_Reason, Logger dataAccess_log ) {
         long Queue_Id = messageQueueVO.getQueue_Id();
-
+        // устанавливаем признак "SEND"
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());

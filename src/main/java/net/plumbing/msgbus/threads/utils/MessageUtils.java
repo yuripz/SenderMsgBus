@@ -274,7 +274,7 @@ public class MessageUtils {
         messageDetails.Confirmation.clear();
 
         String parsedMessageConfirmation = messageDetails.XML_MsgRESOUT.toString();
-        String AnswXSLTQueue_Direction = XMLchars.DirectERROUT;
+        String AnswXSLTQueue_Direction = XMLchars.DirectERROUT; // Значение, если вышли с ошибкой
         //AppThead_log.info( parsedConfig );
         if ( parsedMessageConfirmation == null ) {
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
@@ -282,7 +282,7 @@ public class MessageUtils {
                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
             return AnswXSLTQueue_Direction;
         }
-        if ( parsedMessageConfirmation.length() == 0 ) {
+        if (parsedMessageConfirmation.isEmpty()) {
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                     "PrepareConfirmation: результат преобоазования MsgAnswXSLT ( или чистый Response) - строка 0-й длины" + messageDetails.MessageTemplate4Perform.getMsgAnswXSLT(), 1232,
                     messageQueueVO.getRetry_Count(), MessegeSend_Log);

@@ -565,16 +565,6 @@ public class MessageHttpSend {
                     .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
                     .build();
 
-            /*java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .POST( HttpRequest.BodyPublishers.ofByteArray(RequestBody) )
-                    .uri(URI.create(EndPointUrl))
-                    .header("User-Agent", "msgBus/Java-17")
-                    .header("Accept", "* /*")
-                    .header("Connection", "close")
-                    // .headers( httpHeaders.toString() ) // возможно несколько заголовков!
-                    .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
-                    .build();
-            */
             HttpResponse<byte[]> Response = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
             restResponseStatus = Response.statusCode();
 
