@@ -1218,9 +1218,12 @@ public class MessageHttpSend {
             if ( messageTemplate4Perform.getPreemptivePostExec() ) // adding the header to the HttpRequest
              {  // добавляем Authorization заголовки через HttpRequest.Builder
                  String encodedAuth = Base64.getEncoder()
-                         .encodeToString((messageTemplate4Perform.getPropUser() + ":" + messageTemplate4Perform.getPropPswd() ).getBytes(StandardCharsets.UTF_8));
+                                     .encodeToString((PropUser + ":" + PropPswd ).getBytes(StandardCharsets.UTF_8));
                 requestBuilder = requestBuilder
                         .header("Authorization", "Basic " + encodedAuth );
+                 if ( messageTemplate4Perform.getIsDebugged() )
+                     MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] Authorization Basic " + encodedAuth +
+                                    " (using User=`" + PropUser + "` Pswd=`" + PropPswd + "`)" );
             }
 
             java.net.http.HttpRequest request = requestBuilder
@@ -1237,11 +1240,11 @@ public class MessageHttpSend {
             restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
 
             if ( messageTemplate4Perform.getIsDebugged() )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET(" + EndPointUrl + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
+                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET(" + EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
 
         } catch ( Exception e) {
             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
-            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "), вызов от имени пользователя(`"+ PropUser + "/" + messageTemplate4Perform.getPropPswd() + "`):" + e.toString() );
+            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) + "), вызов от имени пользователя(`"+ PropUser + "/" + PropPswd + "`):" + e.toString() );
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
                     "Ошибка пост-обработки HttpGet(" + EndPointUrl + "), вызов от имени пользователя(`"+ PropUser +"`):" + sStackTrace.strInterruptedException(e), 123567,
                     messageQueueVO.getRetry_Count(),  MessageSend_Log);
