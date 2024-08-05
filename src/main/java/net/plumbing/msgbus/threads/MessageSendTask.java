@@ -547,7 +547,7 @@ public class MessageSendTask  implements Runnable
                 }
                 if ( num_Message4Perform <  NumMessageInScan ) // если в курсор был НЕ полон
                 {
-                    MessegeSend_Log.info("Ждём'c (курсор был НЕ полон): `" + num_Message4Perform + "` < `" + NumMessageInScan + "` в " + theadRunCount + " раз " + WaitTimeBetweenScan + "сек., уже " + (secondsFromEpoch - startTimestamp) + "сек., начиная с =" + startTimestamp + " текущее время =" + secondsFromEpoch);
+                //    MessegeSend_Log.info("Ждём'c (курсор был НЕ полон): `" + num_Message4Perform + "` < `" + NumMessageInScan + "` в " + theadRunCount + " раз " + WaitTimeBetweenScan + "сек., уже " + (secondsFromEpoch - startTimestamp) + "сек., начиная с =" + startTimestamp + " текущее время =" + secondsFromEpoch);
                     // +"secondsFromEpoch - startTimestamp=" + (secondsFromEpoch - startTimestamp) +  " Long.valueOf(60L * TotalTimeTasks)=" + Long.valueOf(60L * TotalTimeTasks)
                     // Период ожидания JMS зависит от того, был ли конкурентный досту для "помощи" .
                     // Если помощник не смог взять блокировку - значит, помощников свободных много но работа для них есть, можно из рчереди читать не долго, 1/3 от обычного

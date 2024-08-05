@@ -496,7 +496,7 @@ public class MessageHttpSend {
         }
 
         if ( AckXSLT_4_make_JSON != null )
-        { httpHeaders.put("Content-Type","text/json;charset=UTF-8");
+        { httpHeaders.put("Content-Type","application/json;charset=UTF-8");
             if ( IsDebugged )
             MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST JSON `" + messageDetails.XML_MsgSEND + "`" );
         }
@@ -604,6 +604,13 @@ public class MessageHttpSend {
 
             //  формируем в XML_MsgResponse ответ а-ля SOAP
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
+            // --бессмысленно добавлять в Header, обработка берёт из /Body/MsgData , но для чтения лога буде полезно
+                messageDetails.XML_MsgResponse.append(XMLchars.Header_Begin);
+                    messageDetails.XML_MsgResponse.append( XMLchars.NameTagHttpStatusCode_Begin );
+                        messageDetails.XML_MsgResponse.append(restResponseStatus);
+                    messageDetails.XML_MsgResponse.append( XMLchars.NameTagHttpStatusCode_End );
+                messageDetails.XML_MsgResponse.append(XMLchars.Header_End);
+
             messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
 
             if (RestResponse.isEmpty()) {  // добавляем <HttpStatusCode>httpStatus</HttpStatusCode>
@@ -612,7 +619,6 @@ public class MessageHttpSend {
             {
                 if (RestResponse.startsWith("<?xml") || RestResponse.startsWith("<?XML")) {
                     int index2 = RestResponse.indexOf("?>"); //6
-
                     messageDetails.XML_MsgResponse.append(RestResponse.substring(index2 + 2));
                     messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
                     messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);

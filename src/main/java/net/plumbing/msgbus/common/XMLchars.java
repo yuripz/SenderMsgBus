@@ -67,7 +67,8 @@ public class XMLchars {
     public static final String TagNext ="Next";
 
     public static final String NameTagResult       = "Result";
-    public static final String NameTagHttpStatusCode    = "HttpResponseStatusCode";
+    public static final String NameTagHttpStatusCode_Begin="<HttpResponseStatusCode>";
+    public static final String NameTagHttpStatusCode_End="</HttpResponseStatusCode>";
     public static final String NameTagResultText   = "Text";
 
     public static final String NameTagFaultResult  = "ResultCode";

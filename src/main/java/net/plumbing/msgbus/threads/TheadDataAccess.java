@@ -275,7 +275,7 @@ public class TheadDataAccess {
         }
 
         if (make_INSERT_QUEUElog(dataAccess_log) == null) {
-            dataAccess_log.error("make_UPDATE_QUEUElog() fault");
+            dataAccess_log.error("make_INSERT_QUEUElog() fault");
             return null;
         }
 
