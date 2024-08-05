@@ -205,7 +205,8 @@ public class SenderApplication implements CommandLineRunner {
 			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
 			MQbroker.stop();
 			NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
-					+ InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *нет связи с БД*", AppThead_log );
+					+ InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC
+					+ "` as `"+ connectionProperties.gethrmsDbLogin() + "`), *нет доступа к репозиторию* , не получен список систем для взаимодействия", AppThead_log );
 					//+ InetAddress.getLocalHost().getHostAddress() + " , *нет связи с БД*", AppThead_log );
 			System.exit(-22);
 		}
@@ -367,7 +368,8 @@ public class SenderApplication implements CommandLineRunner {
 		taskExecutor.shutdown();
 		// monitorWriterPool.shutdown(); -- monitorWriter для Графаны больше не используется , комментарим
 		 NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
-				 + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`) , *exit!*", AppThead_log );
+				 + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC
+				 + "` as `"+ connectionProperties.gethrmsDbLogin() + "`) , *exit!*", AppThead_log );
 		System.exit(-22);
 		//return;
 	}
