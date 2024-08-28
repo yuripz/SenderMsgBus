@@ -56,7 +56,7 @@ public class NotifyByChannel {
             URI_Sring = ChatBotUrl +
                     //"https://api.telegram.org/bot1450268713:AAGMgWJ1ET91dvY5KofxNfXJBRJ_iFpTqZo/sendMessage" +
                     //        "?chat_id=-1001328897633&text=" +
-                            URLEncoder.encode( message4telegramm, StandardCharsets.UTF_8.toString()) + "&parse_mode=Markdown";
+                            URLEncoder.encode( message4telegramm, StandardCharsets.UTF_8) + "&parse_mode=Markdown";
          //   URI_Sring="http://httpbin.org/get";
          //  URI_Sring = "https://172.64.200.15:443/users/2";
        //  URI_Sring =  "https://api.megaindex.ru/scan_mail_position?user=megaindex-api-test@megaindex.ru&password=123456&lr=213&request=%D0%9F%D0%BB%D0%B8%D1%82%D0%BA%D0%B0&show_title=1";

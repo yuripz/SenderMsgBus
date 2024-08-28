@@ -437,6 +437,177 @@ public class MessageUtils {
         return SoapEnvelope.toString();
     }
 
+
+    public static int ReadConfirmation(@NotNull TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, Logger MessegeReceive_Log) {
+
+        messageDetails.Confirmation.clear();
+        messageDetails.ConfirmationRowNum = 0;
+        messageDetails.Confirmation_Tag_Num = 0;
+        messageDetails.XML_ClearBodyResponse.setLength(0); // XML_MsgConfirmation меняем на XML_ClearBodyResponse
+        messageDetails.XML_ClearBodyResponse.trimToSize();
+        int Tag_Num=-1;
+
+        try { // получаем Confirmation Tag_Num из select Tag_Num from  Message_QueueDet  WHERE QUEUE_ID = ?Queue_Id and Tag_Par_Num = 0 and tag_Id ='Confirmation'
+            theadDataAccess.stmtMsgQueueConfirmationTag.setLong(1, Queue_Id);
+            ResultSet rs = theadDataAccess.stmtMsgQueueConfirmationTag.executeQuery();
+            while (rs.next()) {
+                Tag_Num= rs.getInt("Tag_Num");
+            }
+            rs.close();
+        } catch (SQLException e) {
+            MessegeReceive_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            System.err.println("Queue_Id=[" + Queue_Id + "] :" + e.getMessage() );
+            e.printStackTrace();
+            return messageDetails.ConfirmationRowNum;
+        }
+        if ( Tag_Num < 1 ) {
+            MessegeReceive_Log.warn("Queue_Id=[" + Queue_Id + "] ReadConfirmation: tag 'Confirmation' is not found in MESSAGE_QUEUEDET" );
+            messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag)
+                    .append(XMLchars.TagConfirmation).append(XMLchars.CloseTag)
+                    .append(XMLchars.nanXSLT_Result)
+                    .append(XMLchars.OpenTag)
+                    .append(XMLchars.TagConfirmation).append(XMLchars.EndTag).append(XMLchars.CloseTag);
+            messageDetails.ConfirmationRowNum = 0;
+            return 0;
+        }
+        try {
+            theadDataAccess.stmtMsgQueueConfirmationDet.setLong(1, Queue_Id);
+            theadDataAccess.stmtMsgQueueConfirmationDet.setInt(2, Tag_Num);
+            theadDataAccess.stmtMsgQueueConfirmationDet.setLong(3, Queue_Id);
+            theadDataAccess.stmtMsgQueueConfirmationDet.setInt(4, Tag_Num);
+            ResultSet rs = theadDataAccess.stmtMsgQueueConfirmationDet.executeQuery();
+            String rTag_Value=null;
+            while (rs.next()) {
+                MessageDetailVO messageDetailVO = new MessageDetailVO();
+                rTag_Value = org.apache.commons.text.StringEscapeUtils.escapeXml10(rs.getString("Tag_Value") );
+//                    MessegeReceive_Log.warn("_ReadConfirmation messageChildVO.Tag_Par_Num=" + rs.getInt("Tag_Par_Num") +
+//                            ", messageChildVO.Tag_Num=" + rs.getInt("Tag_Num") +
+//                            ", messageChildVO.Tag_Id=" + rs.getString("Tag_Id") +
+//                            ", messageChildVO.Tag_Value=" + rTag_Value
+//                    );
+
+                if ( rTag_Value == null )
+                    messageDetailVO.setMessageQueue(
+                            rs.getString("Tag_Id"),
+                            null,
+                            rs.getInt("Tag_Num"),
+                            rs.getInt("Tag_Par_Num")
+                    );
+                else
+                    messageDetailVO.setMessageQueue(
+                            rs.getString("Tag_Id"),
+                            org.apache.commons.text.StringEscapeUtils.escapeXml10(stripNonValidXMLCharacters(rTag_Value)),
+                            //StringEscapeUtils.escapeXml10(rTag_Value.replaceAll(XMLchars.XML10pattern,"")),
+                            // StringEscapeUtils.escapeXml10(rTag_Value).replaceAll(XMLchars.XML10pattern,""),
+                            rs.getInt("Tag_Num"),
+                            rs.getInt("Tag_Par_Num")
+                    );
+                messageDetails.Confirmation.put(messageDetails.ConfirmationRowNum, messageDetailVO);
+                messageDetails.ConfirmationRowNum += 1;
+                // MessegeReceive_Log.info( "Tag_Id:" + rs.getString("Tag_Id") + " [" + rs.getString("Tag_Value") + "]");
+            }
+            rs.close();
+        } catch (SQLException e) {
+            MessegeReceive_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            e.printStackTrace();
+            return -2;
+        }
+//                if (  messageDetails.MessageTemplate4Perform.getIsDebugged() ) {
+//                    for (int i = 0; i < messageDetails.Confirmation.size(); i++) {
+//                        MessageDetailVO messageChildVO = messageDetails.Confirmation.get(i);
+//                        MessegeReceive_Log.warn("_ReadConfirmation done messageChildVO.Tag_Par_Num=" + messageChildVO.Tag_Par_Num +
+//                                ", messageChildVO.Tag_Num=" + messageChildVO.Tag_Num +
+//                                ", messageChildVO.Tag_Id=" + messageChildVO.Tag_Id +
+//                                ", messageChildVO.Tag_Value=" + messageChildVO.Tag_Value
+//                        );
+//                    }
+//                }
+        if ( messageDetails.ConfirmationRowNum > 0 )
+
+
+            XML_CurrentConfirmation_Tags(messageDetails, 0, MessegeReceive_Log);
+        if (  messageDetails.MessageTemplate4Perform.getIsDebugged() )
+            MessegeReceive_Log.info("["+ Queue_Id +"] MsgConfirmation: " +  messageDetails.XML_ClearBodyResponse.toString());
+        return messageDetails.ConfirmationRowNum;
+    }
+
+    public static int XML_CurrentConfirmation_Tags(MessageDetails messageDetails, int Current_Elm_Key, Logger MessegeReceive_Log) {
+        MessageDetailVO messageDetailVO = messageDetails.Confirmation.get(Current_Elm_Key);
+//        boolean is_Local_Debug= true;
+        if ( messageDetailVO.Tag_Num != 0 ) {
+
+            // !было:  StringBuilder XML_Tag = new StringBuilder( XMLchars.OpenTag + messageDetailVO.Tag_Id );
+            // стало:
+            messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag).append(messageDetailVO.Tag_Id);
+            // XML_Tag.append ( "<" + messageDetailVO.Tag_Id + ">" );
+            // цикл по формированию параметров-аьтрибутов элемента
+            for (int i = 0; i < messageDetails.Confirmation.size(); i++) {
+                MessageDetailVO messageChildVO = messageDetails.Confirmation.get(i);
+//                MessegeReceive_Log.warn("_CurrentConfirmation_Tags messageChildVO.Tag_Par_Num=" +  messageChildVO.Tag_Par_Num +
+//                                ", messageChildVO.Tag_Num=" + messageChildVO.Tag_Num +
+//                                ", messageChildVO.Tag_Id=" + messageChildVO.Tag_Id +
+//                                ", messageChildVO.Tag_Value=" + messageChildVO.Tag_Value
+//                );
+                if ( (messageChildVO.Tag_Par_Num == messageDetailVO.Tag_Num) && // нашли Дочерний элемент
+                        (messageChildVO.Tag_Num == 0) )  // это атрибут элемента, у которого нет потомков
+                {
+                    if ( messageChildVO.Tag_Value != null )
+                        // !было:XML_Tag.append ( XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + messageChildVO.Tag_Value + XMLchars.Quote );
+                        // стало:
+                        messageDetails.XML_ClearBodyResponse.append(XMLchars.Space).append(messageChildVO.Tag_Id).
+                                append(XMLchars.Equal).append(XMLchars.Quote).append(messageChildVO.Tag_Value).append(XMLchars.Quote);
+                        // по
+                        //                messageDetails.XML_MsgConfirmation.append(XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + messageChildVO.Tag_Value + XMLchars.Quote);
+                    else
+                        // !было: XML_Tag.append ( XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + XMLchars.Quote );
+                        // стало:
+                        messageDetails.XML_ClearBodyResponse.append(XMLchars.Space)
+                                .append( messageChildVO.Tag_Id)
+                                .append( XMLchars.Equal)
+                                .append( XMLchars.Quote).append( "noName").append(XMLchars.Quote);
+                }
+            }
+            // !было: XML_Tag.append( XMLchars.CloseTag);
+            // стало:
+            messageDetails.XML_ClearBodyResponse.append(XMLchars.CloseTag);
+
+            if ( messageDetailVO.Tag_Value != null )
+                // !было: XML_Tag.append( messageDetailVO.getTag_Value() );
+                // стало:
+                messageDetails.XML_ClearBodyResponse.append(messageDetailVO.getTag_Value());
+
+            for (int i = 0; i < messageDetails.Confirmation.size(); i++) {
+                MessageDetailVO messageChildVO = messageDetails.Confirmation.get(i);
+
+                if ( (messageChildVO.Tag_Par_Num == messageDetailVO.Tag_Num) && // нашли Дочерний элемент
+                        (messageChildVO.Tag_Num != 0) )  // И это элемент, который может быть потомком!
+                {
+                    // !было: XML_Tag.append ( XML_Current_Tags( messageDetails, i) );
+                    // стало:
+                    XML_CurrentConfirmation_Tags(messageDetails, i, MessegeReceive_Log );
+                }
+            }
+
+            // !было: XML_Tag.append( XMLchars.OpenTag + XMLchars.EndTag + messageDetailVO.Tag_Id + XMLchars.CloseTag);
+            // стало:
+            messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag).append(XMLchars.EndTag).append( messageDetailVO.Tag_Id ).append(XMLchars.CloseTag);
+            return 1; //XML_Tag;
+        } else {
+            // !было: return 0;
+            // Теряются отрибуты по считывании Confirmation
+            if ( messageDetailVO.Tag_Value != null ) {   // !было:XML_Tag.append ( XMLchars.Space + messageChildVO.Tag_Id + XMLchars.Equal + XMLchars.Quote + messageChildVO.Tag_Value + XMLchars.Quote );
+                // стало:
+                messageDetails.XML_ClearBodyResponse.append(XMLchars.Space).append( messageDetailVO.Tag_Id).append( XMLchars.Equal)
+                        .append( XMLchars.Quote).append( messageDetailVO.Tag_Value).append( XMLchars.Quote);
+                return 1; //XML_Tag;
+            }
+            else
+                return 0; //XML_Tag;
+        }
+    }
+
+
+
     public static int ReadMessage(TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, boolean IsDebugged, Logger MessegeSend_Log) {
         messageDetails.Message.clear();
         messageDetails.MessageRowNum = 0;

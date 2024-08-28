@@ -53,7 +53,9 @@ public class SenderApplication implements CommandLineRunner {
 	public TelegramProperties telegramProperties;
 
 	public static String propJDBC;
-	public static final String ApplicationName="*Sender_BUS* v.4.06.30";
+	public static String propExtJDBC;
+	public static String firstInfoStreamId;
+	public static final String ApplicationName="*Sender_BUS* v.4.08.24";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -71,7 +73,7 @@ public class SenderApplication implements CommandLineRunner {
 		propJDBC = connectionProperties.gethrmsPoint();
 		if ( propJDBC == null)  propJDBC = "jdbc UNKNOWN ! ";
 		else {
-			if ( propJDBC.indexOf("//") < 1  ) ; //propJDBC = "jdbc INVALID! `" + propJDBC + "`";
+			if ( propJDBC.indexOf("//") < 1  ) ;
 			else {
 				propJDBC = propJDBC.substring(propJDBC.indexOf("//") + 2);
 				if ( propJDBC.indexOf("/") < 1  ) propJDBC = "INVALID db in jdbc ! `" + propJDBC + "`";
@@ -79,7 +81,23 @@ public class SenderApplication implements CommandLineRunner {
 				 propJDBC = propJDBC.substring(0, propJDBC.indexOf("/"));
 			}
 		}
-		 NotifyByChannel.Telegram_sendMessage( "Starting " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "` as `"+ connectionProperties.gethrmsDbLogin() + "`)", AppThead_log );
+		propExtJDBC = connectionProperties.getextsysPoint();
+		if ( propExtJDBC == null)  propExtJDBC = "Ext jdbc UNKNOWN ! ";
+		else {
+			if ( propExtJDBC.indexOf("//") < 1  ) ;
+			else {
+				propExtJDBC = propExtJDBC.substring(propExtJDBC.indexOf("//") + 2);
+				if ( propExtJDBC.indexOf("/") < 1  ) propExtJDBC = "INVALID db in jdbc ! `" + propExtJDBC + "`";
+				else
+					propExtJDBC = propExtJDBC.substring(0, propExtJDBC.indexOf("/"));
+			}
+		}
+		firstInfoStreamId = connectionProperties.getfirstInfoStreamId(); // для импорта из ShutdownHook
+		String sendedMessage_2_Telegram = "Starting " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on " + InetAddress.getLocalHost().getHostName()+
+				" (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "` as `"+ connectionProperties.gethrmsDbLogin() + "`, extDb `"
+				+ propExtJDBC+ "` as `"+ connectionProperties.getextsysDbLogin()  + "` )";
+		AppThead_log.warn( "testSring:[" + sendedMessage_2_Telegram + "] 4 sent"  );
+		NotifyByChannel.Telegram_sendMessage( sendedMessage_2_Telegram, AppThead_log );
 		String propConnectMsgBus = connectionProperties.getconnectMsgBus();
 		if ( propConnectMsgBus == null) propConnectMsgBus = "tcp://0.0.0.0:61016";
 
@@ -193,6 +211,11 @@ public class SenderApplication implements CommandLineRunner {
 					+ " JdbcUrl:" + ApplicationProperties.extSystemDataSource.getJdbcUrl()
 					+ " isRunning:" + ApplicationProperties.extSystemDataSource.isRunning()
 					+ " 4 dbSchema:" + ApplicationProperties.ExtSysSchema);
+		} else {
+			AppThead_log.error("НЕ удалось подключится к базе данных внешней системы: останавливаем" );
+			NotifyByChannel.Telegram_sendMessage( "Do stopping " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " *extDB problem*  ip:" + InetAddress.getLocalHost().getHostAddress()+
+					", db `" + connectionProperties.getextsysPoint() + "` as `"+ connectionProperties.getextsysDbLogin() + "`), *stopping*", AppThead_log );
+			System.exit(-20);
 		}
 
 		// Зачитываем MessageDirection
@@ -369,7 +392,8 @@ public class SenderApplication implements CommandLineRunner {
 		// monitorWriterPool.shutdown(); -- monitorWriter для Графаны больше не используется , комментарим
 		 NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
 				 + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC
-				 + "` as `"+ connectionProperties.gethrmsDbLogin() + "`) , *exit!*", AppThead_log );
+				 + "` as `"+ connectionProperties.gethrmsDbLogin() + "` extDb `"
+				 + propExtJDBC+ "` as `"+ connectionProperties.getextsysDbLogin()  + "` ) , *exit!*", AppThead_log );
 		System.exit(-22);
 		//return;
 	}
