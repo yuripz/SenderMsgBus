@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.4.08.24";
+	public static final String ApplicationName="*Sender_BUS* v.4.09.16";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -65,9 +65,6 @@ public class SenderApplication implements CommandLineRunner {
 		ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
 
 		AppThead_log.info("Hellow for SenderApplication ");
-		// NotifyByChannel.test_Post(AppThead_log ); - для проверки
-		//		System.exit(11);
-
 		NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
 		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "Starting " + ApplicationName + " on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		propJDBC = connectionProperties.gethrmsPoint();
@@ -219,7 +216,6 @@ public class SenderApplication implements CommandLineRunner {
 		}
 
 		// Зачитываем MessageDirection
-
 		int num_of_Systems = InitMessageRepository.SelectMsgDirections(ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval,
 				AppThead_log );
 		if ( num_of_Systems < 1 )
