@@ -184,7 +184,7 @@ public class MessageHttpSend {
             if ( IsDebugged )
                 MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.POST[" + SoapEnvelope + "]" );
             messageDetails.Confirmation.clear();
-            messageDetails.XML_MsgResponse.setLength(0);
+            messageDetails.XML_MsgResponse.setLength(0); messageDetails.XML_MsgResponse.trimToSize();
 
             String SOAPAction=messageDetails.MessageTemplate4Perform.getSOAPAction();
             if ( SOAPAction == null)
@@ -220,7 +220,7 @@ public class MessageHttpSend {
             // Headers headers = Response.getHeaders();
             // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendSoapMessage.POST.Response.getBody().length" + Response.body().length );
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendSoapMessage.POST.Response.getBody().length =" + Response.body().length );
             //  byte [] RequestBodyContent = new Response.toString();
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8
             // Response => RestResponse;
@@ -251,7 +251,7 @@ public class MessageHttpSend {
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
             if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HTTP status: " + restResponseStatus + " sendSoapMessage.POST.Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
+            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HTTP status: " + restResponseStatus + " sendSoapMessage.POST.Response=#(`{}`)", messageDetails.XML_MsgResponse.toString());
             if ( IsDebugged )
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
 
