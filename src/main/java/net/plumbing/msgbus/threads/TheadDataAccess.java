@@ -23,7 +23,9 @@ public class TheadDataAccess {
     private final int maxReasonLen = 1996;
     public Connection Hermes_Connection;
     public PreparedStatement stmtMsgQueueDet = null;
-    private PreparedStatement stmtMsgQueueConfirmationTag = null;
+    public PreparedStatement stmtMsgQueueConfirmationTag = null;
+    public PreparedStatement stmtMsgQueueConfirmationDet=null;
+
     private PreparedStatement stmtMsgQueueBody = null;
     private PreparedStatement stmtMsgLastBodyTag = null;
     private PreparedStatement stmtMsgQueueConfirmation = null;
@@ -181,7 +183,7 @@ public class TheadDataAccess {
 
         Hermes_Connection = Target_Connection;
 
-        dataAccess_log.info("Hermes(thead) getConnection: " + connectionUrl + " as " + db_userid + " done");
+        dataAccess_log.info("MsgBus(thead) getConnection: " + connectionUrl + " as " + db_userid + " done");
 
         if (make_SelectNew_Queue(  dataAccess_log) == null ) {
             dataAccess_log.error( "make_SelectNew_Queue() fault");
@@ -292,7 +294,32 @@ public class TheadDataAccess {
             dataAccess_log.error("make_UPDATE_MessageQueue_SetMsg_Reason() fault");
             return null;
         }
+        if (make_Message_QueryConfirmation(dataAccess_log) == null) {
+            dataAccess_log.error("make_Message_QueryConfirmation() fault");
+            return null;
+        }
         return Target_Connection;
+    }
+
+    public PreparedStatement  make_Message_QueryConfirmation( Logger dataAccess_log ) {
+        PreparedStatement stmtMsgQueueConfirmationDet;
+        try {
+
+            stmtMsgQueueConfirmationDet = this.Hermes_Connection.prepareStatement(
+                    //"select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from artx_proj.message_queuedet D where (1=1)  and d.QUEUE_ID = ? and d.Tag_Num >= ? order by   Tag_Par_Num, Tag_Num "
+                    "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from "+ dbSchema +".message_QueueDet D where (1=1) and d.QUEUE_ID = ? and d.Tag_Num = ? " +
+                            "union all " +
+                            "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from "+ dbSchema +".message_QueueDet D where (1=1)  and d.QUEUE_ID = ? and d.Tag_Par_Num >= ? " +
+                            "order by   4, 3"
+            );
+
+        } catch (Exception e) {
+            dataAccess_log.error( e.getMessage() );
+            e.printStackTrace();
+            return ( (PreparedStatement) null );
+        }
+        this.stmtMsgQueueConfirmationDet = stmtMsgQueueConfirmationDet;
+        return  stmtMsgQueueConfirmationDet ;
     }
 
     //stmt_UPDATE_MessageQueue_OUT2Ok
@@ -1213,9 +1240,17 @@ public class TheadDataAccess {
     public PreparedStatement  make_Message_ConfirmationTag_Query( Logger dataAccess_log ) {
         PreparedStatement StmtMsgQueueDet;
         try {
-            StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
-                            "select Tag_Num from ( select Tag_Num from  " + dbSchema + ".message_queuedet  WHERE QUEUE_ID = ? and Tag_Par_Num = 0 and tag_Id ='Confirmation' order by Tag_Num ) where rownum=1"
-            );
+            if (rdbmsVendor.equals("oracle")) {
+                StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
+                        "select Tag_Num from ( select Tag_Num from " + dbSchema + ".message_queuedet  WHERE QUEUE_ID = ? and Tag_Par_Num = 0 and tag_Id ='Confirmation' order by Tag_Num desc) qd " +
+                                "where rownum=1"
+                );
+            }
+            else
+                StmtMsgQueueDet = (PreparedStatement)this.Hermes_Connection.prepareStatement(
+                        "select Tag_Num from ( select Tag_Num from " + dbSchema + ".message_queuedet  WHERE QUEUE_ID = ? and Tag_Par_Num = 0 and tag_Id ='Confirmation' order by Tag_Num desc) qd " +
+                                "limit 1"
+                );
         } catch (Exception e) {
             dataAccess_log.error( e.getMessage() );
             e.printStackTrace();

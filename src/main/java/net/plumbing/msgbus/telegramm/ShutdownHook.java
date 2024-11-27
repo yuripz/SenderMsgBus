@@ -11,8 +11,9 @@ import javax.annotation.PreDestroy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import static  net.plumbing.msgbus.SenderApplication.propJDBC;
+import static  net.plumbing.msgbus.SenderApplication.propExtJDBC;
 import static  net.plumbing.msgbus.SenderApplication.ApplicationName;
-
+import static  net.plumbing.msgbus.SenderApplication.firstInfoStreamId;
 //@Configuration
 //@ComponentScan(basePackages = "ru.hermes.msgbus.*")
 @Component
@@ -25,7 +26,9 @@ public class ShutdownHook {
         ShutdownHook_log.info("###STOPing###");
 
         try {
-            NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " on "  + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *exit!*", ShutdownHook_log );
+            NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " -" + firstInfoStreamId + " on "  + InetAddress.getLocalHost().getHostName()+
+                    " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "` extDb `"
+                    + propExtJDBC+ "` ),  *exit!*", ShutdownHook_log );
             ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *exit!*" );
 
             // NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon v.0.2.23.12.36 on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*", ShutdownHook_log );

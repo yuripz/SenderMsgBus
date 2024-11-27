@@ -286,25 +286,33 @@ public class PerformQueueMessages {
                             return -32L;
 
                         }
-                          // специального класса нет -  используем XmlSQLStatement.ExecuteSQLincludedXML
+                          // специального класса нет -  используем
+                         // ExternalXmlSQLStatement.Call4ExternDbSQLincludedXML -- для внещней
+                        // или  XmlSQLStatement.ExecuteSQLincludedXML -- для своей БД
+                        if (Message.MessageTemplate4Perform.getIsExtSystemAccess()) { // для внещней ExternalXmlSQLStatement.Call4ExternDbSQLincludedXM
+                            MessageSend_Log.info("[" + Queue_Id + "] Шаблон для SQL-XSLTExt-обработки использует пулл коннектов для внешней системы(" + Message.MessageTemplate4Perform.getEnvelopeXSLTExt() + ")");
+
+
                             if (Message.MessageTemplate4Perform.getIsDebugged())
                                 MessageSend_Log.info("[" + Queue_Id + "] try ExecuteSQLincludedXML 4 external Db (" + Passed_Envelope4XSLTExt + ")");
 
-                                ExtSystemDataConnection extSystemDataConnection = new ExtSystemDataConnection(Queue_Id,  MessageSend_Log);
-                                if ( extSystemDataConnection.ExtSystem_Connection == null ){
-                                    Message.MsgReason.append("Ошибка на обработке сообщения - ExtSystemDataConnection return: NULL!"  );
-                                    return -33L;
-                                }
+                            ExtSystemDataConnection extSystemDataConnection = new ExtSystemDataConnection(Queue_Id, MessageSend_Log);
+                            if (extSystemDataConnection.ExtSystem_Connection == null) {
+                                Message.MsgReason.append("Ошибка на обработке сообщения - ExtSystemDataConnection return: NULL!");
+                                return -33L;
+                            }
                             Function_Result = ExternalXmlSQLStatement.Call4ExternDbSQLincludedXML(theadDataAccess, extSystemDataConnection.ExtSystem_Connection,
-                                                               Passed_Envelope4XSLTExt, messageQueueVO, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessageSend_Log);
-                                //(theadDataAccess, true, extSystemDataConnection.ExtSystem_Connection ,
-                                //        Passed_Envelope4XSLTExt, messageQueueVO, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessageSend_Log);
-                            try {  extSystemDataConnection.ExtSystem_Connection.close(); } catch (SQLException e) {
+                                    Passed_Envelope4XSLTExt, messageQueueVO, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessageSend_Log);
+                            //(theadDataAccess, true, extSystemDataConnection.ExtSystem_Connection ,
+                            //        Passed_Envelope4XSLTExt, messageQueueVO, Message, Message.MessageTemplate4Perform.getIsDebugged(), MessageSend_Log);
+                            try {
+                                extSystemDataConnection.ExtSystem_Connection.close();
+                            } catch (SQLException e) {
                                 MessageSend_Log.error("[" + Queue_Id + "] ExtSystem_Connection.close() fault:" + e.getMessage());
                             }
                             if (Function_Result != 0) {
                                 MessageSend_Log.error("[" + Queue_Id + "] Envelope4XSLTExt:" + ConvXMLuseXSLTerr.toString());
-                                    MessageSend_Log.error("[" + Queue_Id + "] Ошибка Call4ExternDbSQLincludedXML:" + Message.MsgReason.toString());
+                                MessageSend_Log.error("[" + Queue_Id + "] Ошибка Call4ExternDbSQLincludedXML:" + Message.MsgReason.toString());
                                 theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO, "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(), 3231,
                                         messageQueueVO.getRetry_Count(), MessageSend_Log);
                                 return -34L;
@@ -312,6 +320,34 @@ public class PerformQueueMessages {
                                 if (Message.MessageTemplate4Perform.getIsDebugged())
                                     MessageSend_Log.info("[" + Queue_Id + "] Исполнение Call4ExternDbSQLincludedXML:" + Message.MsgReason.toString());
                             }
+                        }
+                        else { //XmlSQLStatement.ExecuteSQLincludedXML -- для своей БД
+                            if (Message.MessageTemplate4Perform.getIsDebugged())
+                                MessageSend_Log.info("[" + Queue_Id + "] try ExecuteSQLincludedXML 4 internal Db (" + Passed_Envelope4XSLTExt + ")");
+                            Function_Result = XmlSQLStatement.ExecuteSQLincludedXML( theadDataAccess,  Passed_Envelope4XSLTExt, messageQueueVO, Message,
+                                                                                     Message.MessageTemplate4Perform.getIsDebugged(), MessageSend_Log
+                                                                                    );
+                            if (Function_Result != 0) {
+                                MessageSend_Log.error("[" + Queue_Id + "] Envelope4XSLTExt:" + ConvXMLuseXSLTerr.toString());
+                                MessageSend_Log.error("[" + Queue_Id + "] Ошибка ExecuteSQLincludedXML:" + Message.MsgReason.toString());
+                                theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO, "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(),
+                                                                           3231, messageQueueVO.getRetry_Count(), MessageSend_Log);
+                                return -34L;
+                            } else {
+                                if (Message.MessageTemplate4Perform.getIsDebugged())
+                                    MessageSend_Log.info("[" + Queue_Id + "] Исполнение ExecuteSQLincludedXML:" + Message.MsgReason.toString());
+                            }
+                            // читаем в XML_ClearBodyResponse , как будто после очистки от внешнего запроса!
+                            int ConfirmationRowNum = MessageUtils.ReadConfirmation(theadDataAccess, Queue_Id, Message, MessageSend_Log);
+                            if (ConfirmationRowNum < 1) {
+                                // Ругаемся, что обработчик не сформировал Confirmation
+                                Message.MsgReason.append("[" + Queue_Id + "] обработчик не сформировал Confirmation, нарушено соглашение о взаимодействии с Шиной");
+                                MessageSend_Log.error("[" + Queue_Id + "] " + Message.MsgReason);
+                                theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO, "Ошибка ExecuteSQLinXML: " + Message.MsgReason.toString(),
+                                        3231, messageQueueVO.getRetry_Count(), MessageSend_Log);
+                                return -38L;
+                            }
+                        }
 
                     }
                     else
