@@ -659,7 +659,7 @@ public class MessageHttpSend {
         } catch (Exception e) {
             System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
             e.printStackTrace();
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST (" + EndPointUrl + ") fault, UnirestException:" + e);
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST (" + EndPointUrl + ") fault, HttpRequestException:" + e);
             messageDetails.MsgReason.append(" sendPostMessage.POST fault: ").append(sStackTrace.strInterruptedException(e));
 
             // Журналируем UnirestException-ответ как есть
