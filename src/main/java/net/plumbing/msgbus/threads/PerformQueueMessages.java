@@ -852,7 +852,7 @@ public class PerformQueueMessages {
     }
 
 
-    private   String ConvXMLuseXSLT(@NotNull Long QueueId, @NotNull String xmldata, @NotNull String XSLTdata, StringBuilder MsgResult, Logger MessageSend_Log, boolean IsDebugged )
+    private String ConvXMLuseXSLT(@NotNull Long QueueId, @NotNull String xmldata, @NotNull String XSLTdata, StringBuilder MsgResult, Logger MessageSend_Log, boolean IsDebugged )
             throws TransformerException
     { StreamSource source,srcXSLT;
         Transformer transformer;
@@ -914,9 +914,16 @@ public class PerformQueueMessages {
             if ( result != null) {
                 res = fOut.toString();
                 // System.err.println("result != null, res:" + res );
+                if (( res.charAt(0) == '{') || ( res.charAt(0) == '['))
+                {
+                    if ( IsDebugged )
+                        MessageSend_Log.warn("["+ QueueId  + "] json transformer.transform(`"+ res + "`) < "  );
+                }
+
+                 else
                 if ( res.length() < XMLchars.EmptyXSLT_Result.length()) {
                     if ( IsDebugged )
-                        MessageSend_Log.warn("["+ QueueId  + "] length transformer.transform(`"+ res + "`) < " + XMLchars.EmptyXSLT_Result.length() );
+                        MessageSend_Log.warn("["+ QueueId  + "] length transformer.transform(`"+ res + "`) < {}" , XMLchars.EmptyXSLT_Result.length() );
                     res = XMLchars.EmptyXSLT_Result;
                 }
             }
@@ -942,7 +949,7 @@ public class PerformQueueMessages {
             ConvXMLuseXSLTerr = sStackTrace.strInterruptedException(exp);
             System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.Transformer TransformerException" );
             exp.printStackTrace();
-            MessageSend_Log.error("["+ QueueId  + "] ConvXMLuseXSLT.Transformer TransformerException: " + ConvXMLuseXSLTerr);
+            MessageSend_Log.error("["+ QueueId  + "] ConvXMLuseXSLT.Transformer TransformerException: {}" , ConvXMLuseXSLTerr);
             if (  !IsDebugged ) {
                 MessageSend_Log.error("["+ QueueId  + "]ConvXMLuseXSLT( XML IN ): " + xmldata);
                 MessageSend_Log.error("["+ QueueId  + "]ConvXMLuseXSLT( XSLT ): " + XSLTdata);
