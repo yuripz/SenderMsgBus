@@ -366,74 +366,6 @@ public class MessageHttpSend {
     }
         return 0;
     } // sendSoapMessage
-    /*
-    private static CloseableHttpClient getCloseableHttpClient( MessageQueueVO messageQueueVO, MessageDetails Message , TheadDataAccess theadDataAccess,
-                                                               BasicHttpClientConnectionManager syncConnectionManager, int Timeout_Conn, int Timeout_Read,
-                                                       Logger MessegeReceive_Log) {
-        int ReadTimeoutInMillis = Timeout_Read * 1000;
-        int ConnectTimeoutInMillis = Timeout_Conn * 1000;
-        SSLContext sslContext = MessageHttpSend.getSSLContext(  );
-        if ( sslContext == null ) {
-            MessegeReceive_Log.error("["+ messageQueueVO.getQueue_Id()+"] " + "SSLContextBuilder fault: (" +  Message.MsgReason.toString() + ")");
-            Message.MsgReason.append("Внутренняя Ошибка SSLContextBuilder fault: (" +  Message.MsgReason.toString() + ")" ) ;
-
-            MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
-                    "Внутренняя Ошибка SSLContextBuilder fault: (" +  Message.MsgReason.toString() + ")",
-                    true, null , MessegeReceive_Log );
-            return null;
-        }
-
-        /// это в вызывающем методе !- syncConnectionManager = new PoolingHttpClientConnectionManager();
-        // для BasicHttpClientConnectionManager не нужно
-        //syncConnectionManager.setMaxTotal((Integer) 4);
-        // syncConnectionManager.setDefaultMaxPerRoute((Integer) 2);
-        RequestConfig rc;
-
-        rc = RequestConfig.custom()
-                .setConnectionRequestTimeout(ConnectTimeoutInMillis)
-                .setConnectTimeout(ConnectTimeoutInMillis)
-                .setSocketTimeout( ReadTimeoutInMillis)
-                .build();
-
-        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create()
-                .disableDefaultUserAgent()
-                .disableRedirectHandling()
-                .disableAutomaticRetries()
-                .setUserAgent("msgbus.Sender")
-                .setSSLContext(sslContext)
-                .disableAuthCaching()
-                .disableConnectionState()
-                .disableCookieManagement()
-                // .useSystemProperties() // HE-5663  https://stackoverflow.com/questions/5165126/without-changing-code-how-to-force-httpclient-to-use-proxy-by-environment-varia
-                .setConnectionManager(syncConnectionManager)
-                .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                .setConnectionTimeToLive( Timeout_Read +  Timeout_Conn + 5, TimeUnit.SECONDS)
-                .evictIdleConnections((long) (Timeout_Read +  Timeout_Conn + 5)*2, TimeUnit.SECONDS);
-        httpClientBuilder.setDefaultRequestConfig(rc);
-
-        CloseableHttpClient
-                ApiRestHttpClient = httpClientBuilder.build();
-        if ( ApiRestHttpClient == null) {
-            try {
-                syncConnectionManager.shutdown();
-                syncConnectionManager.close();
-            } catch ( Exception e) {
-                MessegeReceive_Log.error("["+ messageQueueVO.getQueue_Id()  +"] " + "Внутренняя ошибка - httpClientBuilder.build() не создал клиента. И ещё проблема с syncConnectionManager.shutdown()...");
-                System.err.println("["+ messageQueueVO.getQueue_Id()  +"] " + "Внутренняя ошибка - httpClientBuilder.build() не создал клиента. И ещё проблема с syncConnectionManager.shutdown()..." + e.getMessage()); //e.printStackTrace();
-            }
-            MessegeReceive_Log.error("["+ messageQueueVO.getQueue_Id()  +"] " + "httpClientBuilder.build() fault");
-            Message.MsgReason.append("Внутренняя Ошибка httpClientBuilder.build() fault");
-
-
-            MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
-                    "Внутренняя Ошибка httpClientBuilder.build() fault: (" +  Message.MsgReason.toString() + ")",
-                    true, null , MessegeReceive_Log );
-            return null;
-        }
-        return ApiRestHttpClient  ;
-
-    }
-    */
 
     public static int sendPostMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         //
@@ -629,9 +561,11 @@ public class MessageHttpSend {
                         messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
 
                     } else { // возможно, Json
-                        if (RestResponse.startsWith("{")) { // Разбираем Json
+                        if ((RestResponse.startsWith("{") ) || (RestResponse.startsWith("[") ) ) { // Разбираем Json
                             try {
-                                JSONObject RestResponseJSON = new JSONObject(RestResponse);
+                                final String RestResponse_with_HttpResponseStatusCode = "{ \"HttpResponseStatusCode\":" + String.valueOf(restResponseStatus) + ",\"payload\":"
+                                         + RestResponse + "}";
+                                JSONObject RestResponseJSON = new JSONObject(RestResponse_with_HttpResponseStatusCode);
                                 messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
                                 messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
                                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
@@ -895,22 +829,69 @@ public class MessageHttpSend {
 
           StringBuilder queryString= new StringBuilder(messageDetails.XML_MsgSEND.length());
 
-          queryString.append("?queue_id=").append(messageQueueVO.getQueue_Id());
+          // Для обращений к внешней системе НЕЛЬЗЯ передавать автоматом Queue_Id !
+          // queryString.append("?queue_id=").append(messageQueueVO.getQueue_Id());
+          int j=0;
           for (Map.Entry<String, String> entry: HttpGetParams.entrySet()) {
-              queryString.append("&");
-              queryString.append(entry.getKey()).append("=").append(entry.getValue());
+              if (j==0) { queryString.append("?");    }
+                  else { queryString.append("&");}
 
+              queryString.append(entry.getKey()).append("=").append(entry.getValue());
+             j++;
           }
           Escaper restElmntEscaper = UrlEscapers.urlFragmentEscaper();
-          restElmntEscaper.escape(queryString.toString());
+          //restElmntEscaper.escape(queryString.toString());
           URI URI_4_GET = URI.create(EndPointUrl + restElmntEscaper.escape(queryString.toString()));
 
           if (IsDebugged) {
               MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.GET URI=`" + EndPointUrl + restElmntEscaper.escape(queryString.toString()) + "`");
               ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), queryString.toString(), MessageSend_Log);
           }
+////////////////////////////
+          // формируем заголовки с учетом переменных httpHeaders из параметров
+          Map<String, String> httpHeaders= new HashMap<>();
+          String headerParams[];
+          httpHeaders.put("User-Agent", "msgBus/Java-21");
+          httpHeaders.put("Accept", "*/*");
+          httpHeaders.put("Connection", "close");
+          if ( (messageDetails.MessageTemplate4Perform.restPasswordAuthenticator != null) &&
+                  (messageDetails.MessageTemplate4Perform.getIsPreemptive())  // adding the header to the HttpRequest
+          ) {
+              String encodedAuth = Base64.getEncoder()
+                      .encodeToString((PropUser + ":" + PropPswd ).getBytes(StandardCharsets.UTF_8));
+              httpHeaders.put("Authorization", "Basic " + encodedAuth );
+          }
+
+          if (( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) == -1 )// NOT Header_is_empty
+                  && ( ! messageDetails.Soap_HeaderRequest.isEmpty() ))
+          {
+              headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
+              if ( IsDebugged ) {
+                  MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET headerParams.length=" + headerParams.length);
+                  for (int i = 0; i < headerParams.length; i++)
+                      MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET headerParams[" + i + "] = " + headerParams[i]);
+              }
+              if (headerParams.length > 1  )
+                  for (int i = 0; i < headerParams.length; i++)
+                      httpHeaders.put(headerParams[0], headerParams[1]);
+          }
+          else { if ( IsDebugged )
+              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
+          }
+
+//////////////////////////
 
           HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
+          // добавляем все заголовки как есть через HttpRequest.Builder
+          for (Map.Entry<String, String> entry: httpHeaders.entrySet()) {
+              requestBuilder = requestBuilder
+                      .header(entry.getKey(),entry.getValue());
+              if ( IsDebugged )
+                  MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST .header: `" + entry.getKey() + ":" + entry.getValue() + "`");
+              // queryString.append(entry.getKey()).append("=").append(entry.getValue());
+          }
+
+/*   добавили уже выще, удалить после отладки
           if ( (messageDetails.MessageTemplate4Perform.restPasswordAuthenticator != null) &&
                   (messageDetails.MessageTemplate4Perform.getIsPreemptive())  // adding the header to the HttpRequest
           ) {  // добавляем Authorization заголовки через HttpRequest.Builder
@@ -919,12 +900,15 @@ public class MessageHttpSend {
               requestBuilder = requestBuilder
                       .header("Authorization", "Basic " + encodedAuth );
           }
+*/
+
+
           java.net.http.HttpRequest request = requestBuilder
                   .GET( )
                   .uri( URI_4_GET)
-                  .header("User-Agent", "msgBus/Java-21")
-                  .header("Accept", "*/*")
-                  .header("Connection", "close")
+                  //.header("User-Agent", "msgBus/Java-21") -- добавили уже выще, удалить после отладки
+                  //.header("Accept", "*/*")
+                  //.header("Connection", "close")
                   .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
                   .build();
           RestResponseGet = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofString() );
@@ -971,7 +955,10 @@ public class MessageHttpSend {
       try {
           Document XMLdocument;
           try {
-              JSONObject RestResponseJSON = new JSONObject(RestResponse);
+              final String RestResponse_with_HttpResponseStatusCode = "{ \"HttpResponseStatusCode\":" + String.valueOf(restResponseStatus) + ",\"payload\":"
+                      + RestResponse + "}";
+              JSONObject RestResponseJSON = new JSONObject(RestResponse_with_HttpResponseStatusCode);
+              // JSONObject RestResponseJSON = new JSONObject(RestResponse);
               messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
               messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
               XML.setMessege_Log(MessageSend_Log);
