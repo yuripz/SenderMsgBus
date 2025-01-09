@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -428,7 +429,15 @@ public class MessageHttpSend {
         }
 
         if ( AckXSLT_4_make_JSON != null )
-        { httpHeaders.put("Content-Type","application/json;charset=UTF-8");
+        {  if (messageDetails.XML_MsgSEND.charAt(0) =='{')
+            httpHeaders.put("Content-Type","application/json;charset=UTF-8");
+            else {
+                // grant_type=password&username=t-hospital-dzm&password=ORzmj1%5B3IJ%25Y9%231&client_id=t-hospital-dzm&client_secret=GyuwLz0UyZvnwvDmtfGLH13UEkm2RhMB
+            httpHeaders.put("Content-Type","application/x-www-form-urlencoded");
+            //String urlEncoded = URLEncoder.encode(messageDetails.XML_MsgSEND, StandardCharsets.UTF_8);
+            // messageDetails.XML_MsgSEND = urlEncoded;
+        }
+
             if ( IsDebugged )
             MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST JSON `" + messageDetails.XML_MsgSEND + "`" );
         }
@@ -830,15 +839,32 @@ public class MessageHttpSend {
           StringBuilder queryString= new StringBuilder(messageDetails.XML_MsgSEND.length());
 
           // Для обращений к внешней системе НЕЛЬЗЯ передавать автоматом Queue_Id !
+          // первый проход -- ище параметр, который пойдёт как добавка URL типа /Query_KEY_Value
+          for (Map.Entry<String, String> entry: HttpGetParams.entrySet()) {
+                  if (entry.getKey().equalsIgnoreCase("Query_KEY_Value")) {
+                      queryString.append("/").append(entry.getValue());
+                  }
+
+          }
           // queryString.append("?queue_id=").append(messageQueueVO.getQueue_Id());
           int j=0;
           for (Map.Entry<String, String> entry: HttpGetParams.entrySet()) {
-              if (j==0) { queryString.append("?");    }
-                  else { queryString.append("&");}
+              if (! entry.getKey().equalsIgnoreCase("Query_KEY_Value"))
+              { // Query_KEY_Value в Qry не добавляем!
+                  if (j == 0) {
+                      {
+                          queryString.append("?");
+                          j++;
+                      }
+                  } else {
+                      queryString.append("&");
+                  }
+                    // добавляем параметр в Qry
+                  queryString.append(entry.getKey()).append("=").append(entry.getValue());
+              }
 
-              queryString.append(entry.getKey()).append("=").append(entry.getValue());
-             j++;
           }
+
           Escaper restElmntEscaper = UrlEscapers.urlFragmentEscaper();
           //restElmntEscaper.escape(queryString.toString());
           URI URI_4_GET = URI.create(EndPointUrl + restElmntEscaper.escape(queryString.toString()));
