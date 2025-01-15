@@ -870,7 +870,7 @@ public class MessageHttpSend {
           URI URI_4_GET = URI.create(EndPointUrl + restElmntEscaper.escape(queryString.toString()));
 
           if (IsDebugged) {
-              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.GET URI=`" + EndPointUrl + restElmntEscaper.escape(queryString.toString()) + "`");
+              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + " HttpGetMessage.GET URI=`" + EndPointUrl + restElmntEscaper.escape(queryString.toString()) + "`");
               ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), queryString.toString(), MessageSend_Log);
           }
 ////////////////////////////
@@ -913,7 +913,7 @@ public class MessageHttpSend {
               requestBuilder = requestBuilder
                       .header(entry.getKey(),entry.getValue());
               if ( IsDebugged )
-                  MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST .header: `" + entry.getKey() + ":" + entry.getValue() + "`");
+                  MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET .header: `" + entry.getKey() + ":" + entry.getValue() + "`");
               // queryString.append(entry.getKey()).append("=").append(entry.getValue());
           }
 
