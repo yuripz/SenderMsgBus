@@ -31,6 +31,9 @@ public class XMLchars {
     public static final String Fault_ExtResponse_Begin="<Envelope><Body><Fault><faultcode>";
     public static final String FaultExtResponse_FaultString="</faultcode><faultstring><![CDATA[";
     public static final String FaultExtResponse_End="]]></faultstring></Fault></Body></Envelope>";
+    public static final String Fault_Client_noNS_Begin="<Fault><faultcode>Client</faultcode><faultstring>";
+    public static final String Fault_Server_noNS_Begin="<Fault><faultcode>Server</faultcode><faultstring>";
+    public static final String Fault_noNS_End="</faultstring></Fault>";
 
     public static final String Success_ExtResponse_Begin="<Envelope><Body><MsgData><HttpResponseStatusCode>";
     public static final String Success_ExtResponse_PayloadString="</HttpResponseStatusCode><payload><![CDATA[";

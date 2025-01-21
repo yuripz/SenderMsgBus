@@ -1212,7 +1212,7 @@ public class MessageUtils {
     }
 
 
-    public static int ReplaceConfirmation(@NotNull TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, Logger MessegeSend_Log) {
+    public static int   ReplaceConfirmation(@NotNull TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, Logger MessegeSend_Log) {
         int nn = 0;
 
         nn = theadDataAccess.doDELETE_Message_Confirmation( Queue_Id, MessegeSend_Log);

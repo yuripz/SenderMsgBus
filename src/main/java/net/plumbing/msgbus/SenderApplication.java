@@ -65,6 +65,9 @@ public class SenderApplication implements CommandLineRunner {
 		ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
 
 		AppThead_log.info("Hellow for SenderApplication ");
+		// NotifyByChannel.test_Post(AppThead_log ); - для проверки
+		//		System.exit(11);
+
 		NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
 		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "Starting " + ApplicationName + " on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		propJDBC = connectionProperties.gethrmsPoint();

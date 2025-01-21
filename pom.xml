@@ -106,7 +106,7 @@
 
 		<dependency> <groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
-			<version>3.2.11</version>
+			<version>3.2.5</version>
 		</dependency>-->
 
 		<dependency>
@@ -248,7 +248,6 @@
                             <systemPath>C:/#_Integration_/ojdbc8-full/postgresql-42.2.19.jar</systemPath>
                         </dependency>
                 -->
-
 		<dependency>
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
