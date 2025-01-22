@@ -170,59 +170,6 @@ public class MessageSendTask  implements Runnable
             return;
         }
 
-/*
-        sslContext = MessageHttpSend.getSSLContext();
-        if ( sslContext == null ) {
-            return;
-        }
-        PoolingHttpClientConnectionManager syncConnectionManager = new PoolingHttpClientConnectionManager();
-        syncConnectionManager.setMaxTotal( 4);
-        syncConnectionManager.setDefaultMaxPerRoute(2);
-
-        externalConnectionManager = new ThreadSafeClientConnManager();
-        externalConnectionManager.setMaxTotal(99);
-        externalConnectionManager.setDefaultMaxPerRoute( 99);
-
-
-        RequestConfig rc;
-        rc = RequestConfig.custom()
-                .setConnectionRequestTimeout(ConnectTimeoutInMillis)
-                .setConnectTimeout(ConnectTimeoutInMillis)
-                .setSocketTimeout( ReadTimeoutInMillis)
-                .build();
-
-        httpClientBuilder = HttpClientBuilder.create()
-                .disableDefaultUserAgent()
-                .disableRedirectHandling()
-                .disableAutomaticRetries()
-                .setUserAgent("Mozilla/5.0")
-                .setSSLContext(sslContext)
-                .disableAuthCaching()
-                .disableConnectionState()
-                .disableCookieManagement()
-                // .useSystemProperties() // HE-5663  https://stackoverflow.com/questions/5165126/without-changing-code-how-to-force-httpclient-to-use-proxy-by-environment-varia
-                .setConnectionManager(syncConnectionManager)
-                .setSSLHostnameVerifier(new NoopHostnameVerifier())
-                .setConnectionTimeToLive( ApiRestWaitTime + 5, TimeUnit.SECONDS)
-                .evictIdleConnections((long) (ApiRestWaitTime + 5)*2, TimeUnit.SECONDS);
-        httpClientBuilder.setDefaultRequestConfig(rc);
-
-        ApiRestHttpClient = httpClientBuilder.build();
-        if ( ApiRestHttpClient == null) {
-            return;
-        }
-        */
-
-        //SimpleHttpClient..setConnectTimeout(ConnectTimeoutInMillis);
-        //HttpParams paramZ =  SimpleHttpClient.getParams();
-        //BasicHttpParams params = new BasicHttpParams(); // =  SimpleHttpClient.getParams();
-        //HttpConnectionParams.setConnectionTimeout( params, ConnectTimeoutInMillis);
-        //HttpConnectionParams.setSoTimeout(params, ReadTimeoutInMillis);
-
-            /*
-            ThreadPoolTaskExecutor SenderExecutor = (ThreadPoolTaskExecutor) context.getBean("messageSender");
-            ControlledTheadService schedulerService= new ControlledTheadService(theadNum, MessegeSend_Log );
-*/
         MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: is runing ");
 
         PreparedStatement stmtMsgQueue;
@@ -301,8 +248,7 @@ public class MessageSendTask  implements Runnable
 
                     // selectMessageSQL = PreSelectMessageSQL + " and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan;
                    }
-                else {  // TODO Pg -" and Q.Msg_Date < Current_TimeStamp AT TIME ZONE 'Europe/Moscow'" - почему то не срабвтывает условие, java как бы в <time zone 0> хотя выставлено set SESSION time zone 3;
-                    // TODO Pg - " and Q.Msg_Date < clock_timestamp() AT TIME ZONE 'Europe/Moscow'" -- попробовать
+                else {
                     selectMessageSQL = """
                             select * from ( select CTID::varchar as ROWID,
                                     q.queue_Id,
@@ -341,7 +287,8 @@ public class MessageSendTask  implements Runnable
                 // Получеем перечень потоков, которым надо помогать ДАННОМУ потоку
                 String List_Lame_Threads =  MessageRepositoryHelper.look4List_Lame_Threads_4_Num_Thread( theadNum + this.FirstInfoStreamId  , MessegeSend_Log );
                 if ( List_Lame_Threads != null)
-                {   String Lame_selectMessageSQL;
+                {   // TODO для PG Current_TimeStamp заменить на clock_timestamp() AT TIME ZONE 'Europe/Moscow'
+                    String Lame_selectMessageSQL;
                     String Lame_PreSelectMessageSQL =
                         "select * from ( select q.ROWID, " +
                                 " Q.queue_id," +
