@@ -259,7 +259,7 @@ public class TheadDataAccess {
         }
 
         if (make_UPDATE_MessageQueue_Send2AttOUT(dataAccess_log) == null) {
-            dataAccess_log.error("make_UPDATE_MessageQueue_Send2finishedOUT() fault");
+            dataAccess_log.error("make_UPDATE_MessageQueue_Send2AttOUT() fault");
             return null;
         }
         if (make_UPDATE_MessageQueue_DirectionAsIS(dataAccess_log) == null) {
@@ -688,11 +688,7 @@ public class TheadDataAccess {
             stmt_UPDATE_MessageQueue_Send2finishedOUT.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] commit: doUPDATE_MessageQueue_Send2finishedOUT: \"update " + dbSchema + ".MESSAGE_QUEUE Q " +
-                    "set Queue_Direction = '"+Queue_Direction+ "', Msg_Reason = '"+ pMsg_Reason+ "' " +
-                    ", Msg_Date= current_timestamp,  Msg_Status = "+ Msg_Status + ", Retry_Count= ? " +
-                    ", Prev_Queue_Direction='SEND', Prev_Msg_Date=Msg_Date " +
-                    "where 1=1 and q.Queue_Id = "+ Queue_Id +" ; Retry_Count= ? " + Retry_Count);
+            dataAccess_log.info( "[" + Queue_Id + "] commit: doUPDATE_MessageQueue_Send2finishedOUT: " + UPDATE_MessageQueue_Send2finishedOUT +  "; Retry_Count=" + Retry_Count);
 
         } catch (Exception e) {
 
