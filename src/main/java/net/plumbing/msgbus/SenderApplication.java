@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.5.01.15o";
+	public static final String ApplicationName="*Sender_BUS* v.5.01.27a";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -111,36 +111,6 @@ public class SenderApplication implements CommandLineRunner {
 
 		ThreadPoolTaskExecutor taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
 
-		/* --- monitorWriter для Графаны больше не используется , комментарим
-		this.monitorWriter();
-
-		AppThead_log.warn( dbLoggingProperties.toString() );
-		// MonitoringWriterTask.setMonitoringDbParam()
-		if ( dbLoggingProperties.gettotalNumTasks() != null) {
-			int TotalWriterTask = Integer.parseInt(dbLoggingProperties.gettotalNumTasks());
-			Integer WaitTimeBetweenWrite = Integer.parseInt(dbLoggingProperties.getwaitTimeScan());
-
-			ConcurrentQueue.Init(Integer.parseInt(dbLoggingProperties.getqueueCopasity()));
-			this.monitorWriterPool.setThreadGroupName("monitorWriter");
-
-			if (TotalWriterTask > 0 )  // dbLoggingProperties.gettotalNumTasks() == 0 значит, выключен
-			{
-
-				MonitoringWriterTask[] monitorWriterTask = new MonitoringWriterTask[TotalWriterTask];
-				for (i = 0; i < TotalWriterTask; i++) {
-					monitorWriterTask[i] = new MonitoringWriterTask();// (MessageSendTask) context.getBean("MessageSendTask");
-					//monitorWriterTask[ i ].setContext(  MntrContext );
-					monitorWriterTask[i].setWaitTimeBetweenScan(WaitTimeBetweenWrite);
-					monitorWriterTask[i].setMonitoringDbParam(dbLoggingProperties.getdataSourceClassName(), dbLoggingProperties.getjdbcUrl(),
-							dbLoggingProperties.getmntrDbLogin(), dbLoggingProperties.getmntrDbPasswd(),
-							dbLoggingProperties.getdataStoreTableName());
-					monitorWriterTask[i].setTheadNum(i);
-
-					this.monitorWriterPool.execute(monitorWriterTask[i]);
-				}
-			}
-		}
-*/
 		AppThead_log.info( connectionProperties.toString() );
 		//taskPollProperties.settotalNumTasks("10");
 		//AppThead_log.info( taskPollProperties.toString() );
@@ -184,7 +154,6 @@ public class SenderApplication implements CommandLineRunner {
 		if ( Target_Connection == null)
 		{
 			taskExecutor.shutdown();
-			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
 			MQbroker.stop();
 			NotifyByChannel.Telegram_sendMessage( "Do stopping " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " *нет связи с БД*  ip:" + InetAddress.getLocalHost().getHostAddress()+
 													", db `" + connectionProperties.gethrmsPoint() + "` as `"+ connectionProperties.gethrmsDbLogin() + "`), *stopping*", AppThead_log );
@@ -257,6 +226,8 @@ public class SenderApplication implements CommandLineRunner {
 
 		InitMessageRepository.SelectMsgTemplates( AppThead_log );
 		//AppThead_log.info("keysAllMessageTemplates: " + MessageTemplate.AllMessageTemplate.get(12).getTemplate_name() );
+		DataAccess.Hermes_Connection.clearWarnings();
+		DataAccess.Hermes_Connection.commit();
 
 		// Запуск пула потоков под scheduler
 
@@ -361,6 +332,8 @@ public class SenderApplication implements CommandLineRunner {
 						InitMessageRepository.ReReadMsgTypes(intervalReInit, AppThead_log);
 						InitMessageRepository.ReReadMsgTemplates(intervalReInit, AppThead_log);
 						DataAccess.InitDate.setTime(CurrentTime);
+						DataAccess.Hermes_Connection.clearWarnings();
+						DataAccess.Hermes_Connection.commit();
 						AppThead_log.info(" New InitDate=" + DataAccess.dateFormat.format(DataAccess.InitDate));
 
 						// если в

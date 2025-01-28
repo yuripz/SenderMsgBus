@@ -421,9 +421,9 @@ public class TheadDataAccess {
                         "from DUAL "  ;
             else selectMessageStatement = "select nextval('" + dbSchema + ".MESSAGE_QUEUE_SEQ') as queue_id," +
                     " '" + DirectOUT +"' as queue_direction," +
-                    " clock_timestamp()  Queue_Date," +
+                    " now() AT TIME ZONE 'Europe/Moscow'  Queue_Date," +
                     " 0 msg_status," +
-                    " clock_timestamp() Msg_Date," +
+                    " now() AT TIME ZONE 'Europe/Moscow' as Msg_Date," +
                     " 0 operation_id," +
                     " '0' as outqueue_id," +
                     " 'Undefine' as msg_type," +
@@ -435,8 +435,8 @@ public class TheadDataAccess {
                     " NULL subsys_cod," +
                     " 0 as Retry_Count," +
                     " NULL prev_queue_direction," +
-                    " clock_timestamp() Prev_Msg_Date, " +
-                    " clock_timestamp() Queue_Create_Date ";
+                    " now() AT TIME ZONE 'Europe/Moscow' Prev_Msg_Date, " +
+                    " now() AT TIME ZONE 'Europe/Moscow' Queue_Create_Date ";
 
             //dataAccess_log.info( "MESSAGE_QueueSelect4insert:" + selectMessageStatement );
             StmtMsg_Queue = this.Hermes_Connection.prepareStatement( selectMessageStatement);

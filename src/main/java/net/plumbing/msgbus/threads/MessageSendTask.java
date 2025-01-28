@@ -199,12 +199,12 @@ public class MessageSendTask  implements Runnable
                         // """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.ROWID=? ";
                 else // для PostGree используем псевдостолбец CTID с типом ::tid
                     selectMessage4QueueIdSQL= """
-                        select CTID::varchar as ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute) as Queue_Date,
+                        select CTID::varchar as ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, now() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute) as Queue_Date,
                         Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id,
                         Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid,
                         Q.msg_type_own,Q.msg_result, Q.subsys_cod,
                         COALESCE(Q.retry_count, 0) as Retry_Count, Q.prev_queue_direction, Q.prev_msg_date Prev_Msg_Date,
-                        COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute )) as Queue_Create_Date,
+                        COALESCE(Q.queue_create_date, COALESCE(Q.queue_date, now() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute )) as Queue_Create_Date,
                         Q.Perform_Object_Id
                         from
                         """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.queue_id=?";
@@ -253,7 +253,7 @@ public class MessageSendTask  implements Runnable
                             select * from ( select CTID::varchar as ROWID,
                                     q.queue_Id,
                                     q.queue_Direction,
-                                    COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute ) as Queue_Date,
+                                    COALESCE(q.queue_date, now() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute ) as Queue_Date,
                                     q.msg_Status,
                                     q.Msg_Date,
                                     q.Operation_id,
@@ -268,13 +268,13 @@ public class MessageSendTask  implements Runnable
                                     COALESCE(q.retry_count, 0) as Retry_Count,
                                     q.Prev_Queue_Direction,
                                     q.Prev_Msg_Date,
-                                    COALESCE(q.queue_create_date, COALESCE(q.queue_date, clock_timestamp() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute  )) as Queue_Create_Date,
-                                    q.Perform_Object_Id, clock_timestamp() AT TIME ZONE 'Europe/Moscow' as Curr_Server_Time
+                                    COALESCE(q.queue_create_date, COALESCE(q.queue_date, now() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute  )) as Queue_Create_Date,
+                                    q.Perform_Object_Id, now() AT TIME ZONE 'Europe/Moscow' as Curr_Server_Time
                                     from\040
                             """+ HrmsSchema + """
                              .MESSAGE_QUEUE Q where 1=1 and Q.msg_InfoStreamId in ( ?, ? ) \040
                                and Q.queue_Direction in( 'OUT','SEND')\040
-                               and Q.Msg_Date < clock_timestamp() AT TIME ZONE 'Europe/Moscow' order by q.Priority_Level asc , q.queue_id asc ) QUEUE Limit\040
+                               and Q.Msg_Date < now() AT TIME ZONE 'Europe/Moscow' order by q.Priority_Level asc , q.queue_id asc ) QUEUE Limit\040
                              """
                             + NumMessageInScan;
                     // CTID::varchar as ROWID и where CTID=?::tid
@@ -287,7 +287,7 @@ public class MessageSendTask  implements Runnable
                 // Получеем перечень потоков, которым надо помогать ДАННОМУ потоку
                 String List_Lame_Threads =  MessageRepositoryHelper.look4List_Lame_Threads_4_Num_Thread( theadNum + this.FirstInfoStreamId  , MessegeSend_Log );
                 if ( List_Lame_Threads != null)
-                {   // TODO для PG Current_TimeStamp заменить на clock_timestamp() AT TIME ZONE 'Europe/Moscow'
+                {   // TODO для PG Current_TimeStamp заменить на now() AT TIME ZONE 'Europe/Moscow'
                     String Lame_selectMessageSQL;
                     String Lame_PreSelectMessageSQL =
                         "select * from ( select q.ROWID, " +
@@ -439,8 +439,8 @@ public class MessageSendTask  implements Runnable
                                         " do record locked" );
                             }
                             if ( LockedMsg_InfoStreamId != messageQueueVO.getMsg_InfoStreamId() ) // может быть 103 , а может быть и 2000 + 103, перечитываем как есть
-                            { // пока читали, кто то уже забрал на себя
-                                MessegeSend_Log.warn( "Main Thread: stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record can't be locked, " + LockedMsg_InfoStreamId + "!=" + messageQueueVO.getMsg_InfoStreamId()  );
+                            { // пока читали, кто-то уже забрал на себя
+                                MessegeSend_Log.warn( "Main Thread: stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record can't be locked, " + LockedMsg_InfoStreamId + "!=" + messageQueueVO.getMsg_InfoStreamId()  + " (пока читали, кто-то уже забрал на себя)" );
                                 isNoLock = false;
                             }
                             else { // запись захвачена, Ok
@@ -486,6 +486,7 @@ public class MessageSendTask  implements Runnable
 
                     } // Цикл по выборке по своему потоку
                     rs.close();
+                    theadDataAccess.Hermes_Connection.commit();
                 } catch (Exception e) {
                     MessegeSend_Log.error(e.getMessage());
                     e.printStackTrace();
@@ -652,10 +653,12 @@ public class MessageSendTask  implements Runnable
                             Thread.sleep(WaitTimeBetweenScan * 1000);
                         }
                 }
-                else
+                else {
+                    theadDataAccess.Hermes_Connection.commit();
                     MessegeSend_Log.info("НЕ ждём'c: в " + theadRunCount + " раз, а идем читать дальше " + WaitTimeBetweenScan + "сек., уже " + (secondsFromEpoch - startTimestamp) + "сек., начиная с =" + startTimestamp + " текущее время =" + secondsFromEpoch
                             // +"secondsFromEpoch - startTimestamp=" + (secondsFromEpoch - startTimestamp) +  " Long.valueOf(60L * TotalTimeTasks)=" + Long.valueOf(60L * TotalTimeTasks)
                     );
+                }
             } catch (Exception e) {
                 MessegeSend_Log.error("MessageSendTask[" + theadNum + "]: is interrapted: " + e.getMessage());
                 e.printStackTrace();
@@ -848,8 +851,10 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                                 " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") + ",  ROWID=" + rs.getString("ROWID"));
                         messageQueueVO.setMsg_Date(java.sql.Timestamp.valueOf(LocalDateTime.now(ZoneId.of("Europe/Moscow"))));
                     }
-                    if ( !isRecordFoud )
-                        MessegeSend_Log.error( "PerfotmJMSMessage: не нашли запись в `"+ selectMessage4QueueIdSQL +"` =>`" + QueueRowId + "`");
+                    if ( !isRecordFoud ) {
+                        MessegeSend_Log.error("PerfotmJMSMessage: не нашли запись в `" + selectMessage4QueueIdSQL + "` =>`" + QueueRowId + "`");
+                        theadDataAccess.Hermes_Connection.rollback();
+                    }
                 } catch (SQLException e) { MessegeSend_Log.error(e.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
                     MessegeSend_Log.error( "PerfotmJMSMessage: Ошибка выборки `"+ selectMessage4QueueIdSQL + "` ...");
                     try { rLock.close(); theadDataAccess.Hermes_Connection.rollback();
