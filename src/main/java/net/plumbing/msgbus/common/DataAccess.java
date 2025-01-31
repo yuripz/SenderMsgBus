@@ -72,10 +72,11 @@ public  class DataAccess {
                 PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
+                Target_Connection.commit();
             }
             else
             {
-                /*DatabaseMetaData  databaseMetaData  = Target_Connection.getMetaData();
+                /*DatabaseMetaData databaseMetaData  = Target_Connection.getMetaData();
                 ResultSet rs= databaseMetaData.getClientInfoProperties();
                 dataAccess_log.info( "RDBMS get main ClientInfoProperties:");
                 while (rs.next()) {
@@ -144,6 +145,7 @@ public  class DataAccess {
                 dataAccess_log.info( "RDBMS make_DataBase_Connection CurrentTime: LocalDateTime ="+ InitDate.toString() + " getTime=" + InitDate.getTime()  + " mSec., " + dateFormat.format( InitDate )  );
             }
             rs.close();
+            DataAccess.Hermes_Connection.commit();
             // stmtInitTimeDateRead.close();
         } catch (Exception e) {
             dataAccess_log.error( "RDBMS getConnection fault: " + e.toString());
@@ -175,6 +177,7 @@ public  class DataAccess {
                 CurrentTime = rs.getString("InitTime");
             }
             rs.close();
+            Hermes_Connection.commit();
             dataAccess_log.info( "RDBMS CurrentTime getCurrentTimeString(): LocalDate ="+ CurrentTime );
         } catch (Exception e) {
             dataAccess_log.error("getCurrentTimeString `" + SQLCurrentTimeStringRead + "` fault:" + sStackTrace.strInterruptedException(e));

@@ -350,6 +350,7 @@ public class MessageSendTask  implements Runnable
                     CurrentTime = rs.getString("currentTime");
                 }
                 rs.close();
+                DataAccess.Hermes_Connection.commit();
                 MessegeSend_Log.info( "RDBMS CurrentTime for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " LocalDate ="+ CurrentTime );
             } catch (Exception e) {
                 MessegeSend_Log.error("RDBMS setup Connection: `set SESSION time zone 3` fault: " + e.toString());
