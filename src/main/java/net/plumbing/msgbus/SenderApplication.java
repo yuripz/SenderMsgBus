@@ -186,7 +186,6 @@ public class SenderApplication implements CommandLineRunner {
 					", db `" + connectionProperties.getextsysPoint() + "` as `"+ connectionProperties.getextsysDbLogin() + "`), *stopping*", AppThead_log );
 			System.exit(-20);
 		}
-
 		// Зачитываем MessageDirection
 
 		int num_of_Systems = InitMessageRepository.SelectMsgDirections(ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval,
@@ -210,7 +209,6 @@ public class SenderApplication implements CommandLineRunner {
 					( MessageDirections.AllMessageDirections.get(i).getType_Connect() == 4 ) )
 				// non-Persistent очереди для каждой из Soap-XmlHttp систем.
 				activeMQService.NewQueue("Q."+ MessageDirections.AllMessageDirections.get(i).getMsgDirection_Cod() + ".IN");
-
 		}
 		// Получаем JMSQueueConnection для последующей передачи в
 		Connection JMSQueueConnection= activeMQService.StartMQbroker();
@@ -256,9 +254,7 @@ public class SenderApplication implements CommandLineRunner {
 					externSystemCallTask[ i ].setHrmsPoint( connectionProperties.gethrmsPoint());
 					externSystemCallTask[ i ].setHrmsDbLogin( connectionProperties.gethrmsDbLogin());
 					externSystemCallTask[ i ].setHrmsDbPasswd( connectionProperties.gethrmsDbPasswd());
-
 					externSystemCallTask[i].setTheadNum(i);
-
 					externSystemCallPool.execute(externSystemCallTask[i]);
 				}
 			}
@@ -294,7 +290,6 @@ public class SenderApplication implements CommandLineRunner {
 			taskExecutor.execute(messageSendTask[ i ]);
 		}
 		int count = 0;
-
 
 		String CurrentTimeString;
 		long timeToReInit;
