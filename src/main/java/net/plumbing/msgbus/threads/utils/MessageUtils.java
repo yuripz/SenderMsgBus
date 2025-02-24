@@ -144,7 +144,9 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")"
+                    + " Next attempt after " + messageDetails.MessageTemplate4Perform.getShortRetryInterval() + " sec.," + whyIsFault + "fault: " + ErrorExceptionMessage
+            );
             return messageRetry_Count;
         }
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() ) {
@@ -157,6 +159,9 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")"
+                    + " Next attempt after " + messageDetails.MessageTemplate4Perform.getLongRetryInterval() + " sec.," + whyIsFault + "fault: " + ErrorExceptionMessage
+            );
             return messageRetry_Count;
         }
         if (( isMessageQueue_Directio_2_ErrorOUT ) // Если это не Транспортная ошибка( выставили признак ERROROUT)
@@ -167,6 +172,9 @@ public class MessageUtils {
                     whyIsFault + " fault: " + ErrorExceptionMessage, 1239,
                      messageQueueVO.getRetry_Count(), MessageSend_Log);
             messageQueueVO.setQueue_Direction(XMLchars.DirectERROUT);
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")"
+                    + " set Queue_Direction == ERROUT," + whyIsFault + "fault: " + ErrorExceptionMessage
+            );
         }
         return messageRetry_Count;
     }

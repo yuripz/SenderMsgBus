@@ -481,7 +481,6 @@ public class MessageHttpSend {
             RequestBody = messageDetails.XML_MsgSEND.getBytes(StandardCharsets.UTF_8);
 
         try {
-            // Unirest.config().httpClient(ApiRestHttpClient); //( messageDetails.SimpleHttpClient);
             if ( IsDebugged )
             MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
                     ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() + " PropUser:" + PropUser);
@@ -513,7 +512,7 @@ public class MessageHttpSend {
             //Headers headers = Response.getHeaders();
             //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.Response httpCode=" + restResponseStatus + " getBody().length=" + Response.body().length);
+            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Response httpCode=" + restResponseStatus + " getBody().length=" + Response.body().length);
             // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getBody()=" + Arrays.toString(Test) +" getBody().length=" + Test.length );
 
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8 RestResponse = Response.getBody();
@@ -541,7 +540,18 @@ public class MessageHttpSend {
                     theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(ioExc), MessageSend_Log);
                 return -1;
             }
-            /**/
+            // обработку HTTP статусов 502, 503 и 504 от внешних систем как транспортную ошибку
+            if (( restResponseStatus == 502)
+                 || ( restResponseStatus == 503 )
+                    || ( restResponseStatus == 504 )
+               ) {
+                Exception e = new Exception(" sendPostMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
+                if (IsDebugged)
+                    MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] call handle_Transport_Errors: `" + e.getMessage() + "`");
+                return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendPostMessage.POST", e,
+                        ROWID_QUEUElog, IsDebugged, MessageSend_Log);
+            }
+
 
             //  формируем в XML_MsgResponse ответ а-ля SOAP
             messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
@@ -600,8 +610,11 @@ public class MessageHttpSend {
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
 
         } catch (Exception e) {
-            System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
-            e.printStackTrace();
+            return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendPostMessage.POST", e,
+                     ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
+
+            /*System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception"); e.printStackTrace();
+
             MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST (" + EndPointUrl + ") fault, HttpRequestException:" + e);
             messageDetails.MsgReason.append(" sendPostMessage.POST fault: ").append(sStackTrace.strInterruptedException(e));
 
@@ -630,7 +643,7 @@ public class MessageHttpSend {
             }
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                     "sendPostMessage.POST(" + EndPointUrl + ")", true, e, MessageSend_Log);
-            return -1;
+            return -1;*/
         }
 
         if (IsDebugged)
@@ -725,6 +738,43 @@ public class MessageHttpSend {
         return 0;
     }
 
+    private static int  handle_Transport_Errors ( TheadDataAccess theadDataAccess, MessageQueueVO messageQueueVO, MessageDetails messageDetails, String EndPointUrl, String colledHttpMethodName,
+            Exception e,
+                                 String ROWID_QUEUElog , boolean IsDebugged, Logger  MessageSend_Log)
+    {
+        System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception"); if (e != null ) e.printStackTrace();
+
+        MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + colledHttpMethodName + " (" + EndPointUrl + ") fault, HttpRequestException:" + e);
+        messageDetails.MsgReason.append(" sendPostMessage.POST fault: ");
+        if (e != null ) messageDetails.MsgReason.append(sStackTrace.strInterruptedException(e));
+
+        // Журналируем UnirestException-ответ как есть
+        if (IsDebugged)
+            theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
+
+        // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
+        // НАДО проверять количество порыток !!!
+        MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + colledHttpMethodName + ": Retry_Count (" + messageQueueVO.getRetry_Count() + ")>= " +
+                "( ShortRetryCount=" + messageDetails.MessageTemplate4Perform.getShortRetryCount() +
+                " LongRetryCount=" + messageDetails.MessageTemplate4Perform.getLongRetryCount() + ")");
+        if (messageQueueVO.getRetry_Count() + 1 >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) {
+            // количество порыток исчерпано, формируем результат для выхода из повторов
+            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + colledHttpMethodName + "(`" + EndPointUrl + "`) fault:" + e);
+            append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, 506 ,
+                    colledHttpMethodName + " (`").append(EndPointUrl).append("`) fault:").append(e.getMessage() );
+
+            MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    colledHttpMethodName + " (" + EndPointUrl + "), do re-Send: ", false, e, MessageSend_Log);
+        } else {
+            // HE-4892 Если транспорт отвалился , то Шина выставляет RESOUT - коммент ProcessingSendError & return -1;
+            MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    colledHttpMethodName + " (`" + EndPointUrl + "`) ", true, e, MessageSend_Log);
+            return -1;
+        }
+        MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                colledHttpMethodName + " (`" + EndPointUrl + "`)", true, e, MessageSend_Log);
+        return -1;
+    }
 
     private static StringBuilder append_Http_ResponseStatus_and_PlaneResponse ( @NotNull StringBuilder XML_MsgResponse, @NotNull Integer restResponseStatus, String restResponse )
     {
@@ -949,6 +999,9 @@ public class MessageHttpSend {
           // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.get escapeXml.RestResponse=(" + XML.escape(RestResponse) + ")");
 
       } catch (Exception e) {
+          return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "HttpGetMessage.GET", e,
+                  ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
+          /*
           System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET `" + EndPointUrl + "` Exception");
           e.printStackTrace();
           MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage fault:" + e);
@@ -958,7 +1011,9 @@ public class MessageHttpSend {
           if (IsDebugged)
               theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
           return -1;
+          */
       }
+
       if ((messageDetails.MessageTemplate4Perform.getPropEncoding_Out() != null) &&
               (!messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equals("UTF-8"))) {
           try {
@@ -974,6 +1029,15 @@ public class MessageHttpSend {
                   theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
               return -1;
           }
+      }
+      // обработку HTTP статусов 502, 503 и 504 от внешних систем как транспортную ошибку
+      if (( restResponseStatus == 502)
+              || ( restResponseStatus == 503 )
+              || ( restResponseStatus == 504 )
+      ) {
+          Exception e = new Exception(" sendGetMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
+          return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "HttpGetMessage.GET", e,
+                  ROWID_QUEUElog, IsDebugged, MessageSend_Log);
       }
       if (IsDebugged)
           theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);

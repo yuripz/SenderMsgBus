@@ -7,12 +7,12 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<!--suppress MavenModelInspection -->
-		<version>3.2.11</version>
+		<version>3.2.12</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.3.25.01.31o-SNAPSHOT</version>
+	<version>0.3.25.02.22-SNAPSHOT</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -24,7 +24,7 @@
 		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jdbc</artifactId>
-			<version>3.2.11</version>
+			<version>3.2.12</version>
 			<exclusions>
 				<exclusion>
 					<groupId>commons-logging</groupId>
@@ -35,7 +35,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-			<version>3.2.11</version>
+			<version>3.2.12</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jetty</artifactId>
-			<version>3.2.11</version>
+			<version>3.2.12</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.eclipse.jetty.ee10.websocket</groupId>
@@ -258,7 +258,7 @@
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot</artifactId>
-                    <version>3.2.11</version>
+                    <version>3.2.12</version>
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
@@ -292,7 +292,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>3.2.11</version>
+				<version>3.2.12</version>
 				<configuration>
 					<executable>true</executable>
 					<includeSystemScope>true</includeSystemScope>
