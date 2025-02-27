@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.5.02.22";
+	public static final String ApplicationName="*Sender_BUS* v.5.02.26";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -67,8 +67,11 @@ public class SenderApplication implements CommandLineRunner {
 		AppThead_log.info("Hellow for SenderApplication ");
 		// NotifyByChannel.test_Post(AppThead_log ); - для проверки
 		//		System.exit(11);
-
+		NotifyByChannel.Telegram_setHttpProxyHost( telegramProperties.gethttpProxyHost() , AppThead_log );
+		NotifyByChannel.Telegram_setHttpProxyPort( telegramProperties.gethttpProxyPort() , AppThead_log );
 		NotifyByChannel.Telegram_setChatBotUrl( telegramProperties.getchatBotUrl() , AppThead_log );
+		NotifyByChannel.Telegram_buildHttpClient(  AppThead_log );
+
 		AppThead_log.info( "Telegram_sendMessage " + telegramProperties.getchatBotUrl() + " :" + "Starting " + ApplicationName + " on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) ");
 		propJDBC = connectionProperties.gethrmsPoint();
 		if ( propJDBC == null)  propJDBC = "jdbc UNKNOWN ! ";
