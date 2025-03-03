@@ -876,6 +876,7 @@ public class PerformQueueMessages {
         }
 
         if ( (XSLTdata == null) || ( XSLTdata.length() < XMLchars.EmptyXSLT_Result.length() )  ) {
+            ConvXMLuseXSLTerr = " length XSLTdata 4 transform is null OR  < " + XMLchars.EmptyXSLT_Result.length();
             if ( IsDebugged )
                 MessageSend_Log.info("["+ QueueId  + "] length XSLTdata 4 transform is null OR  < " + XMLchars.EmptyXSLT_Result.length() );
             return XMLchars.EmptyXSLT_Result ;
@@ -917,17 +918,19 @@ public class PerformQueueMessages {
                 if (( res.charAt(0) == '{') || ( res.charAt(0) == '['))
                 {
                     if ( IsDebugged )
-                        MessageSend_Log.warn("["+ QueueId  + "] json transformer.transform(`"+ res + "`) < "  );
+                        MessageSend_Log.warn("["+ QueueId  + "] json transformer.transform(`{}`) < ", res  );
                 }
 
                  else
                 if ( res.length() < XMLchars.EmptyXSLT_Result.length()) {
+                    ConvXMLuseXSLTerr = " length Xtransformer.transform(`"+ res + "`) < " + XMLchars.EmptyXSLT_Result.length();
                     if ( IsDebugged )
-                        MessageSend_Log.warn("["+ QueueId  + "] length transformer.transform(`"+ res + "`) < {}" , XMLchars.EmptyXSLT_Result.length() );
+                        MessageSend_Log.warn("["+ QueueId  + "] length transformer.transform(`{}`) < {}", res, XMLchars.EmptyXSLT_Result.length() );
                     res = XMLchars.EmptyXSLT_Result;
                 }
             }
             else {
+                ConvXMLuseXSLTerr = " StreamResult transformer.transform() is null ";
                 if ( IsDebugged )
                     MessageSend_Log.warn("["+ QueueId  + "] StreamResult transformer.transform() is null ");
                 res = XMLchars.EmptyXSLT_Result;

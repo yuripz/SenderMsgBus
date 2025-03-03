@@ -107,7 +107,7 @@ public class XMLchars {
       public static final String nanXSLT_Result ="<nan></nan>";
 
     // TODO  for Oracle it must be 3992
-    final public static int MAX_TAG_VALUE_BYTE_SIZE= 32778; // TODO  for PostGreSQL 32778;
+    final public static int MAX_TAG_VALUE_BYTE_SIZE= 3992; // TODO  for PostGreSQL 32778;
 
     public static byte @NotNull [] cutUTF8ToMAX_TAG_VALUE_BYTE_SIZE(@NotNull String s)  {
         byte[] utf8;
