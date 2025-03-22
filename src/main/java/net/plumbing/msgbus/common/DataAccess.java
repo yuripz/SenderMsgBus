@@ -19,10 +19,7 @@ public  class DataAccess {
     public static DateFormat dateFormat;
 
     //@Autowired
-    /*
-    static JdbcTemplate jdbcTemplate;
-    static DriverManagerDataSource dataSource;
-    */
+
     private static  String SQLCurrentTimeStringRead;
     private static  String SQLCurrentTimeDateRead;
     private static PreparedStatement stmtCurrentTimeStringRead;
@@ -47,9 +44,14 @@ public  class DataAccess {
         //String db_userid = "HERMES";
         //String db_password = "uthvtc";
         String ClassforName;
-        if ( connectionUrl.indexOf("oracle") > 0 )
+        if ( connectionUrl.indexOf("oracle") > 0 ) {
             ClassforName = "oracle.jdbc.driver.OracleDriver";
-        else ClassforName = "org.postgresql.Driver";
+            XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 3992;  //   for Oracle it must be 3992
+        }
+        else {
+            ClassforName = "org.postgresql.Driver";
+            XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 32778; // for PostGreSQL 32778;
+        }
         HrmsSchema =  DbSchema;
         if ( connectionUrl.contains("oracle") ) rdbmsVendor="oracle";
         else rdbmsVendor="postgresql";
