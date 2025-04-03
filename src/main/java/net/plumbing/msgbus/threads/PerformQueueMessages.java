@@ -51,7 +51,7 @@ public class PerformQueueMessages {
         XSLTErrorListener = new xlstErrorListener();
         XSLTErrorListener.setXlstError_Log( MessageSend_Log );
 
-        MonitoringQueueVO monitoringQueueVO = new MonitoringQueueVO();
+        //MonitoringQueueVO monitoringQueueVO = new MonitoringQueueVO();
 
         MessageSend_Log.info(Queue_Direction + " [" + Queue_Id + "] ищем Шаблон под оперрацию (" + Operation_Id + "), с учетом системы приёмника MsgDirection_Id=" + MsgDirection_Id + ", SubSys_Cod =" + SubSys_Cod);
 
