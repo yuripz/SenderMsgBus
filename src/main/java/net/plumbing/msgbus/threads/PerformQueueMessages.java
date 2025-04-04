@@ -914,18 +914,22 @@ public class PerformQueueMessages {
 
             if ( result != null) {
                 res = fOut.toString();
-                // System.err.println("result != null, res:" + res );
-                if (( res.charAt(0) == '{') || ( res.charAt(0) == '['))
-                {
-                    if ( IsDebugged )
-                        MessageSend_Log.warn("["+ QueueId  + "] json transformer.transform(`{}`) < ", res  );
+                if (!res.isEmpty()) {
+                    // System.err.println("result != null, res:" + res );
+                    if ((res.charAt(0) == '{') || (res.charAt(0) == '[')) {
+                        if (IsDebugged)
+                            MessageSend_Log.warn("[" + QueueId + "] json transformer.transform(`{}`) < ", res);
+                    } else if (res.length() < XMLchars.EmptyXSLT_Result.length()) {
+                        ConvXMLuseXSLTerr = " length Xtransformer.transform(`" + res + "`) < " + XMLchars.EmptyXSLT_Result.length();
+                        if (IsDebugged)
+                            MessageSend_Log.warn("[" + QueueId + "] length transformer.transform(`{}`) < {}", res, XMLchars.EmptyXSLT_Result.length());
+                        res = XMLchars.EmptyXSLT_Result;
+                    }
                 }
-
-                 else
-                if ( res.length() < XMLchars.EmptyXSLT_Result.length()) {
-                    ConvXMLuseXSLTerr = " length Xtransformer.transform(`"+ res + "`) < " + XMLchars.EmptyXSLT_Result.length();
-                    if ( IsDebugged )
-                        MessageSend_Log.warn("["+ QueueId  + "] length transformer.transform(`{}`) < {}", res, XMLchars.EmptyXSLT_Result.length() );
+                else {
+                    ConvXMLuseXSLTerr = " length Xtransformer.transform(`" + res + "`) == 0 ";
+                    if (IsDebugged)
+                        MessageSend_Log.warn("[" + QueueId + "] length transformer.transform(`{}`) == 0", res);
                     res = XMLchars.EmptyXSLT_Result;
                 }
             }

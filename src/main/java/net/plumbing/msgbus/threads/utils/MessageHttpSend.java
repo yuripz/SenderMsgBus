@@ -841,7 +841,7 @@ public class MessageHttpSend {
         }
         if ( numOfParams < 1) {
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
-                    "HttpGetMessage.setHttpGetParams() [не содержит параметров для HtthGet]", true,  null ,  MessageSend_Log);
+                    "HttpGetMessage.setHttpGetParams(): [вызов не содержит параметров для HtthGet]", true,  null ,  MessageSend_Log);
             return -1;
         }
 
