@@ -191,12 +191,25 @@ public class XML {
          *
          * any Unicode character, excluding the surrogate blocks, FFFE, and FFFF.
          */
+        /*
+        if (    (current == 0x9) ||
+                    (current == 0xA) ||
+                    (current == 0xD) ||
+                    ((cp >= 0x20) && (cp <= 0xD7FF)) ||
+                    ((cp >= 0xE000) && (cp <= 0xFFFD)) ||
+                    ((cp >= 0x10000) && (cp <= 0x10FFFF)) // 0x7fffffff
+               )
+         */
         // isISOControl is true when (cp >= 0 && cp <= 0x1F) || (cp >= 0x7F && cp <= 0x9F)
         // all ISO control characters are out of range except tabs and new lines
         return ( false ||
                 // valid the range of acceptable characters that aren't control
-                Character.isISOControl(cp) || (cp >= 0x04F1 )
-
+                Character.isISOControl(cp)  //|| (cp >= 0x04F1 )
+                || !(
+                ((cp >= 0x20) && (cp <= 0xD7FF)) ||
+                        ((cp >= 0xE000) && (cp <= 0xFFFD)) ||
+                        ((cp >= 0x10000) && (cp <= 0x10FFFF))
+                )
         )
                 ;
     }

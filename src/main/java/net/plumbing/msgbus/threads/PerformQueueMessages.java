@@ -404,10 +404,14 @@ public class PerformQueueMessages {
                         }
 
                         if (Message.MessageTemplate4Perform.getPropWebMetod() != null) {
-                            if (Message.MessageTemplate4Perform.getPropWebMetod().equals("get")) {
+                            if (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("GET")) {
                                 Function_Result = MessageHttpSend.HttpGetMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
                             }
-                            if (Message.MessageTemplate4Perform.getPropWebMetod().equals("post")) {
+                            if (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("DELETE")) {
+                                Function_Result = MessageHttpSend.HttpDeleteMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
+                            }
+                            //
+                            if (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) {
                                 String AckXSLT_4_make_JSON = Message.MessageTemplate4Perform.getAckXSLT() ; // получили XSLT-для
                                 if ( AckXSLT_4_make_JSON != null ) {
                                     if (Message.MessageTemplate4Perform.getIsDebugged())
@@ -444,10 +448,12 @@ public class PerformQueueMessages {
 
                                 Function_Result = MessageHttpSend.sendPostMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
                             }
-                            if ((!Message.MessageTemplate4Perform.getPropWebMetod().equals("get")) &&
-                                    (!Message.MessageTemplate4Perform.getPropWebMetod().equals("post"))) {
+                            if ((!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("GET")) &&
+                                    (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) &&
+                                    (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("DELETE"))
+                                ) {
                                 MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
-                                        "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'", true,
+                                        "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указанное в шаблоне, не 'get', не 'post' и не 'delete'", true,
                                         null, MessageSend_Log);
                                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessageSend_Log);
                                 //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessageSend_Log);
