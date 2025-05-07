@@ -1,6 +1,6 @@
 package net.plumbing.msgbus.mq;
 
-import javax.jms.*;
+import jakarta.jms.*;
 
 import net.plumbing.msgbus.common.sStackTrace;
 import org.apache.activemq.ActiveMQConnectionFactory;

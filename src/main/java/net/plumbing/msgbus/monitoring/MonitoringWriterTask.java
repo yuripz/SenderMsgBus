@@ -16,8 +16,10 @@ import java.time.Instant;
 
 import net.plumbing.msgbus.model.MonitoringQueueVO;
 
+import javax.annotation.PostConstruct;
 
-@Component
+
+// @Component
 // @Scope("prototype")
 
 
@@ -72,8 +74,9 @@ public class MonitoringWriterTask implements Runnable
     private int theadRunCount = 0;
     private  int  theadRunTotalCount = 1;
 
- @Bean( name = "МonitoringWriterTaskRun")
+ // @Bean( name = "МonitoringWriterTaskRun")
    // @Scheduled(initialDelay = 100, fixedRate = 1000)
+ // @PostConstruct
     public void run() {
         //if (( theadNum != null ) && ((theadNum == 17) || (theadNum == 18) || (theadNum == 19) || (theadNum == 20)) )
         if (( theadNum != null ) ) // && (theadNum == 0))

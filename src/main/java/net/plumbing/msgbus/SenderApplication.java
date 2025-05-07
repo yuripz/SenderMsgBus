@@ -32,7 +32,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 import org.apache.activemq.broker.BrokerService;
 
-import javax.jms.Connection;
+import jakarta.jms.Connection;
 
 @EnableScheduling
 @SpringBootApplication (scanBasePackages = "net.plumbing.msgbus.*")
@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.5.04.17";
+	public static final String ApplicationName="*Sender_BUS* v.5.05.07";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}

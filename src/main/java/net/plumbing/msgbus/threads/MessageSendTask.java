@@ -17,7 +17,7 @@ import net.plumbing.msgbus.model.MonitoringQueueVO;
 import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
 import net.plumbing.msgbus.common.json.JSONObject;
 
-import javax.jms.*;
+import jakarta.jms.*;
 import java.sql.*;
 import java.sql.Connection;
 import java.time.*;
@@ -60,7 +60,7 @@ public class MessageSendTask  implements Runnable
     private Integer ApiRestWaitTime;
     private Integer FirstInfoStreamId;
     private Integer CuberNumId;
-    private javax.jms.Connection JMSQueueConnection;
+    private jakarta.jms.Connection JMSQueueConnection;
 
     public String getHrmsPpoint() {
         return HrmsPoint;
@@ -92,7 +92,7 @@ public class MessageSendTask  implements Runnable
         this.theadNum = TheadNum;
     }
 
-    public void setJMSQueueConnection (javax.jms.Connection JMSQueueConnection  ) { this.JMSQueueConnection = JMSQueueConnection;}
+    public void setJMSQueueConnection (jakarta.jms.Connection JMSQueueConnection  ) { this.JMSQueueConnection = JMSQueueConnection;}
     public void setApiRestWaitTime( int ApiRestWaitTime) { this.ApiRestWaitTime = ApiRestWaitTime; }
     public void setFirstInfoStreamId( int FirstInfoStreamId) { this.FirstInfoStreamId=FirstInfoStreamId;}
     public void setCuberNumId( int cuberNumId) { this.CuberNumId=cuberNumId;}
@@ -102,7 +102,7 @@ public class MessageSendTask  implements Runnable
     //private HttpClientBuilder httpClientBuilder  = null;
     // private java.net.http.HttpClient ApiRestHttpClient = null;
 
-    @Bean( name = "MessageSendTaskRun")
+    // @Bean( name = "MessageSendTaskRun")
     // @Scheduled(initialDelay = 100, fixedRate = 1000)
     public void run() {
         //if (( theadNum != null ) && ((theadNum == 17) || (theadNum == 18) || (theadNum == 19) || (theadNum == 20)) )
