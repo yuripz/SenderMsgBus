@@ -1,5 +1,8 @@
 package net.plumbing.msgbus.model;
 
+import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.Xslt30Transformer;
+import net.sf.saxon.s9api.XsltCompiler;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
@@ -138,6 +141,28 @@ public class MessageTemplate4Perform {
                         SOAP_ACTION_12 = "action=";
 
     private Logger MessageTemplate4Perform_Log;
+    private Xslt30Transformer HeaderXSLT_xslt30Transformer;
+    private Xslt30Transformer MessageXSLT_xslt30Transformer;
+    private Xslt30Transformer MsgAnswXSLT_xslt30Transformer;
+    private Xslt30Transformer AckXSLT_xslt30Transformer;
+    private Xslt30Transformer EnvelopeXSLTPost_xslt30Transformer;
+    private Xslt30Transformer EnvelopeXSLTExt_xslt30Transformer;
+    private Xslt30Transformer ErrTransXSLT_xslt30Transformer;
+
+    private Processor ErrTransXSLT_processor; // = new Processor(false);
+    private XsltCompiler ErrTransXSLT_xsltCompiler; // = processor.newXsltCompiler();
+    private Processor EnvelopeXSLTExt_processor; // = new Processor(false);
+    private XsltCompiler EnvelopeXSLTExt_xsltCompiler; // = processor.newXsltCompiler();
+    private Processor EnvelopeXSLTPost_processor; // = new Processor(false);
+    private XsltCompiler EnvelopeXSLTPost_xsltCompiler; // = processor.newXsltCompiler();
+    private Processor AckXSLT_processor; // = new Processor(false);
+    private XsltCompiler AckXSLT_xsltCompiler; // = processor.newXsltCompiler();
+    private Processor MessageXSLT_processor; // = new Processor(false);
+    private XsltCompiler MessageXSLT_xsltCompiler; // = processor.newXsltCompiler();
+    private Processor MsgAnswXSLT_processor; // = new Processor(false);
+    private XsltCompiler MsgAnswXSLT_xsltCompiler; // = processor.newXsltCompiler();
+    private Processor HeaderXSLT_processor; // = new Processor(false);
+    private XsltCompiler HeaderXSLT_xsltCompiler; // = processor.newXsltCompiler();
 
     private String EndPointUrl;
     private String Type_Connection = null;
@@ -206,8 +231,31 @@ public class MessageTemplate4Perform {
             this.isPreemptivePostExec =false;
             this.isPreemptive =false;
 
+        this.HeaderXSLT_xslt30Transformer = messageTemplateVO.getHeaderXSLT_xslt30Transformer();
+        this.MessageXSLT_xslt30Transformer = messageTemplateVO.getMessageXSLT_xslt30Transformer();
+        this.MsgAnswXSLT_xslt30Transformer = messageTemplateVO.getMsgAnswXSLT_xslt30Transformer();
+        this.AckXSLT_xslt30Transformer = messageTemplateVO.getAckXSLT_xslt30Transformer();
+        this.EnvelopeXSLTPost_xslt30Transformer = messageTemplateVO.getEnvelopeXSLTPost_xslt30Transformer();
+        this.EnvelopeXSLTExt_xslt30Transformer = messageTemplateVO.getEnvelopeXSLTExt_xslt30Transformer();
+        this.ErrTransXSLT_xslt30Transformer = messageTemplateVO.getErrTransXSLT_xslt30Transformer();
+        this.ErrTransXSLT_processor = messageTemplateVO.getErrTransXSLT_processor() ;
+        this.ErrTransXSLT_xsltCompiler = messageTemplateVO.getErrTransXSLT_xsltCompiler()  ;
+        this.EnvelopeXSLTExt_processor = messageTemplateVO.getEnvelopeXSLTExt_processor() ;
+        this.EnvelopeXSLTExt_xsltCompiler = messageTemplateVO.getEnvelopeXSLTExt_xsltCompiler()  ;
+        this.EnvelopeXSLTPost_processor = messageTemplateVO.getEnvelopeXSLTPost_processor() ;
+        this.EnvelopeXSLTPost_xsltCompiler = messageTemplateVO.getEnvelopeXSLTPost_xsltCompiler()  ;
+        this.AckXSLT_processor = messageTemplateVO.getMAckXSLT_processor() ;
+        this.AckXSLT_xsltCompiler = messageTemplateVO.getAckXSLT_xsltCompiler()  ;
+        this.MessageXSLT_processor = messageTemplateVO.getMessageXSLT_processor() ;
+        this.MessageXSLT_xsltCompiler = messageTemplateVO.getMessageXSLT_xsltCompiler()  ;
+        this.MsgAnswXSLT_processor = messageTemplateVO.getMsgAnswXSLT_processor() ;
+        this.MsgAnswXSLT_xsltCompiler = messageTemplateVO.getMsgAnswXSLT_xsltCompiler()  ;
+        this.HeaderXSLT_processor = messageTemplateVO.getHeaderXSLT_processor() ;
+        this.HeaderXSLT_xsltCompiler = messageTemplateVO.getHeaderXSLT_xsltCompiler()  ;
 
-            this.ConfigExecute = messageTemplateVO.getConfigExecute();
+
+
+        this.ConfigExecute = messageTemplateVO.getConfigExecute();
             if (this.ConfigExecute != null) {
                 Properties properties=new Properties();
                 this.isDebugged=false;
@@ -382,6 +430,30 @@ public class MessageTemplate4Perform {
             this.ErrTransXSLT = messageTemplateVO.getErrTransXSLT();
             this.AckXSLT = messageTemplateVO.getAckXSLT();
     }
+    public Xslt30Transformer getEnvelopeXSLTExt_xslt30Transformer() {return EnvelopeXSLTExt_xslt30Transformer;}
+    public Xslt30Transformer getEnvelopeXSLTPost_xslt30Transformer() {return EnvelopeXSLTPost_xslt30Transformer;}
+    public Xslt30Transformer getAckXSLT_xslt30Transformer() {return AckXSLT_xslt30Transformer;}
+    public Xslt30Transformer getMessageXSLT_xslt30Transformer() {return MessageXSLT_xslt30Transformer;}
+    public Xslt30Transformer getMsgAnswXSLT_xslt30Transformer() {return MsgAnswXSLT_xslt30Transformer;}
+    public Xslt30Transformer getHeaderXSLT_xslt30Transformer() {return HeaderXSLT_xslt30Transformer;}
+    public Xslt30Transformer getErrTransXSLT_xslt30Transformer() {return ErrTransXSLT_xslt30Transformer;}
+
+    public Processor getHeaderXSLT_processor() {return HeaderXSLT_processor;}
+    public XsltCompiler getHeaderXSLT_xsltCompiler() {return HeaderXSLT_xsltCompiler;}
+    public Processor getMsgAnswXSLT_processor() {return MsgAnswXSLT_processor;}
+    public XsltCompiler getMsgAnswXSLT_xsltCompiler() {return MsgAnswXSLT_xsltCompiler;}
+    public Processor getMessageXSLT_processor() {return MessageXSLT_processor;}
+    public XsltCompiler getMessageXSLT_xsltCompiler() {return MessageXSLT_xsltCompiler;}
+    public Processor getAckXSLT_processor() {return AckXSLT_processor;}
+    public XsltCompiler getAckXSLT_xsltCompiler() {return AckXSLT_xsltCompiler;}
+    public Processor getEnvelopeXSLTPost_processor() {return EnvelopeXSLTPost_processor;}
+    public XsltCompiler getEnvelopeXSLTPost_xsltCompiler() {return EnvelopeXSLTPost_xsltCompiler;}
+    public Processor getEnvelopeXSLTExt_processor() {return EnvelopeXSLTExt_processor;}
+    public XsltCompiler getEnvelopeXSLTExt_xsltCompiler() {return EnvelopeXSLTExt_xsltCompiler;}
+    public Processor getErrTransXSLT_processor() {return ErrTransXSLT_processor;}
+    public XsltCompiler getErrTransXSLT_xsltCompiler() {return ErrTransXSLT_xsltCompiler;}
+
+
     public  String getPropReplacement() { return this.PropReplacement; }
     public  String getPropSearchString() { return this.PropSearchString; }
     public  String getSOAPAction() { return this.SOAPAction; }

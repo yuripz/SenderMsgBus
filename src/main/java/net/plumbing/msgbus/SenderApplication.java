@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.5.05.30";
+	public static final String ApplicationName="*Sender_BUS-Sax* v.5.06.14";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -195,6 +195,10 @@ public class SenderApplication implements CommandLineRunner {
 				AppThead_log );
 		if ( num_of_Systems < 1 )
 		{
+			AppThead_log.error("Список систем пуст: останавливаем" );
+			NotifyByChannel.Telegram_sendMessage( "Do stopping " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " *empty system list problem*  ip:" + InetAddress.getLocalHost().getHostAddress()+
+					", db `" + connectionProperties.getextsysPoint() + "` as `"+ connectionProperties.getextsysDbLogin() + "`), *stopping*", AppThead_log );
+
 			taskExecutor.shutdown();
 			// this.monitorWriterPool.shutdown(); // -- monitorWriter для Графаны больше не используется , комментарим
 			MQbroker.stop();
