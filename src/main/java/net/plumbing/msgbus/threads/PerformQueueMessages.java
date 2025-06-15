@@ -995,16 +995,16 @@ public class PerformQueueMessages {
         return(res);
     }
 
-    private String ConvXMLuseXSLT30(@NotNull Long QueueId, @NotNull String xmlData,
+    private String ConvXMLuseXSLT30(@NotNull Long QueueId, @NotNull String XMLdata_4_Tranform,
                                     @NotNull Processor xslt30Processor, @NotNull XsltCompiler xslt30Compiler,
                                     @NotNull Xslt30Transformer xslt30Transformer,
-                                    @NotNull String checkXSLTdata, StringBuilder MsgResult, Logger MessageSend_Log, boolean IsDebugged )
+                                    @NotNull String checkXSLTtext, StringBuilder MsgResult, Logger MessageSend_Log, boolean IsDebugged )
             throws SaxonApiException // TransformerException
     { StreamSource xmlStreamSource ,srcXSLT;
         //Transformer transformer;
         // StreamResult result;
 
-        if ( (checkXSLTdata != null) && ( !checkXSLTdata.isEmpty() ) &&
+        if ( (checkXSLTtext != null) && ( !checkXSLTtext.isEmpty() ) &&
              (xslt30Transformer == null) // проверяем, получилось ли из проверяемого XSLT скомпилировать xslt30Transformer на этапе загрузки
            ) {
             ConvXMLuseXSLTerr = " ConvXMLuseXSLT30:: length XSLTdata 4 transform is NOT NULL (OR < " + XMLchars.EmptyXSLT_Result.length() + "), but xslt30Processor/xslt30Transformer == null";
@@ -1012,7 +1012,7 @@ public class PerformQueueMessages {
             MessageSend_Log.error("[{}] ConvXMLuseXSLT30: length XSLTdata 4 transform is NOT null (OR  < {}), xslt30Processor/xslt30Transformer == null", QueueId, XMLchars.EmptyXSLT_Result.length());
             return XMLchars.EmptyXSLT_Result;
         }
-        if ( (checkXSLTdata == null) || ( checkXSLTdata.length() < XMLchars.EmptyXSLT_Result.length() )  ) {
+        if ( (checkXSLTtext == null) || ( checkXSLTtext.length() < XMLchars.EmptyXSLT_Result.length() )  ) {
             ConvXMLuseXSLTerr = " ConvXMLuseXSLT30: length XSLTdata 4 transform is null OR  < " + XMLchars.EmptyXSLT_Result.length();
             if ( IsDebugged )
                 MessageSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT30: length XSLTdata 4 transform is null OR  < {}" , XMLchars.EmptyXSLT_Result.length() );
@@ -1022,28 +1022,26 @@ public class PerformQueueMessages {
         ByteArrayInputStream xmlInputStream=null;
         //BufferedInputStream  _xmlInputStream;
         ByteArrayOutputStream outputByteArrayStream =new ByteArrayOutputStream();
-        String res=XMLchars.EmptyXSLT_Result;
+        String stringResult_of_XSLT =XMLchars.EmptyXSLT_Result;
         ConvXMLuseXSLTerr="";
         try {
-            xmlInputStream  = new ByteArrayInputStream( xmlData.getBytes(StandardCharsets.UTF_8) );
+            xmlInputStream  = new ByteArrayInputStream( XMLdata_4_Tranform.getBytes(StandardCharsets.UTF_8) );
         }
         catch ( Exception exp ) {
             ConvXMLuseXSLTerr = sStackTrace.strInterruptedException(exp);
             exp.printStackTrace();
-            System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.ByteArrayInputStream Exception" );
-            MessageSend_Log.error("["+ QueueId  + "] Exception: {}" , ConvXMLuseXSLTerr );
+            System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT30.ByteArrayInputStream Exception" );
+            MessageSend_Log.error("[{}] Exception: {}", QueueId, ConvXMLuseXSLTerr);
             MsgResult.setLength(0);
-            MsgResult.append( "ConvXMLuseXSLT:");  MsgResult.append( ConvXMLuseXSLTerr );
+            MsgResult.append( "ConvXMLuseXSLT30:");  MsgResult.append( ConvXMLuseXSLTerr );
             return XMLchars.EmptyXSLT_Result ;
         }
-
-
 
         xmlStreamSource = new StreamSource(xmlInputStream);
         try
         {
             if (IsDebugged)
-                MessageSend_Log.warn("["+ QueueId  + "] using XsltLanguageVersion {}",  xslt30Compiler.getXsltLanguageVersion() ) ;
+                MessageSend_Log.warn("[{}] ConvXMLuseXSLT30: using XsltLanguageVersion {}", QueueId, xslt30Compiler.getXsltLanguageVersion());
             Serializer outSerializer = xslt30Processor.newSerializer();
             outSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             outSerializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
@@ -1053,32 +1051,32 @@ public class PerformQueueMessages {
             xslt30Transformer.transform( xmlStreamSource, outSerializer);
 
 
-            res = outputByteArrayStream.toString();
-            if (!res.isEmpty()) {
-                // System.err.println("result != null, res:" + res );
-                if ((res.charAt(0) == '{') || (res.charAt(0) == '[')) {
+            stringResult_of_XSLT = outputByteArrayStream.toString();
+            if (!stringResult_of_XSLT.isEmpty()) {
+                // System.err.println("result != null, stringResult_of_XSLT:" + stringResult_of_XSLT );
+                if ((stringResult_of_XSLT.charAt(0) == '{') || (stringResult_of_XSLT.charAt(0) == '[')) {
                     if (IsDebugged)
-                        MessageSend_Log.warn("[" + QueueId + "] json transformer.transform(`{}`)", res);
-                } else if (res.length() < XMLchars.EmptyXSLT_Result.length()) {
-                    ConvXMLuseXSLTerr = " length Xtransformer.transform(`" + res + "`) < " + XMLchars.EmptyXSLT_Result.length();
+                        MessageSend_Log.warn("[{}] json transformer.transform(`{}`)", QueueId, stringResult_of_XSLT);
+                } else if (stringResult_of_XSLT.length() < XMLchars.EmptyXSLT_Result.length()) {
+                    ConvXMLuseXSLTerr = " length Xtransformer.transform(`" + stringResult_of_XSLT + "`) < " + XMLchars.EmptyXSLT_Result.length();
                     if (IsDebugged)
-                        MessageSend_Log.warn("[" + QueueId + "] length transformer.transform(`{}`) < {}", res, XMLchars.EmptyXSLT_Result.length());
-                    res = XMLchars.EmptyXSLT_Result;
+                        MessageSend_Log.warn("[{}] length transformer.transform(`{}`) < {}", QueueId, stringResult_of_XSLT, XMLchars.EmptyXSLT_Result.length());
+                    stringResult_of_XSLT = XMLchars.EmptyXSLT_Result;
                 }
             }
             else {
-                ConvXMLuseXSLTerr = " length Xtransformer.transform(`" + res + "`) == 0 ";
+                ConvXMLuseXSLTerr = " length Xtransformer.transform(`" + stringResult_of_XSLT + "`) == 0 ";
                 if (IsDebugged)
-                    MessageSend_Log.warn("[" + QueueId + "] length transformer.transform(`{}`) == 0", res);
-                res = XMLchars.EmptyXSLT_Result;
+                    MessageSend_Log.warn("[{}] length transformer.transform(`{}`) == 0", QueueId, stringResult_of_XSLT);
+                stringResult_of_XSLT = XMLchars.EmptyXSLT_Result;
             }
 
 
             /*
                 if ( IsDebugged ) {
-                MessageSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XML IN ): " + xmldata);
+                MessageSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XML IN ): " + XMLdata_4_Tranform);
                 MessageSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XSLT ): " + XSLTdata);
-                MessageSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XML out ): " + res);
+                MessageSend_Log.info("["+ QueueId  + "] ConvXMLuseXSLT( XML out ): " + stringResult_of_XSLT);
             }
             */
         }
@@ -1086,18 +1084,18 @@ public class PerformQueueMessages {
             ConvXMLuseXSLTerr = sStackTrace.strInterruptedException(exp);
             System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.Transformer TransformerException" );
             exp.printStackTrace();
-            MessageSend_Log.error("["+ QueueId  + "] ConvXMLuseXSLT.Transformer TransformerException: {}" , ConvXMLuseXSLTerr);
+            MessageSend_Log.error("[{}] ConvXMLuseXSLT.Transformer TransformerException: {}", QueueId, ConvXMLuseXSLTerr);
             if (  !IsDebugged ) {
-                MessageSend_Log.error("["+ QueueId  + "] ConvXMLuseXSLT( XML IN ): {}" , xmlData);
-                MessageSend_Log.error("["+ QueueId  + "] ConvXMLuseXSLT( XSLT ): {}" , checkXSLTdata);
-                MessageSend_Log.error("["+ QueueId  + "] ConvXMLuseXSLT( XML out ): {}" , res);
+                MessageSend_Log.error("[{}] ConvXMLuseXSLT( XML IN ): {}", QueueId, XMLdata_4_Tranform);
+                MessageSend_Log.error("[{}] ConvXMLuseXSLT( XSLT ): {}", QueueId, checkXSLTtext);
+                MessageSend_Log.error("[{}] ConvXMLuseXSLT( XML out ): {}", QueueId, stringResult_of_XSLT);
             }
-            MessageSend_Log.error("["+ QueueId  + "] Transformer.Exception: " + ConvXMLuseXSLTerr);
+            MessageSend_Log.error("[{}] Transformer.Exception: {}", QueueId, ConvXMLuseXSLTerr);
             MsgResult.setLength(0);
             MsgResult.append( "ConvXMLuseXSLT.Transformer:");  MsgResult.append( ConvXMLuseXSLTerr );
             throw exp;
             // return XMLchars.EmptyXSLT_Result ;
         }
-        return(res);
+        return(stringResult_of_XSLT);
     }
 }

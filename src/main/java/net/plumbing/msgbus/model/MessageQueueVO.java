@@ -9,7 +9,7 @@ public class MessageQueueVO {
     protected java.sql.Timestamp    Msg_Date;             //   время установки последнего  статуса
     protected int     Msg_Status=0;         //  статус сообщения
     protected int     MsgDirection_Id;     // Идентификатор sysId: для входящего - источник, для исходящего - получатель
-    protected int     Msg_InfoStreamId;  //  поток обработки сообщения
+    protected int     Msg_InfoStreamId=0;  //  поток обработки сообщения
     protected int     Operation_Id;         // Номер операции в сообщении ( ссылка )
     protected String  Queue_Direction;      // Этап обработки
     protected String  Msg_Type;
@@ -65,22 +65,46 @@ public class MessageQueueVO {
         this.Queue_Create_Date = Queue_Create_Date;
         this.Perform_Object_Id = Perform_Object_Id;
     }
+    public String toSring () {
+        return ( "Queue_Id=" +   Queue_Id +
+        "; Queue_Date=" +   Queue_Date +
+        "; OutQueue_Id=" +   OutQueue_Id +
+        "; Msg_Date=" +     Msg_Date +
+        "; Msg_Status=" +    Msg_Status +
+        "; MsgDirection_Id=" +    MsgDirection_Id +
+        "; Msg_InfoStreamId=" +     Msg_InfoStreamId +
+        "; Operation_Id=" +     Operation_Id +
+        "; Queue_Direction=" +  Queue_Direction +
+        "; Msg_Type=" +  Msg_Type +
+        "; Msg_Reason=" +  Msg_Reason +
+        "; Msg_Type_own=" +  Msg_Type_own+
+        "; Msg_Result=" +   Msg_Result +
+        "; SubSys_Cod=" +   SubSys_Cod );
+    }
+    public void  setEventInitiator( int pMsgDirection_Id, String pSubSys_Cod) {
+        this.MsgDirection_Id = pMsgDirection_Id; this.SubSys_Cod = pSubSys_Cod;
+    }
+    public void  setOperation_Id( int pOperation_Id) { this.Operation_Id = pOperation_Id; }
+    public void  setMsg_Type( String pMsg_Type) { this.Msg_Type = pMsg_Type; }
+    public void  setMsg_Type_own( String pMsg_Type_own) { this.Msg_Type_own = pMsg_Type_own; }
+    public void  setOutQueue_Id( String pOutQueue_Id) { this.OutQueue_Id = pOutQueue_Id; }
+    public void  setMsg_Reason(  String pMsg_Reason) { this.Msg_Reason = pMsg_Reason; }
+    public void  setMsg_Result(  String pMsg_Result) { this.Msg_Result = pMsg_Result; }
+
     public  void  setRetry_Count( int Retry_Count ) { this.Retry_Count = Retry_Count; }
     public  void  setMsg_Status( int Msg_Status ) { this.Msg_Status = Msg_Status; }
     public  void  setQueue_Direction( String Queue_Direction ) { this.Queue_Direction = Queue_Direction; }
     public  void  setPrev_Queue_Direction( String Prev_Queue_Direction ) { this.Prev_Queue_Direction = Prev_Queue_Direction; }
-    public  void  setOperation_Id( int operation_Id ) { this.Operation_Id = operation_Id; }
     public  void  setMsgDirection_Id( int msgDirection_Id ) { this.MsgDirection_Id = msgDirection_Id; }
     public  void  setSubSys_Cod( String subSys_Cod ) { this.SubSys_Cod = subSys_Cod; }
 
-    public  void  setMsg_Reason( String Msg_Reason ) { this.Msg_Reason = Msg_Reason; }
-    public  void  setMsg_Result( String Msg_Result ) { this.Msg_Result = Msg_Result; }
     public  void  setMsg_Date( java.sql.Timestamp Msg_Date ) { this.Msg_Date = Msg_Date; }
     public  void  setPrev_Msg_Date( java.sql.Timestamp Prev_Msg_Date ) { this.Prev_Msg_Date = Prev_Msg_Date; }
     public  void setMsg_InfoStreamId(int Msg_InfoStreamId) { this.Msg_InfoStreamId = Msg_InfoStreamId; }
 
     public  int  getRetry_Count() { return this.Retry_Count;  }
     public  long  getQueue_Id() { return this.Queue_Id; }
+    public void  setQueue_Id( long pQueue_Id) { this.Queue_Id = pQueue_Id; }
     public  String getOutQueue_Id() { return this.OutQueue_Id; } //!!
 
     public  int  getMsgDirection_Id() { return this.MsgDirection_Id; }

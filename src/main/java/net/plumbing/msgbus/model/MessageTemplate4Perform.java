@@ -295,10 +295,10 @@ public class MessageTemplate4Perform {
                         if ( key.equals(ProprNameReplacement)) this.PropReplacement = properties.getProperty(key).trim();
                         if ( key.equals(PropNameSOAPAction_11)) {
                             this.SOAPAction = properties.getProperty(key);
-                            MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropNameSOAPAction Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                            MessageTemplate_Log.info("[{}]PropNameSOAPAction Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                         }
                         if ( key.equals(PropDebug) ) {
-                            MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                            MessageTemplate_Log.info("[{}]PropDebug Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                             if (( properties.getProperty(key).equalsIgnoreCase("on") ) ||
                                     ( properties.getProperty(key).equalsIgnoreCase("full") )
                             )
@@ -321,7 +321,7 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
                             { if (isDebugged )
-                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropExtSystemAccess Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                MessageTemplate_Log.info("[{}]PropExtSystemAccess Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                                 this.isExtSystemAccess=true;
                             }
                         }
@@ -332,7 +332,7 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
                             { if (isDebugged )
-                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropPreemptive Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                MessageTemplate_Log.info("[{}]PropPreemptive Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                                 this.isPreemptive=true;
                             }
                         }
@@ -351,11 +351,11 @@ public class MessageTemplate4Perform {
             else {
                 if ( WSDL_Name != null ) {
                     EndPointUrl = WSDL_Name;
-                    MessageTemplate_Log.info( "[" + Queue_Id + "]" + " if ( WSDL_Name != null ) EndPointUrl " + EndPointUrl );
+                    MessageTemplate_Log.info("[{}] if ( WSDL_Name != null ) EndPointUrl {}", Queue_Id, EndPointUrl);
                 if ( URL_SOAP_Send != null )
                     EndPointUrl = WSDL_Name + URL_SOAP_Send ;
 
-                    MessageTemplate_Log.info( "[" + Queue_Id + "]" + " if ( URL_SOAP_Send != null ) EndPointUrl " + EndPointUrl );
+                    MessageTemplate_Log.info("[{}] if ( URL_SOAP_Send != null ) EndPointUrl {}", Queue_Id, EndPointUrl);
                 }
             }
             if ( EndPointUrl == null) EndPointUrl ="http://no.endpoint.error";
@@ -398,7 +398,7 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
                             {
-                                MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PreemptivePostExec Property[" + key +"]=[" + properties.getProperty(key) + "]" );
+                                MessageTemplate_Log.info("[{}]PreemptivePostExec Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                                 this.isPreemptivePostExec=true;
                             }
                         }
