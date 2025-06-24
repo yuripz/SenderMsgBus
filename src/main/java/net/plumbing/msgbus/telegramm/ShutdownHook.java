@@ -29,13 +29,13 @@ public class ShutdownHook {
             NotifyByChannel.Telegram_sendMessage( "Shutdown " + ApplicationName + " -" + firstInfoStreamId + " on "  + InetAddress.getLocalHost().getHostName()+
                     " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "` extDb `"
                     + propExtJDBC+ "` ),  *exit!*", ShutdownHook_log );
-            ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *exit!*" );
+            ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Application " + InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`), *exit!*" );
 
             // NotifyByChannel.Telegram_sendMessage( "*Shutdown* Sender Applicationon v.0.2.23.12.36 on " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*", ShutdownHook_log );
             // ShutdownHook_log.warn("Как бы типа => *Shutdown* Sender Applicationon " + InetAddress.getLocalHost().getHostName()+ " (ip " +InetAddress.getLocalHost().getHostAddress() + " ) , *exit!*" );
             // Thread.sleep(1 * 1000); InterruptedException |
         } catch ( UnknownHostException e) {
-            ShutdownHook_log.error(" хрякнулось InetAddress.getLocalHost().getHostAddress()", e);;
+            ShutdownHook_log.error(" fatal error on InetAddress.getLocalHost().getHostAddress()", e);;
         }
         ShutdownHook_log.info("###STOP FROM THE LIFECYCLE###");
 

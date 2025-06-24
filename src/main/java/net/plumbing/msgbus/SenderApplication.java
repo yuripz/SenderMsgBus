@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS-SaxonX* v.5.06.15sax";
+	public static final String ApplicationName="*Sender_BUS-SaxonX* v.5.06.24sax";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -319,10 +319,24 @@ public class SenderApplication implements CommandLineRunner {
 					freeMemory = r.maxMemory() - r.totalMemory() + r.freeMemory();
 					AppThead_log.info(" `free memory`( heapSize=" + r.totalMemory() + ", heapFreeSize="+ r.freeMemory() + ") of a Java process after GC is : " + freeMemory );
 
-					if ( count != TotalNumTasks )
-						NotifyByChannel.Telegram_sendMessage( "*Количество потоков=*" + count +" !=" + TotalNumTasks +" у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
-								+ InetAddress.getLocalHost().getHostName()+ " (ip `" +InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC+ "`)", AppThead_log );
-								//InetAddress.getLocalHost().getHostAddress(), AppThead_log );
+					if ( count != TotalNumTasks ) {
+
+						NotifyByChannel.Telegram_sendMessage("*Количество потоков=*" + count + " !=" + TotalNumTasks + " у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
+								+ InetAddress.getLocalHost().getHostName() + " (ip `" + InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC + "`)", AppThead_log);
+						//InetAddress.getLocalHost().getHostAddress(), AppThead_log );
+						for (i=0; i< TotalNumTasks; i++) {
+							if (messageSendTask[ i ] != null) {
+								if (
+								messageSendTask[ i ].getCurrentTuskStatus().toLowerCase().contains("exception")
+								 )
+								{
+									NotifyByChannel.Telegram_sendMessage("Как бы типа => *Shutdown* Sender Application Проблема у потока=*" + i + " `" + messageSendTask[ i ].getCurrentTuskStatus() + "` у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
+											+ InetAddress.getLocalHost().getHostName() + " (ip `" + InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC + "`)", AppThead_log);
+									System.exit(-23);
+								}
+							}
+						}
+					}
 
 					CurrentTimeString = DataAccess.getCurrentTimeString(AppThead_log);
 

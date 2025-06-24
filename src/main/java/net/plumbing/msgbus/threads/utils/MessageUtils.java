@@ -99,19 +99,20 @@ public class MessageUtils {
             // MessegeReceive_Log.info(  ">" + theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] done");
 
         } catch (SQLException e) {
-            MessegeReceive_Log.error(theadDataAccess.INSERT_Message_Queue + ":Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            MessegeReceive_Log.error("[{}] INSERT_Message_Queue `{}` :{}", Queue_Id, theadDataAccess.INSERT_Message_Queue, sStackTrace.strInterruptedException(e));
+
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             } catch (SQLException exp) {
-                MessegeReceive_Log.error("Hermes_Connection.rollback()fault: " + exp.getMessage());
+                MessegeReceive_Log.error("[{} ]Hermes_Connection.rollback()fault: {}", Queue_Id, exp.getMessage());
             }
             return null;
         }
         try {
             theadDataAccess.Hermes_Connection.commit();
         } catch (SQLException exp) {
-            MessegeReceive_Log.error("Hermes_Connection.commit() fault: " + exp.getMessage());
+            MessegeReceive_Log.error("Hermes_Connection.commit() fault: {}", exp.getMessage());
             return null;
         }
         return Queue_Id;
@@ -130,9 +131,8 @@ public class MessageUtils {
         int messageRetry_Count = messageQueueVO.getRetry_Count();
         messageRetry_Count += 1; // увеличили счетчик попыток
 
-        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError.messageRetry_Count = " + messageRetry_Count +
-                "; getShortRetryCount=" + messageDetails.MessageTemplate4Perform.getShortRetryCount() +
-                "; (getShortRetryCount+getLongRetryCount)="+ (messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) );
+        MessageSend_Log.warn("[{}]ProcessingSendError.messageRetry_Count = {}; getShortRetryCount={}; (getShortRetryCount+getLongRetryCount)={}", messageQueueVO.getQueue_Id(),
+                            messageRetry_Count, messageDetails.MessageTemplate4Perform.getShortRetryCount(), messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount());
 
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() ) {
 
@@ -144,9 +144,8 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")"
-                    + " Next attempt after " + messageDetails.MessageTemplate4Perform.getShortRetryInterval() + " sec.," + whyIsFault + "fault: " + ErrorExceptionMessage
-            );
+            MessageSend_Log.warn("[{}]ProcessingSendError:ClearBodyResponse=({}) Next attempt after {} sec.,{}fault: {}", messageQueueVO.getQueue_Id(),
+                                    messageDetails.XML_ClearBodyResponse.toString(), messageDetails.MessageTemplate4Perform.getShortRetryInterval(), whyIsFault, ErrorExceptionMessage);
             return messageRetry_Count;
         }
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() ) {
@@ -159,9 +158,8 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")"
-                    + " Next attempt after " + messageDetails.MessageTemplate4Perform.getLongRetryInterval() + " sec.," + whyIsFault + "fault: " + ErrorExceptionMessage
-            );
+            MessageSend_Log.warn("[{}]ProcessingSendError:ClearBodyResponse=({}) Next attempt after {} sec.,{}fault: {}", messageQueueVO.getQueue_Id(),
+                                 messageDetails.XML_ClearBodyResponse.toString(), messageDetails.MessageTemplate4Perform.getLongRetryInterval(), whyIsFault, ErrorExceptionMessage);
             return messageRetry_Count;
         }
         if (( isMessageQueue_Directio_2_ErrorOUT ) // Если это не Транспортная ошибка( выставили признак ERROROUT)
@@ -172,9 +170,8 @@ public class MessageUtils {
                     whyIsFault + " fault: " + ErrorExceptionMessage, 1239,
                      messageQueueVO.getRetry_Count(), MessageSend_Log);
             messageQueueVO.setQueue_Direction(XMLchars.DirectERROUT);
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "ProcessingSendError:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")"
-                    + " set Queue_Direction == ERROUT," + whyIsFault + "fault: " + ErrorExceptionMessage
-            );
+            MessageSend_Log.warn("[{}]ProcessingSendError:ClearBodyResponse=({}) set Queue_Direction == ERROUT,{}fault: {}",
+                                   messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString(), whyIsFault, ErrorExceptionMessage);
         }
         return messageRetry_Count;
     }
@@ -253,7 +250,6 @@ public class MessageUtils {
         // SoapEnvelope.append("<MsgId>" + messageQueueVO.getQueue_Id() +"</MsgId>");
         SoapEnvelope.append(MsgId_Vaue);
         SoapEnvelope.append(XMLchars.Header_noNS_End);
-
         SoapEnvelope.append(XMLchars.Body_noNS_Begin);
         SoapEnvelope.append( messageDetails.XML_MsgRESOUT );
         SoapEnvelope.append(XMLchars.Body_noNS_End);
@@ -263,12 +259,16 @@ public class MessageUtils {
     }
 
     public static String PrepareEnvelope4ErrTransXSLT( MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, Logger MessegeSend_Log) {
-        int nn = 0;
-        StringBuilder SoapEnvelope = new StringBuilder(XMLchars.Envelope_noNS_Begin);
+        // рассчитываем размер SoapEnvelope
+        String MsgId_Vaue = "<MsgId>" + messageQueueVO.getQueue_Id() + "</MsgId>";
+        int SoapEnvelopeSize= (XMLchars.Envelope_noNS_Begin.length() + XMLchars.Header_noNS_Begin.length() + MsgId_Vaue.length()+ XMLchars.Header_noNS_End.length()  +
+                XMLchars.Body_noNS_Begin.length() + XMLchars.Body_noNS_End.length() + XMLchars.Envelope_noNS_End.length() +16); ;
+        StringBuilder SoapEnvelope = new StringBuilder(SoapEnvelopeSize);
+        SoapEnvelope.append(XMLchars.Envelope_noNS_Begin);
         SoapEnvelope.append(XMLchars.Header_noNS_Begin);
-        SoapEnvelope.append("<MsgId>" + messageQueueVO.getQueue_Id() +"</MsgId>");
+        // SoapEnvelope.append("<MsgId>" + messageQueueVO.getQueue_Id() +"</MsgId>");
+        SoapEnvelope.append(MsgId_Vaue);
         SoapEnvelope.append(XMLchars.Header_noNS_End);
-
         SoapEnvelope.append(XMLchars.Body_noNS_Begin);
         SoapEnvelope.append( XMLchars.DirectERROUT );
         SoapEnvelope.append(XMLchars.Body_noNS_End);
@@ -326,8 +326,7 @@ public class MessageUtils {
                     XPathExpression<Element> xpathNext = XPathFactory.instance().compile(xpathNextExpression, Filters.element());
                     Element emtNext = xpathNext.evaluateFirst(document);
                     if ( emtNext != null ) {
-                        MessegeSend_Log.info(" ["+ messageQueueVO.getQueue_Id() +"] XPath has result: <" + emtNext.getName() + "> :" + emtNext.getText()
-                        );
+                        MessegeSend_Log.info(" [{}] XPath has result: <{}> :{}", messageQueueVO.getQueue_Id(), emtNext.getName(), emtNext.getText());
                         AnswXSLTQueue_Direction = emtNext.getText();
 
                         XPathExpression<Element> xpathResultCode = XPathFactory.instance().compile(xpathResultCodeExpression, Filters.element());
@@ -337,10 +336,10 @@ public class MessageUtils {
                                 iMsgStaus = Integer.parseInt(emtResultCode.getText());
                             } catch (NumberFormatException e) {
                                 iMsgStaus = 12345;
-                                messageDetails.MsgReason.append("Не не получили числового значения Статуса " + xpathResultCodeExpression + " в результате XSLT преобразования Response");
+                                messageDetails.MsgReason.append("Не не получили числового значения Статуса ").append(xpathResultCodeExpression).append(" в результате XSLT преобразования Response");
                             }
                         else {
-                            messageDetails.MsgReason.append("Не нашли " + xpathResultCodeExpression + " в результате XSLT преобразования Response");
+                            messageDetails.MsgReason.append("Не нашли ").append(xpathResultCodeExpression).append(" в результате XSLT преобразования Response");
                             iMsgStaus = 12346;
                         }
 
@@ -349,7 +348,7 @@ public class MessageUtils {
                         if ( emtMessage != null )
                             messageDetails.MsgReason.append(emtMessage.getText());
                         else
-                            messageDetails.MsgReason.append("Не нашли " + xpathMessageExpression + " в " + parsedMessageConfirmation);
+                            messageDetails.MsgReason.append("Не нашли ").append(xpathMessageExpression).append(" в ").append(parsedMessageConfirmation);
 
                         if ( emtConfirmation != null ) {
 
@@ -373,7 +372,7 @@ public class MessageUtils {
                                 theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                                         "PrepareConfirmation.'" + StringEscapeUtils.unescapeHtml4(messageDetails.MsgReason.toString()) + "' for (" + parsedMessageConfirmation + ")", 1233,
                                         messageQueueVO.getRetry_Count(), MessegeSend_Log);
-                                MessegeSend_Log.error("PrepareConfirmation.'"+ messageDetails.MsgReason.toString()  +"' for(" + parsedMessageConfirmation + ")");
+                                MessegeSend_Log.error("[{}] PrepareConfirmation.'{}' for({})", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString(), parsedMessageConfirmation);
 
                                 return XMLchars.DirectERROUT;
                             }
@@ -389,24 +388,24 @@ public class MessageUtils {
                         theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                                 "PrepareConfirmation.XPathFactory.xpath.evaluateFirst('" + xpathNextExpression + "') не нашёл <Next></Next> в (" + parsedMessageConfirmation + ")", 1233,
                                 messageQueueVO.getRetry_Count(), MessegeSend_Log);
-                        MessegeSend_Log.error("PrepareConfirmation.XPathFactory.xpath.evaluateFirst('\"+ xpathNextExpression  +\"') не нашёл <Next></Next> в (" + parsedMessageConfirmation + ")");
+                        MessegeSend_Log.error("[{}] PrepareConfirmation.XPathFactory.xpath.evaluateFirst('{}') не нашёл <Next></Next> в ({})", messageQueueVO.getQueue_Id(), xpathNextExpression, parsedMessageConfirmation);
 
                         return AnswXSLTQueue_Direction;
                     }
                 }
                 catch (Exception ex) {
                     ex.printStackTrace();
-                    MessegeSend_Log.error("PrepareConfirmation.XPathFactory.xpath.evaluateFirst \""+ xpathNextExpression + "\" fault: " + ex.getMessage() + " for " + parsedMessageConfirmation );
+                    MessegeSend_Log.error("[{}] PrepareConfirmation.XPathFactory.xpath.evaluateFirst `{}` fault: {} for {}", messageQueueVO.getQueue_Id(), xpathNextExpression, ex.getMessage(), parsedMessageConfirmation);
                     theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-                            "PrepareConfirmation.XPathFactory.xpath.evaluateFirst \""+ xpathNextExpression +"\" for (" + parsedMessageConfirmation + ") fault: " + ex.getMessage()  , 1233,
+                            "PrepareConfirmation.XPathFactory.xpath.evaluateFirst `"+ xpathNextExpression +"` for (" + parsedMessageConfirmation + ") fault: " + ex.getMessage()  , 1233,
                             messageQueueVO.getRetry_Count(), MessegeSend_Log);
                 }
 
             } catch (Exception ex) {
                 ex.printStackTrace();
-                MessegeSend_Log.error("PrepareConfirmation.XPathFactory.xpath.evaluateFirst '/Confirmation' fault: " + ex.getMessage() + " for " + parsedMessageConfirmation );
+                MessegeSend_Log.error("[{}] PrepareConfirmation.XPathFactory.xpath.evaluateFirst '/Confirmation' fault: {} for {}", messageQueueVO.getQueue_Id(), ex.getMessage(), parsedMessageConfirmation);
                 theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-                        "PrepareConfirmation.XPathFactory.xpath.evaluateFirst \"/Confirmation\" for (" + parsedMessageConfirmation + ") fault: " + ex.getMessage()  , 1233,
+                        "PrepareConfirmation.XPathFactory.xpath.evaluateFirst `/Confirmation` for (" + parsedMessageConfirmation + ") fault: " + ex.getMessage()  , 1233,
                         messageQueueVO.getRetry_Count(), MessegeSend_Log);
 
                 return AnswXSLTQueue_Direction;
@@ -416,7 +415,7 @@ public class MessageUtils {
 
 
         } catch (JDOMException | IOException ex) {
-            MessegeSend_Log.error("PrepareConfirmation.documentBuilder fault: " + ex.getMessage() + " for " + parsedMessageConfirmation);
+            MessegeSend_Log.error("PrepareConfirmation.documentBuilder fault: {} for {}", ex.getMessage(), parsedMessageConfirmation);
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                     "PrepareConfirmation.documentBuilder fault: " + ex.getMessage() + " for " + parsedMessageConfirmation, 1233,
                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
@@ -441,13 +440,12 @@ public class MessageUtils {
         SoapEnvelope.append( XML_Request_Method );
         SoapEnvelope.append(XMLchars.Body_noNS_End);
         SoapEnvelope.append(XMLchars.Envelope_noNS_End);
-        MessegeReceive_Log.warn( "PrepareEnvelope4XSLTExt: {"+ SoapEnvelope.toString() + "}" );
+        MessegeReceive_Log.warn("Queue_Id=[{}] PrepareEnvelope4XSLTExt: {{}}",messageQueueVO.getQueue_Id(), SoapEnvelope.toString());
         return SoapEnvelope.toString();
     }
 
 
     public static int ReadConfirmation(@NotNull TheadDataAccess theadDataAccess, long Queue_Id, @NotNull MessageDetails messageDetails, Logger MessegeReceive_Log) {
-
         messageDetails.Confirmation.clear();
         messageDetails.ConfirmationRowNum = 0;
         messageDetails.Confirmation_Tag_Num = 0;
@@ -463,13 +461,13 @@ public class MessageUtils {
             }
             rs.close();
         } catch (SQLException e) {
-            MessegeReceive_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            MessegeReceive_Log.error("Queue_Id=[{}] ReadConfirmation() select for tag_Id =Confirmation ,  SQLException:{}", Queue_Id, sStackTrace.strInterruptedException(e));
             System.err.println("Queue_Id=[" + Queue_Id + "] :" + e.getMessage() );
             e.printStackTrace();
             return messageDetails.ConfirmationRowNum;
         }
         if ( Tag_Num < 1 ) {
-            MessegeReceive_Log.warn("Queue_Id=[" + Queue_Id + "] ReadConfirmation: tag 'Confirmation' is not found in MESSAGE_QUEUEDET" );
+            MessegeReceive_Log.warn("Queue_Id=[{}] ReadConfirmation(): tag 'Confirmation' is not found in MESSAGE_QUEUEDET", Queue_Id);
             messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag)
                     .append(XMLchars.TagConfirmation).append(XMLchars.CloseTag)
                     .append(XMLchars.nanXSLT_Result)
@@ -479,6 +477,12 @@ public class MessageUtils {
             return 0;
         }
         try {
+            // зачитываем тег <Confirmation> и все теги, которые под ним
+             // select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from  dbSchema.message_QueueDet D where (1=1) and d.QUEUE_ID = ? and d.Tag_Num = ?
+             //               union all
+             //  select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from "+ dbSchema +".message_QueueDet D where (1=1)  and d.QUEUE_ID = ? and d.Tag_Par_Num >= ?
+             //         order by   4, 3
+
             theadDataAccess.stmtMsgQueueConfirmationDet.setLong(1, Queue_Id);
             theadDataAccess.stmtMsgQueueConfirmationDet.setInt(2, Tag_Num);
             theadDataAccess.stmtMsgQueueConfirmationDet.setLong(3, Queue_Id);
@@ -516,7 +520,7 @@ public class MessageUtils {
             }
             rs.close();
         } catch (SQLException e) {
-            MessegeReceive_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            MessegeReceive_Log.error("Queue_Id=[{}] ReadConfirmation() read body of has SQLException:{}", Queue_Id, sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             return -2;
         }
@@ -535,7 +539,7 @@ public class MessageUtils {
 
             XML_CurrentConfirmation_Tags(messageDetails, 0, MessegeReceive_Log);
         if (  messageDetails.MessageTemplate4Perform.getIsDebugged() )
-            MessegeReceive_Log.info("["+ Queue_Id +"] MsgConfirmation: " +  messageDetails.XML_ClearBodyResponse.toString());
+            MessegeReceive_Log.info("[{}] MsgConfirmation: {}", Queue_Id, messageDetails.XML_ClearBodyResponse.toString());
         return messageDetails.ConfirmationRowNum;
     }
 
@@ -679,15 +683,15 @@ public class MessageUtils {
 
                 messageDetails.MessageRowNum += 1;
                 if ( messageDetails.MessageRowNum % 10000 == 0)
-                    MessegeSend_Log.info( "["+ Queue_Id +"] читаем из БД тело XML, " + messageDetails.MessageRowNum + " записей" );
+                    MessegeSend_Log.info("[{}] читаем из БД тело XML, {} записей", Queue_Id, messageDetails.MessageRowNum);
                 // MessegeSend_Log.info( "Tag_Id:" + rs.getString("Tag_Id") + " [" + rs.getString("Tag_Value") + "]");
             }
         } catch (SQLException e) {
-            MessegeSend_Log.error("Queue_Id=[" + Queue_Id + "] :" + sStackTrace.strInterruptedException(e));
+            MessegeSend_Log.error("Queue_Id=[{}] :{}", Queue_Id, sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             return messageDetails.MessageRowNum;
         }
-        MessegeSend_Log.info( "["+ Queue_Id +"] считали из БД фрагменты XML, " + messageDetails.MessageRowNum + " записей, предполагаемый объём XML " + total_Elm_Length + " символов" );
+        MessegeSend_Log.info("[{}] считали из БД фрагменты XML, {} записей, предполагаемый объём XML {} символов", Queue_Id, messageDetails.MessageRowNum, total_Elm_Length);
 
         if ( messageDetails.MessageRowNum > 0 )
             try {
@@ -696,29 +700,24 @@ public class MessageUtils {
                 XML_Current_Tags( messageDetails, 0);
             } catch ( NullPointerException e ) {
                 // NPE случилось, печатаем диагностику
-                MessegeSend_Log.warn("[" + Queue_Id + "] проверяем вторчный индекс MessageIndex_by_Tag_Par_Num, потому как получили NullPointerException на подготовке XML" );
+                MessegeSend_Log.warn("[{}] проверяем вторчный индекс MessageIndex_by_Tag_Par_Num, потому как получили NullPointerException на подготовке XML", Queue_Id);
                 Set<Integer> MessageIndexSet = messageDetails.MessageIndex_by_Tag_Par_Num.keySet();
                 Iterator MessageIndexIterator = MessageIndexSet.iterator();
                 while (MessageIndexIterator.hasNext()) {
                     Integer i = (Integer) MessageIndexIterator.next();
-                    MessegeSend_Log.warn("[" + Queue_Id + "] MessageIndex_by_Tag_Par_Num[" + i + "]" +
-                            messageDetails.MessageIndex_by_Tag_Par_Num.get(i).toString());
+                    MessegeSend_Log.warn("[{}] MessageIndex_by_Tag_Par_Num[{}]{}", Queue_Id, i, messageDetails.MessageIndex_by_Tag_Par_Num.get(i).toString());
                 }
                 MessageIndexSet = messageDetails.Message.keySet();
                 Iterator messageDetailsIterator = MessageIndexSet.iterator();
                 while (messageDetailsIterator.hasNext()) {
                     Integer i = (Integer) messageDetailsIterator.next();
-                    MessegeSend_Log.warn("[" + Queue_Id + "] messageDetails.Message[" + i + "] <" +
-                            messageDetails.Message.get(i).Tag_Id + ">" +
-                            messageDetails.Message.get(i).Tag_Value +
-                            "; Tag_Num=" + messageDetails.Message.get(i).Tag_Num +
-                            "; Tag_Par_Num=" + messageDetails.Message.get(i).Tag_Par_Num
-                    );
+                    MessegeSend_Log.warn("[{}] messageDetails.Message[{}] <{}>{}; Tag_Num={}; Tag_Par_Num={}", Queue_Id, i,
+                                                messageDetails.Message.get(i).Tag_Id, messageDetails.Message.get(i).Tag_Value, messageDetails.Message.get(i).Tag_Num, messageDetails.Message.get(i).Tag_Par_Num);
                 }
-                MessegeSend_Log.info( "["+ Queue_Id +"] тело XML тело XML не получено из БД , остановлено на " + messageDetails.XML_MsgOUT.length() + " символов" );
+                MessegeSend_Log.info("[{}] тело XML тело XML не получено из БД, остановлено на {} символов", Queue_Id, messageDetails.XML_MsgOUT.length());
             }
 
-        MessegeSend_Log.info( "["+ Queue_Id +"] получили из БД тело XML, " + messageDetails.XML_MsgOUT.length() + " символов" );
+        MessegeSend_Log.info("[{}] получили из БД тело XML, {} символов", Queue_Id, messageDetails.XML_MsgOUT.length());
         if (IsDebugged ) {
             MessegeSend_Log.info(messageDetails.XML_MsgOUT.toString());
         }
@@ -926,7 +925,7 @@ public class MessageUtils {
 
         } catch (JDOMException | IOException ex) {
             ex.printStackTrace(System.out);
-            MessegeSend_Log.error("[" + Queue_Id + "] ReplaceMessage4SEND fault:" + ex.getMessage());
+            MessegeSend_Log.error("[{}] ReplaceMessage4SEND fault:{}", Queue_Id, ex.getMessage());
             MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO, messageDetails,  theadDataAccess,
                     "ReplaceMessage4SEND.SAXBuilder fault:"  + ex.getMessage() + " " + messageDetails.XML_MsgSEND   ,
                     null ,  MessegeSend_Log);
@@ -1066,12 +1065,12 @@ public class MessageUtils {
             theadDataAccess.stmt_DELETE_Message_Details.setLong(1, Queue_Id);
             theadDataAccess.stmt_DELETE_Message_Details.executeUpdate();
         } catch (SQLException e) {
-            MessegeSend_Log.error("DELETE(" + theadDataAccess.DELETE_Message_Details + "[" + Queue_Id + "]" + ") fault: " + e.getMessage());
+            MessegeSend_Log.error("DELETE({}[{}]) ReplaceMessage fault: {}", theadDataAccess.DELETE_Message_Details, Queue_Id, e.getMessage());
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             } catch (SQLException exp) {
-                MessegeSend_Log.error("Hermes_Connection.rollback()fault: " + exp.getMessage());
+                MessegeSend_Log.error("[{}]Hermes_Connection.rollback()fault: {}" , Queue_Id, exp.getMessage());
             }
             return -1;
         }
@@ -1110,7 +1109,7 @@ public class MessageUtils {
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             } catch (SQLException exp) {
-                MessegeSend_Log.error("Hermes_Connection.rollback()fault: " + exp.getMessage());
+                MessegeSend_Log.error("[{}] Hermes_Connection.rollback()fault: {}", Queue_Id, exp.getMessage());
             }
             return -2;
         }
@@ -1122,7 +1121,7 @@ public class MessageUtils {
             return -3;
         }
         */
-        MessegeSend_Log.info("Queue_Id=[" + Queue_Id + "] : Delete and INSERT new Message Details, " + nn + " rows done");
+        MessegeSend_Log.info("Queue_Id=[{}] : Delete and INSERT new Message Details, {} rows done", Queue_Id, nn);
         return nn;
     }
 
@@ -1256,23 +1255,23 @@ public class MessageUtils {
             theadDataAccess.stmt_INSERT_Message_Details.executeBatch();
         } catch ( Exception e) {
             MessegeSend_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "]["+ iNumberRecordInConfirmation +"] :" + sStackTrace.strInterruptedException(e));
-            messageDetails.MsgReason.append( "ReplaceConfirmation ["+ iNumberRecordInConfirmation +"] " + sStackTrace.strInterruptedException(e) );
+            messageDetails.MsgReason.append("ReplaceConfirmation [").append(iNumberRecordInConfirmation).append("] ").append(sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             } catch (SQLException exp) {
-                MessegeSend_Log.error("Hermes_Connection.rollback()fault: " + exp.getMessage());
+                MessegeSend_Log.error("[{}] Hermes_Connection.rollback()fault: {}" , Queue_Id, exp.getMessage());
             }
             return -2;
         }
         try {
             theadDataAccess.Hermes_Connection.commit();
         } catch (SQLException exp) {
-            MessegeSend_Log.error("Hermes_Connection.rollback()fault: " + exp.getMessage());
+            MessegeSend_Log.error("[{}] Hermes_Connection.rollback()fault: {}" , Queue_Id, exp.getMessage());
             return -3;
         }
 
-        MessegeSend_Log.info(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "] :" + nn + " done");
+        MessegeSend_Log.info("{}:Queue_Id=[{}] :{} done", theadDataAccess.INSERT_Message_Details, Queue_Id, nn);
         return nn;
     }
 
