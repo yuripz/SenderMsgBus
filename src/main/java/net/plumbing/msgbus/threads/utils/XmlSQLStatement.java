@@ -18,10 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.sql.CallableStatement;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Types;
+import java.sql.*;
 
 public class XmlSQLStatement {
 
@@ -59,9 +56,10 @@ public class XmlSQLStatement {
                                             MessageQueueVO messageQueueVO,
                                             @NotNull MessageDetails messageDetails, boolean isDebugged, Logger MessegeSend_Log) {
         int nn = 0;
-        messageDetails.Message.clear();
-        messageDetails.MessageRowNum = 0;
-        messageDetails.Message_Tag_Num = 0;
+       // TODO ExecuteSQLincludedXML не должен Message.clear() и сбрасывать MessageRowNum = 0, но это надо тестить
+        // messageDetails.Message.clear();
+       // messageDetails.MessageRowNum = 0;
+       // messageDetails.Message_Tag_Num = 0;
         messageDetails.MsgReason.setLength(0);
        // messageDetails.MsgReason.append("ExecuteSQLinXML is not ready yet! ");
 
@@ -85,9 +83,9 @@ public class XmlSQLStatement {
                 Element emtSQLStatement = xpathSQLStatement.evaluateFirst(document);
                 if ( emtSQLStatement != null ) {
                     SQLcallableStatementExpression = emtSQLStatement.getText();
-                    messageDetails.MsgReason.append("ExecuteSQLincludedXML: SQLStatement=(" + SQLcallableStatementExpression + ")");
+                    messageDetails.MsgReason.append("ExecuteSQLincludedXML: SQLStatement=(").append(SQLcallableStatementExpression).append(")");
                     }
-                else { messageDetails.MsgReason.append("ExecuteSQLincludedXML: Не нашли " + xpathSQLStatementExpression + " в результате XSLT прообразования " + Passed_Envelope4XSLTPost );
+                else { messageDetails.MsgReason.append("ExecuteSQLincludedXML: Не нашли ").append(xpathSQLStatementExpression).append(" в результате XSLT прообразования ").append(Passed_Envelope4XSLTPost);
                     MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + " ] " + messageDetails.MsgReason.toString());
                     return -2;
 
@@ -97,21 +95,30 @@ public class XmlSQLStatement {
                 Element emtMessage = xpathMessage.evaluateFirst(document);
                 if ( emtMessage != null ) {
                     SQLparamValue = emtMessage.getText();
-                    messageDetails.MsgReason.append(" Param=" + SQLparamValue );
+                    messageDetails.MsgReason.append(" Param=").append(SQLparamValue);
                 }
                 else {
-                    messageDetails.MsgReason.append("Не нашли " + xpathSQLStatementParamExpression + " в " + Passed_Envelope4XSLTPost);
-                    MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + " ] " + messageDetails.MsgReason.toString());
+                    messageDetails.MsgReason.append("Не нашли ").append(xpathSQLStatementParamExpression).append(" в ").append(Passed_Envelope4XSLTPost);
+                    MessegeSend_Log.error("[{} ] {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                     return -2;
                 }
 
+                CallableStatement enableDBMS_OUTPUTStmt;
+                CallableStatement disableDBMS_OUTPUTStmt=null;
+                if ( (isDebugged ) && theadDataAccess.getRdbmsVendor().equals("oracle") ) {
+                    enableDBMS_OUTPUTStmt = theadDataAccess.Hermes_Connection.prepareCall("BEGIN DBMS_OUTPUT.ENABLE(buffer_size => NULL); END;");
+                    disableDBMS_OUTPUTStmt = theadDataAccess.Hermes_Connection.prepareCall("BEGIN DBMS_OUTPUT.DISABLE; END;");
 
+                    enableDBMS_OUTPUTStmt.execute();
+                    enableDBMS_OUTPUTStmt.close();
+                }
                 try {
                     theadDataAccess.Hermes_Connection.clearWarnings();
+
                     // Step 2.B: Creating JDBC CallableStatement
                     callableStatement = theadDataAccess.Hermes_Connection.prepareCall (SQLcallableStatementExpression);
 
-                    MessegeSend_Log.info("[" + messageQueueVO.getQueue_Id() + " ] " +  SQLcallableStatementExpression );
+                    MessegeSend_Log.info("[{}] SQLcallableStatementExpression: {}", messageQueueVO.getQueue_Id(), SQLcallableStatementExpression);
                     // register OUT parameter
                     callableStatement.registerOutParameter(1, Types.INTEGER);
                     callableStatement.setString(2, SQLparamValue );
@@ -122,8 +129,8 @@ public class XmlSQLStatement {
                     // COMMIT! ( Мало ли кто не закоммитил )
                     theadDataAccess.Hermes_Connection.commit();
                     } catch (SQLException e) {
-                        messageDetails.MsgReason.append(", SQLException callableStatement.execute():=" + e.toString());
-                        MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + " ] " + messageDetails.MsgReason.toString());
+                        messageDetails.MsgReason.append(", SQLException callableStatement.execute():=").append(e.toString());
+                        MessegeSend_Log.error("[{}] {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                         callableStatement.close();
                         theadDataAccess.Hermes_Connection.rollback();
                         return -3;
@@ -133,16 +140,45 @@ public class XmlSQLStatement {
 
                         while (warning != null) {
                             // System.out.println(warning.getMessage());
-                            MessegeSend_Log.warn("[" + messageQueueVO.getQueue_Id() + " ] callableStatement.SQLWarning: " + warning.getMessage());
+                            MessegeSend_Log.warn("[{} ] callableStatement.SQLWarning: {}", messageQueueVO.getQueue_Id(), warning.getMessage());
                             warning = warning.getNextWarning();
                         }
                     }
                     // get count and print in console
                     int count = callableStatement.getInt(1);
+                    if (isDebugged ) {
+                        MessegeSend_Log.error("[{}] {} return {}", messageQueueVO.getQueue_Id(), SQLcallableStatementExpression, count );
+                    }
+                    callableStatement.close();
+
+                    if ((isDebugged ) && (disableDBMS_OUTPUTStmt!=null)  && theadDataAccess.getRdbmsVendor().equals("oracle")  )
+                    {
+                        CallableStatement getOutputStmt;
+                        try {
+                            getOutputStmt = theadDataAccess.Hermes_Connection.prepareCall("BEGIN DBMS_OUTPUT.GET_LINES(?, ?); END;");
+                            getOutputStmt.registerOutParameter(1, Types.ARRAY, "DBMSOUTPUT_LINESARRAY");
+                            getOutputStmt.registerOutParameter(2, Types.NUMERIC, 100); // For the number of lines
+                            getOutputStmt.execute();
+
+                            Array dbmsOutputArray = getOutputStmt.getArray(1);
+                            String[] lines = (String[]) dbmsOutputArray.getArray();
+                            for (String line : lines) {
+                                MessegeSend_Log.warn("[{} ] callableStatement.dbmsOutput: {}", messageQueueVO.getQueue_Id(), line);
+                            }
+                            dbmsOutputArray.free();
+                            getOutputStmt.close();
+                            disableDBMS_OUTPUTStmt.execute();
+                            disableDBMS_OUTPUTStmt.close();
+                        } catch (SQLException e) {
+                            disableDBMS_OUTPUTStmt.execute();
+                            disableDBMS_OUTPUTStmt.close();
+                        }
+                    }
+
                     callableStatement.close();
                 } catch (SQLException e) {
-                    messageDetails.MsgReason.append("SQLExceptio Hermes_Connection.prepareCall:=" + e.toString());
-                    MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + " ] " + messageDetails.MsgReason.toString());
+                    messageDetails.MsgReason.append("SQLExceptio Hermes_Connection.prepareCall:=").append(e.toString());
+                    MessegeSend_Log.error("[{}] {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                     return -2;
                 }
 

@@ -277,7 +277,7 @@ public class MessageUtils {
         return SoapEnvelope.toString();
     }
 
-    public static String PrepareConfirmation(TheadDataAccess theadDataAccess, MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, Logger MessegeSend_Log) {
+    public static String PrepareConfirmation(TheadDataAccess theadDataAccess, MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, boolean isDebugged,Logger MessegeSend_Log) {
         int nn = 0;
         messageDetails.Confirmation.clear();
 
@@ -326,7 +326,8 @@ public class MessageUtils {
                     XPathExpression<Element> xpathNext = XPathFactory.instance().compile(xpathNextExpression, Filters.element());
                     Element emtNext = xpathNext.evaluateFirst(document);
                     if ( emtNext != null ) {
-                        MessegeSend_Log.info(" [{}] XPath has result: <{}> :{}", messageQueueVO.getQueue_Id(), emtNext.getName(), emtNext.getText());
+                        if ( isDebugged )
+                        MessegeSend_Log.info("[{}] PrepareConfirmation() XPath has result: <{}> :{}", messageQueueVO.getQueue_Id(), emtNext.getName(), emtNext.getText());
                         AnswXSLTQueue_Direction = emtNext.getText();
 
                         XPathExpression<Element> xpathResultCode = XPathFactory.instance().compile(xpathResultCodeExpression, Filters.element());
@@ -360,6 +361,9 @@ public class MessageUtils {
                             }
                             messageDetails.Message_Tag_Num += 1; // Установили Tag_Num для SplitConfirmation
                             messageDetails.Confirmation.clear();
+                            if ( isDebugged )
+                                MessegeSend_Log.info("[{}] PrepareConfirmation() по записям в количестве Message.size={} получаем МАХ Tag_Num из messageDetails.Message:  :{}", messageQueueVO.getQueue_Id(), messageDetails.Message.size(), messageDetails.Message_Tag_Num );
+
 
                             // Split, которая из него сделает набор записей messageDetails.Message -> HashMap<Integer, MessageDetailVO>
                             SplitConfirmation(messageDetails, emtConfirmation, 0, // Tag_Num = messageDetails.Message_Tag_Num !
@@ -1227,7 +1231,7 @@ public class MessageUtils {
             return -1;
         int iNumberRecordInConfirmation=0;
 
-        try {
+        try { MessegeSend_Log.warn("ReplaceConfirmation: {}", theadDataAccess.INSERT_Message_Details);
             for ( iNumberRecordInConfirmation = 0; iNumberRecordInConfirmation < messageDetails.Confirmation.size(); iNumberRecordInConfirmation++) {
                 MessageDetailVO MessageDetailVO = messageDetails.Confirmation.get( iNumberRecordInConfirmation );
                 theadDataAccess.stmt_INSERT_Message_Details.setLong(1, Queue_Id);
@@ -1242,7 +1246,7 @@ public class MessageUtils {
                     theadDataAccess.stmt_INSERT_Message_Details.setString(3, StringEscapeUtils.unescapeHtml4(MessageDetailVO.Tag_Value) );
                 }
 
-                // MessegeSend_Log.error(theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "]["+  MessageDetailVO.Tag_Id +"] :" + StringEscapeUtils.unescapeHtml4(MessageDetailVO.Tag_Value));
+                MessegeSend_Log.warn("Queue_Id=[{}][{}]: {}={}", Queue_Id, MessageDetailVO.Tag_Num, MessageDetailVO.Tag_Id, StringEscapeUtils.unescapeHtml4(MessageDetailVO.Tag_Value));
                 theadDataAccess.stmt_INSERT_Message_Details.setInt(4, MessageDetailVO.Tag_Num);
                 theadDataAccess.stmt_INSERT_Message_Details.setInt(5, MessageDetailVO.Tag_Par_Num);
 

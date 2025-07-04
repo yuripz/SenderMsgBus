@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS-SaxonX* v.5.06.24sax";
+	public static final String ApplicationName="*Sender_BUS* v.5.06.29saX";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -326,16 +326,15 @@ public class SenderApplication implements CommandLineRunner {
 						//InetAddress.getLocalHost().getHostAddress(), AppThead_log );
 						for (i=0; i< TotalNumTasks; i++) {
 							if (messageSendTask[ i ] != null) {
-								if (
-								messageSendTask[ i ].getCurrentTuskStatus().toLowerCase().contains("exception")
-								 )
+								if (messageSendTask[ i ].getCurrentTuskStatus().toLowerCase().contains("exception"))
 								{
-									NotifyByChannel.Telegram_sendMessage("Как бы типа => *Shutdown* Sender Application Проблема у потока=*" + i + " `" + messageSendTask[ i ].getCurrentTuskStatus() + "` у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
+									NotifyByChannel.Telegram_sendMessage("Как бы типа надо => *Shutdown* Sender Application Проблема у потока=*" + i + " `" + messageSendTask[ i ].getCurrentTuskStatus() + "` у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
 											+ InetAddress.getLocalHost().getHostName() + " (ip `" + InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC + "`)", AppThead_log);
-									System.exit(-23);
+
 								}
 							}
 						}
+						System.exit(-23);
 					}
 
 					CurrentTimeString = DataAccess.getCurrentTimeString(AppThead_log);

@@ -76,7 +76,8 @@ public class ConfigMsgTemplates {
                         break;
                     case "HeaderXSLT":
                         messageTemplateVO.setHeaderXSLT( configContent);
-                        messageTemplateVO.makeHeaderXSLT_Transformer( AppThead_log );
+                        if ( configContent!= null )
+                            messageTemplateVO.makeHeaderXSLT_Transformer( AppThead_log );
                         break;
 
                     case  "ConfigPostExec":
@@ -84,32 +85,38 @@ public class ConfigMsgTemplates {
                         break;
                     case "EnvelopeXSLTPost":
                         messageTemplateVO.setEnvelopeXSLTPost( configContent);
-                        messageTemplateVO.makeEnvelopeXSLTPost_xslt30Transformer(AppThead_log);
+                        if ( configContent!= null )
+                            messageTemplateVO.makeEnvelopeXSLTPost_xslt30Transformer(AppThead_log);
                         break;
 
                     case "MsgAnswXSLT":
                         messageTemplateVO.setMsgAnswXSLT( configContent);
-                        messageTemplateVO.makeMsgAnswXSLT_xslt30Transformer(AppThead_log);
+                        if ( configContent!= null )
+                            messageTemplateVO.makeMsgAnswXSLT_xslt30Transformer(AppThead_log);
                         break;
 
                     case "MessageXSLT":
                         messageTemplateVO.setMessageXSLT( configContent);
-                        messageTemplateVO.makeMessageXSLT_xslt30Transformer(AppThead_log);
+                        if ( configContent!= null )
+                            messageTemplateVO.makeMessageXSLT_xslt30Transformer(AppThead_log);
                         break;
 
                     case "AckXSLT":
                         messageTemplateVO.setAckXSLT( configContent);
-                        messageTemplateVO.makeAckXSLT_xslt30Transformer(AppThead_log);
+                        if ( configContent!= null )
+                            messageTemplateVO.makeAckXSLT_xslt30Transformer(AppThead_log);
                         break;
 
                     case "EnvelopeXSLTExt":
                         messageTemplateVO.setEnvelopeXSLTExt( configContent);
-                        messageTemplateVO.makeEnvelopeXSLTExt_xslt30Transformer(AppThead_log);
+                        if ( configContent!= null )
+                            messageTemplateVO.makeEnvelopeXSLTExt_xslt30Transformer(AppThead_log);
                         break;
 
                     case "ErrTransXSLT":
                         messageTemplateVO.setErrTransXSLT( configContent);
-                        messageTemplateVO.makeErrTransXSLT_xslt30Transformer(AppThead_log);
+                        if ( configContent!= null )
+                            messageTemplateVO.makeErrTransXSLT_xslt30Transformer(AppThead_log);
                         break;
                     case "EnvelopeNS" :
                         messageTemplateVO.setEnvelopeNS( configContent );
