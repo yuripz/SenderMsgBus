@@ -1246,7 +1246,7 @@ public class MessageUtils {
                     theadDataAccess.stmt_INSERT_Message_Details.setString(3, StringEscapeUtils.unescapeHtml4(MessageDetailVO.Tag_Value) );
                 }
 
-                MessegeSend_Log.warn("Queue_Id=[{}][{}]: {}={}", Queue_Id, MessageDetailVO.Tag_Num, MessageDetailVO.Tag_Id, StringEscapeUtils.unescapeHtml4(MessageDetailVO.Tag_Value));
+                //MessegeSend_Log.warn("Queue_Id=[{}][{}]: {}={}", Queue_Id, MessageDetailVO.Tag_Num, MessageDetailVO.Tag_Id, StringEscapeUtils.unescapeHtml4(MessageDetailVO.Tag_Value));
                 theadDataAccess.stmt_INSERT_Message_Details.setInt(4, MessageDetailVO.Tag_Num);
                 theadDataAccess.stmt_INSERT_Message_Details.setInt(5, MessageDetailVO.Tag_Par_Num);
 

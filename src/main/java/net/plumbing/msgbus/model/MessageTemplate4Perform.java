@@ -307,7 +307,7 @@ public class MessageTemplate4Perform {
                                 this.isDebugged=true;
                             }
                             if (( properties.getProperty(key).equalsIgnoreCase("ON") ) ||
-                                    ( properties.getProperty(key).equalsIgnoreCase("FULL") )
+                                ( properties.getProperty(key).equalsIgnoreCase("FULL") )
                             )
                             {
                                // MessageTemplate_Log.info( "[" + Queue_Id + "]" + "PropDebug Property[" + key +"]=UPPER[" + properties.getProperty(key) + "]" );
@@ -321,7 +321,7 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
                             { if (isDebugged )
-                                MessageTemplate_Log.info("[{}]PropExtSystemAccess Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
+                                    MessageTemplate_Log.info("[{}]PropExtSystemAccess Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                                 this.isExtSystemAccess=true;
                             }
                         }
@@ -332,7 +332,7 @@ public class MessageTemplate4Perform {
                                     ( properties.getProperty(key).equalsIgnoreCase("TRUE") )
                             )
                             { if (isDebugged )
-                                MessageTemplate_Log.info("[{}]PropPreemptive Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
+                                    MessageTemplate_Log.info("[{}]PropPreemptive Property[{}]=[{}]", Queue_Id, key, properties.getProperty(key));
                                 this.isPreemptive=true;
                             }
                         }
