@@ -1063,7 +1063,7 @@ public class PerformQueueMessages {
             outSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             outSerializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
             outSerializer.setOutputProperty(Serializer.Property.INDENT, "no");
-            outSerializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "no");
+            outSerializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
             outSerializer.setOutputStream(outputByteArrayStream);
             xslt30Transformer.transform( xmlStreamSource, outSerializer);
 
