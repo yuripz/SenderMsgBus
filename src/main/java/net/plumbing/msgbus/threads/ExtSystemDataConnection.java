@@ -18,23 +18,21 @@ public class ExtSystemDataConnection {
         String rdbmsVendor;
         HikariDataSource dataSource = ApplicationProperties.extSystemDataSource;
         String connectionUrl = dataSource.getJdbcUrl();
-        // попробуй ARTX_PROJ / rIYmcN38St5P  || hermes / uthvtc
-        //String db_userid = "HERMES";
-        //String db_password = "uthvtc";
+
         //this.dbSchema = HrmsSchema;
         if (connectionUrl.indexOf("oracle") > 0) {
             rdbmsVendor = "oracle";
         } else {
             rdbmsVendor = "postgresql";
         }
-        dataAccess_log.info("[" + Queue_Id + "] Try(thead) ExtSystem getConnection: " + connectionUrl + " as " + ApplicationProperties.ExtSysDbLogin + " rdbmsVendor=" + rdbmsVendor);
+        dataAccess_log.info("[{}] Try(thead) ExtSystem getConnection: {} as {} rdbmsVendor={}", Queue_Id, connectionUrl, ApplicationProperties.ExtSysDbLogin, rdbmsVendor);
 
 
         try {
             Target_Connection = dataSource.getConnection();
             Target_Connection.setAutoCommit(false);
         } catch (SQLException e) {
-            dataAccess_log.error("[" + Queue_Id + "] ExtSystem getConnection() fault: " + e.getMessage());
+            dataAccess_log.error("[{}] ExtSystem getConnection() fault: {}", Queue_Id, e.getMessage());
             System.err.println( "["+ Queue_Id + "] ExtSystem getConnection() Exception" );
             e.printStackTrace();
             return ;
@@ -43,19 +41,19 @@ public class ExtSystemDataConnection {
 
 
         if (!rdbmsVendor.equals("oracle")) {
-            dataAccess_log.info("[" + Queue_Id + "] try ExtSystem `set SESSION time zone 3`");
+            dataAccess_log.info("[{}] try ExtSystem `set SESSION time zone 3`", Queue_Id);
             try {
                 PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
             } catch (SQLException e) {
 
-                dataAccess_log.error("[" + Queue_Id + "] ExtSystem `set SESSION time zone 3` fault: " + e.getMessage());
+                dataAccess_log.error("[{}] ExtSystem `set SESSION time zone 3` fault: {}", Queue_Id, e.getMessage());
                 System.err.println( "["+ Queue_Id + "] ExtSystem `set SESSION time zone 3` Exception" );
                 e.printStackTrace();
                 try { Target_Connection.close(); //.close(); ??
                 } catch (SQLException SQLe) {
-                    dataAccess_log.error("[" + Queue_Id + "] `ExtSystem Connection.close()` fault: " + e.getMessage());
+                    dataAccess_log.error("[{}] `ExtSystem Connection.close()` fault: {}", Queue_Id, e.getMessage());
                 }
                 return ;
             }

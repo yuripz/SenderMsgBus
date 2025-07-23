@@ -31,22 +31,18 @@ public  class DataAccess {
         Connection Target_Connection = null;
         String connectionUrl ;
         if ( dst_point==null) {
-            connectionUrl = "jdbc:oracle:thin:@//10.242.36.8:1521/hermes12"; // Test-Capsul !!!
-            //connectionUrl = "jdbc:oracle:thin:@//10.32.245.4:1521/hermes"; // Бой !!!
+            connectionUrl = "jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX"; // Test-Capsul !!!
         }
         else {
             //connectionUrl = "jdbc:oracle:thin:@"+dst_point;
             //connectionUrl = "jdbc:postgresql:"+dst_point;
             connectionUrl = dst_point;
         }
-        // попробуй ARTX_PROJ / rIYmcN38St5P
-        // hermes / uthvtc
-        //String db_userid = "HERMES";
-        //String db_password = "uthvtc";
+
         String ClassforName;
         if ( connectionUrl.indexOf("oracle") > 0 ) {
             ClassforName = "oracle.jdbc.driver.OracleDriver";
-            XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 3992;  //   for Oracle it must be 3992
+            XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 3992;  //   for Oracle, it must be 3992
         }
         else {
             ClassforName = "org.postgresql.Driver";
@@ -57,7 +53,7 @@ public  class DataAccess {
         else rdbmsVendor="postgresql";
         HrmsSchema =  DbSchema;
 
-        dataAccess_log.info( "Try DataBase getConnection: [" + connectionUrl + "] as " + db_userid + " to RDBMS (" + rdbmsVendor + ") DbSchema:" + DbSchema);
+        dataAccess_log.info("Try DataBase getConnection: [{}] as {} to RDBMS ({}) DbSchema:{}", connectionUrl, db_userid, rdbmsVendor, DbSchema);
 
         try {
             // Establish the connection.
@@ -117,13 +113,13 @@ public  class DataAccess {
 
             Properties propClientInfo = Target_Connection.getClientInfo();
             if ( propClientInfo != null ) {
-                dataAccess_log.warn( "RDBMS ClientInfoProperties: propClientInfo :" + propClientInfo + " size=" + propClientInfo.size() );
+                dataAccess_log.warn("RDBMS ClientInfoProperties: propClientInfo :{} size={}", propClientInfo, propClientInfo.size());
                 Set<String> propKeysSet = propClientInfo.stringPropertyNames();
                 String[]  propKeys =propKeysSet.toArray(new String[0]);
                 for ( int i=0; i < propKeys.length; i++ ) {
                     String propKey = propKeys[i];
                     if ( propKey != null )
-                        dataAccess_log.info( "RDBMS ClientInfoProperties: NAME=`"+ propKey + "` VALUE=" + propClientInfo.getProperty(propKey)  );
+                        dataAccess_log.info("RDBMS ClientInfoProperties: NAME=`{}` VALUE={}", propKey, propClientInfo.getProperty(propKey));
                     else
                         dataAccess_log.info( "RDBMS ClientInfoProperties: key is null" );
                 }
@@ -144,25 +140,25 @@ public  class DataAccess {
             rs = stmtCurrentTimeDateRead.executeQuery();
             while (rs.next()) {
                 InitDate = rs.getTimestamp("InitTime");
-                dataAccess_log.info( "RDBMS make_DataBase_Connection CurrentTime: LocalDateTime ="+ InitDate.toString() + " getTime=" + InitDate.getTime()  + " mSec., " + dateFormat.format( InitDate )  );
+                dataAccess_log.info("RDBMS make_DataBase_Connection CurrentTime: LocalDateTime ={} getTime={} mSec., {}", InitDate.toString(), InitDate.getTime(), dateFormat.format(InitDate));
             }
             rs.close();
             DataAccess.Hermes_Connection.commit();
             // stmtInitTimeDateRead.close();
         } catch (Exception e) {
-            dataAccess_log.error( "RDBMS getConnection fault: " + e.toString());
+            dataAccess_log.error("RDBMS getConnection fault: {}", e.toString());
             e.printStackTrace();
             return ( (Connection) null );
         }
 
-        dataAccess_log.info( "RDBMS make_DataBase_Connection: " + connectionUrl + " as " + db_userid + " at " + dateFormat.format( InitDate ) + " done" );
+        dataAccess_log.info("RDBMS make_DataBase_Connection: {} as {} at {} done", connectionUrl, db_userid, dateFormat.format(InitDate));
         /*
         jdbcTemplate = new JdbcTemplate( dataSource );
         InitDate = jdbcTemplate.queryForObject(
                 "SELECT current_timestamp FROM dual", Date.class);
         */
       if ( InitDate != null)
-        dataAccess_log.info( "RDBMS make_DataBase_Connection: LocalDate ="+ InitDate.toString() + " getTime=" + InitDate.getTime() + " mSec., " + dateFormat.format( InitDate )  );
+          dataAccess_log.info("RDBMS make_DataBase_Connection: LocalDate ={} getTime={} mSec., {}", InitDate.toString(), InitDate.getTime(), dateFormat.format(InitDate));
 
 
         return Target_Connection;
@@ -180,9 +176,9 @@ public  class DataAccess {
             }
             rs.close();
             Hermes_Connection.commit();
-            dataAccess_log.info( "RDBMS CurrentTime getCurrentTimeString(): LocalDate ="+ CurrentTime );
+            dataAccess_log.info("RDBMS CurrentTime getCurrentTimeString(): LocalDate ={}", CurrentTime);
         } catch (Exception e) {
-            dataAccess_log.error("getCurrentTimeString `" + SQLCurrentTimeStringRead + "` fault:" + sStackTrace.strInterruptedException(e));
+            dataAccess_log.error("getCurrentTimeString `{}` fault:{}", SQLCurrentTimeStringRead, sStackTrace.strInterruptedException(e));
 
         }
         return ( CurrentTime );
@@ -203,16 +199,14 @@ public  class DataAccess {
             Hermes_Connection.commit();
             if ( CurrentTime != null) {
                 localDateTime = CurrentTime.toLocalDateTime();
-                dataAccess_log.info("RDBMS CurrentTime(): LocalDate =" + CurrentTime.toLocalDateTime() + " getTime=" + CurrentTime.getTime() + " mSec., "
-                        + " getLocalDateTime=" + localDateTime.toString() + " `"
-                        + dateFormat.format(CurrentTime) + "`");
+                dataAccess_log.info("RDBMS CurrentTime(): LocalDate ={} getTime={} mSec.,  getLocalDateTime={} `{}`", CurrentTime.toLocalDateTime(), CurrentTime.getTime(), localDateTime.toString(), dateFormat.format(CurrentTime));
 
                 return CurrentTime.getTime();
             }
             else return null;
 
         } catch (SQLException e) {
-            dataAccess_log.error("getCurrentTimeDate fault: " + sStackTrace.strInterruptedException(e));
+            dataAccess_log.error("getCurrentTimeDate fault: {}", sStackTrace.strInterruptedException(e));
             throw e;
             //return null;
         }
@@ -231,12 +225,12 @@ public  class DataAccess {
 
 
         } catch (Exception e) {
-            dataAccess_log.error("prepareCall(" + pSQL_function + " fault: " + sStackTrace.strInterruptedException(e));
+            dataAccess_log.error("prepareCall({} fault: {}", pSQL_function, sStackTrace.strInterruptedException(e));
             DataAccess.Hermes_Connection.rollback();
             return -2;
         }
    try {
-            dataAccess_log.info("try executeCall(" + pSQL_function);
+       dataAccess_log.info("doPSQL_Function_Run: try executeCall({}", pSQL_function);
         // register OUT parameter
         callableStatement.registerOutParameter(1, Types.VARCHAR);
 
@@ -244,7 +238,7 @@ public  class DataAccess {
             try {
             callableStatement.execute();
                 } catch (SQLException e) {
-                    dataAccess_log.error(", SQLException callableStatement.execute(" + pSQL_function + " ):=" + e.toString());
+                dataAccess_log.error(", SQLException callableStatement.execute({} ):={}", pSQL_function, e.toString());
                     callableStatement.close();
                     DataAccess.Hermes_Connection.rollback();
                     return -3;
@@ -258,18 +252,18 @@ public  class DataAccess {
             while (warning != null) {
                 count = count +1;
                 // System.out.println(warning.getMessage());
-                dataAccess_log.warn("[" + count + " ] callableStatement.SQLWarning: " + warning.getMessage());
+                dataAccess_log.warn("doPSQL_Function_Run: [{} ] callableStatement.SQLWarning: {}", count, warning.getMessage());
                 warning = warning.getNextWarning();
             }
 
             callableStatement.close();
 
         } catch (Exception e) {
-            dataAccess_log.error("executeCall(" + pSQL_function + ") fault: " + sStackTrace.strInterruptedException(e));
+       dataAccess_log.error("doPSQL_Function_Run: executeCall({}) fault: {}", pSQL_function, sStackTrace.strInterruptedException(e));
             try {
                 callableStatement.close();
             }catch (SQLException eSQL) {
-                dataAccess_log.error("callableStatement.close(" + pSQL_function + ") fault: " + sStackTrace.strInterruptedException(e));
+                dataAccess_log.error("doPSQL_Function_Run: callableStatement.close({}) fault: {}", pSQL_function, sStackTrace.strInterruptedException(e));
             }
             DataAccess.Hermes_Connection.rollback();
             return -4;

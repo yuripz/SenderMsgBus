@@ -103,8 +103,8 @@ public class XMLchars {
     public static final String Body_noNS_Begin="<Body>";
     public static final String Body_noNS_End="</Body>";
 
-    public static final String EmptyXSLT_Result ="<?xml version=\"1.0\" encoding=\"utf-8\"?><nan></nan>";
-      public static final String nanXSLT_Result ="<nan></nan>";
+    public static final String EmptyXSLT_Result ="<nan/>"; //"<?xml version=\"1.0\" encoding=\"utf-8\"?><nan></nan>"; -- outSerializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
+      public static final String nanXSLT_Result ="<nan/>";
 
     //   for Oracle it must be 3992
     /*

@@ -120,16 +120,12 @@ public class TheadDataAccess {
         String connectionUrl;
 
         if (dst_point == null) {
-            connectionUrl = "jdbc:oracle:thin:@//10.242.36.8:1521/hermes12"; // Test-Capsul !!!
-            //connectionUrl = "jdbc:oracle:thin:@//10.32.245.4:1521/hermes"; // Бой !!!
+            connectionUrl = "jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX";
         } else {
             //connectionUrl = "jdbc:oracle:thin:@"+dst_point;
             connectionUrl = dst_point;
         }
-        // попробуй ARTX_PROJ / rIYmcN38St5P
-        // hermes / uthvtc
-        //String db_userid = "HERMES";
-        //String db_password = "uthvtc";
+
         String ClassforName;
         if (connectionUrl.indexOf("oracle") > 0) {
             ClassforName = "oracle.jdbc.driver.OracleDriver";
@@ -139,7 +135,8 @@ public class TheadDataAccess {
             rdbmsVendor = "postgresql";
         }
 
-        dataAccess_log.info("Try(thead) Hermes getConnection: " + connectionUrl + " as " + db_userid + " , Class.forName:" + ClassforName + " RDBMS (" + rdbmsVendor + ")");
+        dataAccess_log.info("Try(thead) Hermes getConnection: {} as {} , Class.forName:{} RDBMS ({})",
+                connectionUrl, db_userid, ClassforName, rdbmsVendor);
         try {
             // Establish the connection.
             // Class.forName("oracle.jdbc.driver.OracleDriver");
@@ -175,7 +172,7 @@ public class TheadDataAccess {
 
             // Handle any errors that may have occurred.
         } catch (Exception e) {
-            dataAccess_log.error(e.getMessage());
+            dataAccess_log.error("MsgBus(thead) DriverManager.getConnection fault: {}", e.getMessage());
             System.err.println("DriverManager.getConnection fault: " );
             e.printStackTrace();
             return ((Connection) null);
@@ -183,7 +180,7 @@ public class TheadDataAccess {
 
         Hermes_Connection = Target_Connection;
 
-        dataAccess_log.info("MsgBus(thead) getConnection: " + connectionUrl + " as " + db_userid + " done");
+        dataAccess_log.info("MsgBus(thead) getConnection: {} as {} done", connectionUrl, db_userid);
 
         if (make_SelectNew_Queue(  dataAccess_log) == null ) {
             dataAccess_log.error( "make_SelectNew_Queue() fault");
@@ -347,7 +344,7 @@ public class TheadDataAccess {
                             "where 1=1 and Queue_Id = ?  " ;
             StmtMsg_Queue = this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_OUT2Ok );
         } catch (SQLException e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error("make_UPDATE_MessageQueue_OUT2Ok for `{}` fault {}", UPDATE_MessageQueue_OUT2Ok, e.getMessage() );
             e.printStackTrace();
             return (  null );
         }
@@ -380,11 +377,11 @@ public class TheadDataAccess {
             Hermes_Connection.commit();
 
         } catch (SQLException e) {
-            dataAccess_log.error( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]:  doUPDATE_MessageQueue_Out2Ok ) fault: " + e.getMessage() );
+            dataAccess_log.error("update {}.MESSAGE_QUEUE for [{}]:  doUPDATE_MessageQueue_Out2Ok ) fault: {}", dbSchema, Queue_Id, e.getMessage());
             System.err.println( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: doUPDATE_MessageQueue_OUT2Ok )) fault: ");
             try {
                 Hermes_Connection.rollback(); } catch (SQLException SQLe) {
-                dataAccess_log.error( "[" + Queue_Id + "] rollback(" + UPDATE_MessageQueue_OUT2Ok + ") fault: " + SQLe.getMessage() );
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_OUT2Ok, SQLe.getMessage());
                 System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_OUT2Ok + ") fault: " + SQLe.getMessage()  );
             }
             e.printStackTrace();
@@ -516,12 +513,12 @@ public class TheadDataAccess {
             stmt_UPDATE_QUEUElog.setLong(2, Queue_Id);
             stmt_UPDATE_QUEUElog.setString(1, sResponse);
             stmt_UPDATE_QUEUElog.executeUpdate();
-            dataAccess_log.info("[" + Queue_Id + "] commit: " + UPDATE_QUEUElog_Response + " = '" + sResponse + "' " +
-                    "update " + dbSchema + ".MESSAGE_QUEUElog L set systimestamp where l.Queue_Id = " + Queue_Id + "  ;");
+            dataAccess_log.info("[{}] commit: {} = '{}' update {}.MESSAGE_QUEUElog L set systimestamp where l.Queue_Id = {}  ;",
+                    Queue_Id, UPDATE_QUEUElog_Response, sResponse, dbSchema, Queue_Id);
             Hermes_Connection.commit();
 
         } catch (Exception e) {
-            dataAccess_log.error("doUPDATE_QUEUElog for [" + Queue_Id + "]: " + UPDATE_QUEUElog_Response + ") fault: " + e.getMessage());
+            dataAccess_log.error("doUPDATE_QUEUElog for [{}]: {}) fault: {}", Queue_Id, UPDATE_QUEUElog_Response, e.getMessage());
             System.err.println("doUPDATE_QUEUElog for [" + Queue_Id + "]: " + UPDATE_QUEUElog_Response + ") fault: " + e.getMessage());
             e.printStackTrace();
             return -1;
@@ -541,11 +538,12 @@ public class TheadDataAccess {
 
             int state_Update = stmt_UPDATE_QUEUE_InfoStreamId.executeUpdate();
             // Savepoint savepoint_InfoStreamId = Hermes_Connection.setSavepoint("UPDATE_QUEUE_InfoStreamId");
-            dataAccess_log.info("[" + Queue_Id + "] commit:" + UPDATE_QUEUE_InfoStreamId + " ; Msg_InfoStreamId=" + Msg_InfoStreamId + " state_Update=" + state_Update);
+            dataAccess_log.info("[{}] commit:{} ; Msg_InfoStreamId={} state_Update={}",
+                    Queue_Id, UPDATE_QUEUE_InfoStreamId, Msg_InfoStreamId, state_Update);
             Hermes_Connection.commit();
 
         } catch (Exception e) {
-            dataAccess_log.error("[" + Queue_Id + "]: " + UPDATE_QUEUE_InfoStreamId + ") fault: " + e.getMessage());
+            dataAccess_log.error("[{}]: {}) fault: {}", Queue_Id, UPDATE_QUEUE_InfoStreamId, e.getMessage());
             System.err.println("[" + Queue_Id + "]: " + UPDATE_QUEUE_InfoStreamId + ") fault: " + e.getMessage());
             e.printStackTrace();
             return -1;
@@ -619,16 +617,16 @@ public class TheadDataAccess {
                     }
                     stmt.close();
                 }
-                dataAccess_log.info( "[" + Queue_Id + "] ROWID = stmt_INSERT_QUEUElog.executeUpdate() => " + ROWID_QUEUElog);
+                dataAccess_log.info("[{}] ROWID = stmt_INSERT_QUEUElog.executeUpdate() => {}", Queue_Id, ROWID_QUEUElog);
             }
             Hermes_Connection.commit();
             // dataAccess.do_Commit();
 
         } catch (Exception e) {
-            dataAccess_log.error( "insert into " + dbSchema + ".MESSAGE_QUEUElog for [" + Queue_Id+  "]: " + INSERT_QUEUElog_Request + ") fault: " + e.getMessage() );
+            dataAccess_log.error("insert into {}.MESSAGE_QUEUElog for [{}]: {}) fault: {}", dbSchema, Queue_Id, INSERT_QUEUElog_Request, e.getMessage());
             try {
                 Hermes_Connection.rollback(); } catch (SQLException SQLe) {
-                dataAccess_log.error( "[" + Queue_Id + "] rollback(" + INSERT_QUEUElog_Request + ") fault: " + SQLe.getMessage() );
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, INSERT_QUEUElog_Request, SQLe.getMessage());
                 System.err.println( "[" + Queue_Id + "] rollback (" + INSERT_QUEUElog_Request + ") fault: " + SQLe.getMessage()  );
             }
             e.printStackTrace();
@@ -688,7 +686,7 @@ public class TheadDataAccess {
             stmt_UPDATE_MessageQueue_Send2finishedOUT.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] commit: doUPDATE_MessageQueue_Send2finishedOUT: " + UPDATE_MessageQueue_Send2finishedOUT +  "; Retry_Count=" + Retry_Count);
+            dataAccess_log.info("[{}] commit: doUPDATE_MessageQueue_Send2finishedOUT: {}; Retry_Count={}", Queue_Id, UPDATE_MessageQueue_Send2finishedOUT, Retry_Count);
 
         } catch (Exception e) {
 
@@ -738,7 +736,7 @@ public class TheadDataAccess {
 
         } catch (Exception e) {
 
-            dataAccess_log.error( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: " + UPDATE_MessageQueue_DirectionAsIS + ") fault: " + e.getMessage() );
+            dataAccess_log.error("update {}.MESSAGE_QUEUE for [{}]: {}) fault: {}", dbSchema, Queue_Id, UPDATE_MessageQueue_DirectionAsIS, e.getMessage());
             System.err.println( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: " + UPDATE_MessageQueue_DirectionAsIS + ") fault: ");
             e.printStackTrace();
             return -1;
@@ -778,10 +776,10 @@ public class TheadDataAccess {
             stmt_DELETE_Message_ConfirmationH.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "DELETE Confirmation for [" + Queue_Id+  "]: commit " + DELETE_Message_Confirmation + ")" );
+            dataAccess_log.info("[{}] DELETE Confirmation, commit {})", Queue_Id, DELETE_Message_Confirmation);
 
         } catch (Exception e) {
-            dataAccess_log.error( "DELETE Confirmation for [" + Queue_Id+  "]: " + DELETE_Message_Confirmation + ") fault: " + e.getMessage() );
+            dataAccess_log.error("[{}] DELETE Confirmation for ({}) fault: {}", Queue_Id, DELETE_Message_Confirmation, e.getMessage());
             System.err.println( "DELETE Confirmation for [" + Queue_Id+  "]: " + DELETE_Message_Confirmation + ") fault: ");
             e.printStackTrace();
             return -1;
@@ -817,7 +815,7 @@ public class TheadDataAccess {
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Queue_Date4Send );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Queue_Date4Send + ") fault: " + e.getMessage() );
+            dataAccess_log.error("UPDATE({}) fault: {}", UPDATE_MessageQueue_Queue_Date4Send, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -836,7 +834,7 @@ public class TheadDataAccess {
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2Send );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Out2Send + ") fault: " + e.getMessage() );
+            dataAccess_log.error("UPDATE({}) fault: {}", UPDATE_MessageQueue_Out2Send, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -854,15 +852,15 @@ public class TheadDataAccess {
 
         messageQueueVO.setQueue_Direction(XMLchars.DirectSEND);
         try {
-            dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_Queue_Date4Send()" );
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Queue_Date4Send()", Queue_Id);
             stmtUPDATE_MessageQueue_Queue_Date4Send.setLong( 1, Queue_Id );
             stmtUPDATE_MessageQueue_Queue_Date4Send.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] doUPDATE_MessageQueue_Queue_Date4Send() commit(" + UPDATE_MessageQueue_Queue_Date4Send + ")" );
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Queue_Date4Send() commit({})", Queue_Id, UPDATE_MessageQueue_Queue_Date4Send);
 
         } catch (Exception e) {
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Queue_Date4Send + ") fault: " + e.getMessage() );
+            dataAccess_log.error("[{}] UPDATE({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Queue_Date4Send, e.getMessage());
             System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Queue_Date4Send + ") fault: " );
             e.printStackTrace();
             return -1;
@@ -880,18 +878,18 @@ public class TheadDataAccess {
 
         messageQueueVO.setQueue_Direction(XMLchars.DirectSEND);
         try {
-            dataAccess_log.info( "[" + Queue_Id + "] doUPDATE_MessageQueue_Out2Send:" + pMsg_Reason );
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Out2Send:{}", Queue_Id, pMsg_Reason);
 
             stmtUPDATE_MessageQueue_Out2Send.setString( 1, pMsg_Reason.length() > maxReasonLen ? pMsg_Reason.substring(0, maxReasonLen) : pMsg_Reason );
             stmtUPDATE_MessageQueue_Out2Send.setLong( 2, Queue_Id );
             stmtUPDATE_MessageQueue_Out2Send.executeUpdate();
 
-            dataAccess_log.info( "[" + Queue_Id + "] commit doUPDATE_MessageQueue_Out2Send:"  );
+            dataAccess_log.info("[{}] commit doUPDATE_MessageQueue_Out2Send:", Queue_Id);
             Hermes_Connection.commit();
 
         } catch (Exception e) {
-            messageQueueVO.setMsg_Reason("UPDATE(\" + UPDATE_MessageQueue_Out2Send + \") fault: \" + e.getMessage()");
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Out2Send + ") fault: " + e.getMessage() );
+            messageQueueVO.setMsg_Reason("UPDATE(" + UPDATE_MessageQueue_Out2Send + ") fault: " + e.getMessage());
+            dataAccess_log.error("[{}] UPDATE({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Out2Send, e.getMessage());
             System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Out2Send + ") fault: " );
                     e.printStackTrace();
             return -1;
@@ -910,7 +908,7 @@ public class TheadDataAccess {
 
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Send2ErrorOUT );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " + e.getMessage() );
+            dataAccess_log.error("make_Message_Update_Send2ErrorOUT: ({}) fault: {}", UPDATE_MessageQueue_Send2ErrorOUT, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -937,11 +935,11 @@ public class TheadDataAccess {
             stmtUPDATE_MessageQueue_Send2ErrorOUT.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Send2ErrorOUT + ") commit, Retry_Count=" + pMsgRetryCount);
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Send2ErrorOUT({}) commit, Retry_Count={}", Queue_Id, UPDATE_MessageQueue_Send2ErrorOUT, pMsgRetryCount);
 
         } catch (Exception e) {
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " + e.getMessage() );
-            System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " );
+            dataAccess_log.error("[{}] doUPDATE_MessageQueue_Send2ErrorOUT({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2ErrorOUT, e.getMessage());
+            System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_Send2ErrorOUT(" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " );
             e.printStackTrace();
             return -1;
         }
@@ -960,7 +958,7 @@ public class TheadDataAccess {
 
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Send2AttOUT );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " + e.getMessage() );
+            dataAccess_log.error("make_UPDATE_MessageQueue_Send2AttOUT({}) fault: {}", UPDATE_MessageQueue_Send2AttOUT, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -986,11 +984,11 @@ public class TheadDataAccess {
             stmtUPDATE_MessageQueue_Send2AttOUT.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Send2AttOUT + ") commit, Retry_Count=" + pMsgRetryCount );
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Send2AttOUT({}) commit, Retry_Count={}", Queue_Id, UPDATE_MessageQueue_Send2AttOUT, pMsgRetryCount);
 
         } catch (Exception e) {
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " + e.getMessage() );
-            System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " );
+            dataAccess_log.error("[{}] doUPDATE_MessageQueue_Send2AttOUT({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2AttOUT, e.getMessage());
+            System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_Send2AttOUT(" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " );
             e.printStackTrace();
             return -1;
         }
@@ -1006,7 +1004,7 @@ public class TheadDataAccess {
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_SetMsg_Result );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " + e.getMessage() );
+            dataAccess_log.error("make_UPDATE_MessageQueue_SetMsg_Result({}) fault: {}", UPDATE_MessageQueue_SetMsg_Result, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -1017,7 +1015,7 @@ public class TheadDataAccess {
     public int doUPDATE_MessageQueue_SetMsg_Result(MessageQueueVO messageQueueVO, String pQueue_Direction, int pMsgStatus, String pMsg_Result, Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
         long Queue_Id = messageQueueVO.getQueue_Id();
-        dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Result()" );
+        dataAccess_log.info("[{}] doUPDATE_MessageQueue_SetMsg_Result()", Queue_Id);
 
         messageQueueVO.setMsg_Result( pMsg_Result );
 
@@ -1029,11 +1027,11 @@ public class TheadDataAccess {
             stmtUPDATE_MessageQueue_SetMsg_Result.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") commit "+ " Msg_Result=" + pMsg_Result );
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_SetMsg_Result({}) commit  Msg_Result={}", Queue_Id, UPDATE_MessageQueue_SetMsg_Result, pMsg_Result);
 
         } catch (Exception e) {
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " + e.getMessage() );
-            System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " );
+            dataAccess_log.error("[{}] doUPDATE_MessageQueue_SetMsg_Result({}) fault: {}", Queue_Id, UPDATE_MessageQueue_SetMsg_Result, e.getMessage());
+            System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Result(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " );
             e.printStackTrace();
             return -1;
         }
@@ -1051,7 +1049,7 @@ public class TheadDataAccess {
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_SetMsg_Reason );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " + e.getMessage() );
+            dataAccess_log.error("make_UPDATE_MessageQueue_SetMsg_Reason({}) fault: {}", UPDATE_MessageQueue_SetMsg_Reason, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -1062,7 +1060,7 @@ public class TheadDataAccess {
     public int doUPDATE_MessageQueue_SetMsg_Reason(MessageQueueVO messageQueueVO, String pMsg_Reason, int pMsgStatus, int pMsgRetryCount,  Logger dataAccess_log) {
         // dataAccess_log.info( "doUPDATE_MessageQueue_Send2ErrorOUT:" + pMsg_Reason );
         long Queue_Id = messageQueueVO.getQueue_Id();
-        dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Reason()" );
+        dataAccess_log.info("[{}] doUPDATE_MessageQueue_SetMsg_Reason()", Queue_Id);
 
         messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -1077,11 +1075,11 @@ public class TheadDataAccess {
             stmtUPDATE_MessageQueue_SetMsg_Reason.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Reason + ") commit "+ " Retry_Count=" + pMsgRetryCount );
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_SetMsg_Reason({}) commit  Retry_Count={}", Queue_Id, UPDATE_MessageQueue_SetMsg_Reason, pMsgRetryCount);
 
         } catch (Exception e) {
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " + e.getMessage() );
-            System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " );
+            dataAccess_log.error("[{}] doUPDATE_MessageQueue_SetMsg_Reason({}) fault: {}", Queue_Id, UPDATE_MessageQueue_SetMsg_Reason, e.getMessage());
+            System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Reason(" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " );
             e.printStackTrace();
             return -1;
         }
@@ -1099,7 +1097,7 @@ public class TheadDataAccess {
         try {
             StmtMsg_Queue = (PreparedStatement)this.Hermes_Connection.prepareStatement(UPDATE_MessageQueue_Out2ErrorOUT );
         } catch (Exception e) {
-            dataAccess_log.error( "UPDATE(" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " + e.getMessage() );
+            dataAccess_log.error("make_Message_Update_Out2ErrorOUT({}) fault: {}", UPDATE_MessageQueue_Out2ErrorOUT, e.getMessage());
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -1121,11 +1119,11 @@ public class TheadDataAccess {
             stmtUPDATE_MessageQueue_Out2ErrorOUT.executeUpdate();
 
             Hermes_Connection.commit();
-            dataAccess_log.info( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Out2ErrorOUT + ") commit ");
+            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Out2ErrorOUT({}) commit ", Queue_Id, UPDATE_MessageQueue_Out2ErrorOUT);
 
         } catch (Exception e) {
-            dataAccess_log.error( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " + e.getMessage() );
-            System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " );
+            dataAccess_log.error("[{}] doUPDATE_MessageQueue_Out2ErrorOUT({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Out2ErrorOUT, e.getMessage());
+            System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_Out2ErrorOUT(" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " );
             e.printStackTrace();
             return -1;
         }
@@ -1155,7 +1153,7 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error(e.getMessage());
             e.printStackTrace();
-            dataAccess_log.error(  "[" + Queue_Id + "] do_SelectMESSAGE_QUEUE: что то пошло совсем не так...");
+            dataAccess_log.error("[{}] do_SelectMESSAGE_QUEUE: что то пошло совсем не так...", Queue_Id);
             return -1;
         }
         return  0;
@@ -1187,7 +1185,7 @@ public class TheadDataAccess {
         try {
             stmtSelectMESSAGE_QUEUE = (PreparedStatement)this.Hermes_Connection.prepareStatement( selectMESSAGE_QUEUE );
         } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error("make_SelectMESSAGE_QUEUE fault: {}", e.getMessage() );
             e.printStackTrace();
             return (  null );
         }

@@ -14,7 +14,7 @@ public class AppendDataAccess {
     public  static Date InitDate;
     private static DateFormat dateFormat;
 
-    @Autowired
+    //@Autowired
     /*
     static JdbcTemplate jdbcTemplate;
     static DriverManagerDataSource dataSource;
@@ -26,18 +26,13 @@ public class AppendDataAccess {
         Connection Target_Connection ;
         String connectionUrl ;
         if ( pConnectionUrl==null) {
-            connectionUrl = "jdbc:oracle:thin:@//10.242.36.5:1521/hermes12"; // Test-Capsul !!!
-            //connectionUrl = "jdbc:oracle:thin:@//10.32.245.4:1521/hermes"; // Бой !!!
+            connectionUrl = "jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX"; // Test-Capsul !!!
         }
         else {
             connectionUrl = pConnectionUrl;
         }
-        // попробуй ARTX_PROJ / rIYmcN38St5P
-        // hermes / uthvtc
-        //String db_userid = "HERMES";
-        //String db_password = "uthvtc";
 
-        dataAccess_log.info( "Try monitoring getConnection by (" + dataSourceClassName + ") : " + connectionUrl + " as " + db_userid );
+        dataAccess_log.info("Try monitoring getConnection by ({}) : {} as {}", dataSourceClassName, connectionUrl, db_userid);
         try {
             // Establish the connection.
             if ( dataSourceClassName != null )
@@ -50,8 +45,8 @@ public class AppendDataAccess {
             Target_Connection.setAutoCommit(false);
 
             AppendDataAccess.Hermes_Connection = Target_Connection;
-            dateFormat = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
-            dataAccess_log.info("prepareStatement: [insert into " + dataStoreTableName + SQLInsertData + "]");
+            dateFormat = new SimpleDateFormat("YYYY-MM-dd HH24:mi:ss");
+            dataAccess_log.info("prepareStatement: [insert into {}" + SQLInsertData + "]", dataStoreTableName);
             stmtInsertData = AppendDataAccess.Hermes_Connection.prepareStatement("insert into " + dataStoreTableName + SQLInsertData );
 
 
@@ -60,7 +55,7 @@ public class AppendDataAccess {
             return null ;
         }
 
-        dataAccess_log.info( "monitoring getConnection: " + connectionUrl + " as " + db_userid + "  done" );
+        dataAccess_log.info("monitoring getConnection: {} as {}  done", connectionUrl, db_userid);
 
         return Target_Connection;
     }

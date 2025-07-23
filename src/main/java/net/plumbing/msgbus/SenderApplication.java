@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.5.07.17saX";
+	public static final String ApplicationName="*Sender_BUS* v.5.07.21saX";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -64,7 +64,7 @@ public class SenderApplication implements CommandLineRunner {
 		int i;
 		ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
 
-		AppThead_log.info("Hellow for SenderApplication ");
+		AppThead_log.info("Hello for SenderApplication ");
 		// NotifyByChannel.test_Post(AppThead_log ); - для проверки
 		//		System.exit(11);
 		NotifyByChannel.Telegram_setHttpProxyHost( telegramProperties.gethttpProxyHost() , AppThead_log );

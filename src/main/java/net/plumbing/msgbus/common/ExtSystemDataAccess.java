@@ -17,8 +17,8 @@ public class ExtSystemDataAccess {
         HikariConfig hikariConfig = new HikariConfig();
         String connectionUrl ;
         if ( JdbcUrl==null) {
-            connectionUrl = "jdbc:oracle:thin:@//10.242.36.8:1521/hermes12"; // Test-Capsul !!!
-            //connectionUrl = "jdbc:oracle:thin:@//10.32.245.4:1521/hermes"; // Бой !!!
+            connectionUrl = "jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX"; // Test-Capsul !!!
+            SenderApplication.AppThead_log.error("ExtSystemDataAccess.HikariDataSource: JdbcUrl==null");
         }
         else {
             //connectionUrl = "jdbc:oracle:thin:@"+dst_point;
@@ -31,13 +31,14 @@ public class ExtSystemDataAccess {
         else ClassforName = "org.postgresql.Driver";
 
 //        hikariConfig.setDriverClassName("oracle.jdbc.driver.OracleDriver");
-//        hikariConfig.setJdbcUrl( "jdbc:oracle:thin:@"+ JdbcUrl); //("jdbc:oracle:thin:@//10.242.36.8:1521/hermes12");
-        SenderApplication.AppThead_log.info( "ExtSystemDataAccess: Try make hikariConfig: JdbcUrl `" + connectionUrl + "` as " + Username + " ["+ Password + "] , Class.forName:" + ClassforName);
+//        hikariConfig.setJdbcUrl( "jdbc:oracle:thin:@"+ JdbcUrl); //("jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX");
+        SenderApplication.AppThead_log.info("ExtSystemDataAccess: Try make hikariConfig: JdbcUrl `{}` as {} [{}] , Class.forName:{}",
+                            connectionUrl, Username, Password, ClassforName);
         hikariConfig.setDriverClassName(ClassforName);
-        hikariConfig.setJdbcUrl(  connectionUrl ); //("jdbc:oracle:thin:@//10.242.36.8:1521/hermes12");
+        hikariConfig.setJdbcUrl(  connectionUrl ); //("jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX");
 
-        hikariConfig.setUsername( Username ); //("ARTX_PROJ");
-        hikariConfig.setPassword( Password ); // ("rIYmcN38St5P");
+        hikariConfig.setUsername( Username );
+        hikariConfig.setPassword( Password );
 
         hikariConfig.setLeakDetectionThreshold(TimeUnit.MINUTES.toMillis(5));
         hikariConfig.setConnectionTimeout(TimeUnit.SECONDS.toMillis(30));
@@ -58,7 +59,7 @@ public class ExtSystemDataAccess {
         hikariConfig.addDataSourceProperty("dataSource.prepStmtCacheSqlLimit", "4096");
         hikariConfig.addDataSourceProperty("dataSource.useServerPrepStmts", "true");
         hikariConfig.addDataSourceProperty("dataSource.autoCommit", "false");
-        SenderApplication.AppThead_log.info( "ExtSystemDataAccess: try make DataSourcePool: " + connectionUrl + " as " + Username + " , Class.forName:" + ClassforName);
+        SenderApplication.AppThead_log.info("ExtSystemDataAccess: try make DataSourcePool: {} as {} , Class.forName:{}", connectionUrl, Username, ClassforName);
         HikariDataSource dataSource;
         try {
             dataSource = new HikariDataSource(hikariConfig);
@@ -66,20 +67,15 @@ public class ExtSystemDataAccess {
             DataSourcePoolMetadata = new HikariDataSourcePoolMetadata(dataSource);
         }
         catch (Exception e)
-        { SenderApplication.AppThead_log.error( "new HikariDataSource() fault" + e.getMessage());
+        {
+            SenderApplication.AppThead_log.error("new HikariDataSource() fault{}", e.getMessage());
             return null;
         }
-        SenderApplication.AppThead_log.info( "DataSourcePool ( at start ): getMax: " + DataSourcePoolMetadata.getMax()
-                + ", getIdle: " + DataSourcePoolMetadata.getIdle()
-                + ", getActive: " + DataSourcePoolMetadata.getActive()
-                + ", getMax: " + DataSourcePoolMetadata.getMax()
-                + ", getMin: " + DataSourcePoolMetadata.getMin()
-        );
-        SenderApplication.AppThead_log.info(
-                "ConnectionTestQuery: " + dataSource.getConnectionTestQuery()
-                        + ", IdleTimeout: " + dataSource.getIdleTimeout()
-                        + ", LeakDetectionThreshold: " + dataSource.getLeakDetectionThreshold()
-        );
+        SenderApplication.AppThead_log.info("DataSourcePool ( at start ): getMax: {}, getIdle: {}, getActive: {}, getMax: {}, getMin: {}",
+                DataSourcePoolMetadata.getMax(), DataSourcePoolMetadata.getIdle(), DataSourcePoolMetadata.getActive(), DataSourcePoolMetadata.getMax(),
+                DataSourcePoolMetadata.getMin());
+        SenderApplication.AppThead_log.info("ConnectionTestQuery: {}, IdleTimeout: {}, LeakDetectionThreshold: {}",
+                dataSource.getConnectionTestQuery(), dataSource.getIdleTimeout(), dataSource.getLeakDetectionThreshold());
 
         Connection tryConn;
         try {
@@ -87,10 +83,11 @@ public class ExtSystemDataAccess {
              tryConn = dataSource.getConnection();
         }
         catch (java.sql.SQLException e)
-        { SenderApplication.AppThead_log.error( "dataSource.getConnection() fault" + e.getMessage());
+        {
+            SenderApplication.AppThead_log.error("ExtSystemDataAccess.HikariDataSource: dataSource.getConnection() fault: {}", e.getMessage());
           return null;
         }
-        String connectionTestQuery = "SELECT 1 ";
+        String connectionTestQuery = "SELECT 1";
         try {
             if ( connectionUrl.indexOf("oracle") > 0 )
                 connectionTestQuery = "SELECT 1 from dual";
@@ -98,21 +95,19 @@ public class ExtSystemDataAccess {
             PreparedStatement prepareStatement = tryConn.prepareStatement( connectionTestQuery );
             prepareStatement.executeQuery();
             prepareStatement.close();
-            SenderApplication.AppThead_log.info( "DataSourcePool ( at prepareStatement ): getMax: " + DataSourcePoolMetadata.getMax()
-                    + ", getIdle: " + DataSourcePoolMetadata.getIdle()
-                    + ", getActive: " + DataSourcePoolMetadata.getActive()
-                    + ", getMax: " + DataSourcePoolMetadata.getMax()
-                    + ", getMin: " + DataSourcePoolMetadata.getMin()
-            );
+            SenderApplication.AppThead_log.info("DataSourcePool ( at prepareStatement ): getMax: {}, getIdle: {}, getActive: {}, getMax: {}, getMin: {}",
+                    DataSourcePoolMetadata.getMax(), DataSourcePoolMetadata.getIdle(), DataSourcePoolMetadata.getActive(), DataSourcePoolMetadata.getMax(), DataSourcePoolMetadata.getMin());
             tryConn.close();
-            SenderApplication.AppThead_log.info( "getJdbcUrl: "+ hikariConfig.getJdbcUrl());
+            SenderApplication.AppThead_log.info("ExtSystemDataAccess.HikariDataSource getJdbcUrl: {}", hikariConfig.getJdbcUrl());
         }
         catch (java.sql.SQLException e)
-        { SenderApplication.AppThead_log.error( "dataSource connectionTestQuery fault `" + connectionTestQuery + "` :" +  e.getMessage());
+        {
+            SenderApplication.AppThead_log.error("dataSource connectionTestQuery fault `{}` :{}", connectionTestQuery, e.getMessage());
             try { tryConn.close();
                 }
             catch (java.sql.SQLException closeE)
-            { SenderApplication.AppThead_log.error( "dataSource connection close() fault " +  closeE.getMessage()); }
+            {
+                SenderApplication.AppThead_log.error("dataSource connection close() fault {}", closeE.getMessage()); }
             return null;
         }
 
