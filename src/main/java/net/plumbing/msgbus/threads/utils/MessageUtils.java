@@ -131,7 +131,7 @@ public class MessageUtils {
         int messageRetry_Count = messageQueueVO.getRetry_Count();
         messageRetry_Count += 1; // увеличили счетчик попыток
 
-        MessageSend_Log.warn("[{}]ProcessingSendError.messageRetry_Count = {}; getShortRetryCount={}; (getShortRetryCount+getLongRetryCount)={}", messageQueueVO.getQueue_Id(),
+        MessageSend_Log.warn("[{}] ProcessingSendError.messageRetry_Count = {}; getShortRetryCount={}; (getShortRetryCount+getLongRetryCount)={}", messageQueueVO.getQueue_Id(),
                             messageRetry_Count, messageDetails.MessageTemplate4Perform.getShortRetryCount(), messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount());
 
         if ( messageRetry_Count < messageDetails.MessageTemplate4Perform.getShortRetryCount() ) {
@@ -144,7 +144,7 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            MessageSend_Log.warn("[{}]ProcessingSendError:ClearBodyResponse=({}) Next attempt after {} sec.,{}fault: {}", messageQueueVO.getQueue_Id(),
+            MessageSend_Log.warn("[{}] ProcessingSendError:ClearBodyResponse=({}) Next attempt after {} sec.,{}fault: {}", messageQueueVO.getQueue_Id(),
                                     messageDetails.XML_ClearBodyResponse.toString(), messageDetails.MessageTemplate4Perform.getShortRetryInterval(), whyIsFault, ErrorExceptionMessage);
             return messageRetry_Count;
         }
@@ -158,7 +158,7 @@ public class MessageUtils {
             );
             messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now(ZoneId.of( "Europe/Moscow") ) )   );
             messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-            MessageSend_Log.warn("[{}]ProcessingSendError:ClearBodyResponse=({}) Next attempt after {} sec.,{}fault: {}", messageQueueVO.getQueue_Id(),
+            MessageSend_Log.warn("[{}] ProcessingSendError:ClearBodyResponse=({}) Next attempt after {} sec.,{}fault: {}", messageQueueVO.getQueue_Id(),
                                  messageDetails.XML_ClearBodyResponse.toString(), messageDetails.MessageTemplate4Perform.getLongRetryInterval(), whyIsFault, ErrorExceptionMessage);
             return messageRetry_Count;
         }
@@ -170,7 +170,7 @@ public class MessageUtils {
                     whyIsFault + " fault: " + ErrorExceptionMessage, 1239,
                      messageQueueVO.getRetry_Count(), MessageSend_Log);
             messageQueueVO.setQueue_Direction(XMLchars.DirectERROUT);
-            MessageSend_Log.warn("[{}]ProcessingSendError:ClearBodyResponse=({}) set Queue_Direction == ERROUT,{}fault: {}",
+            MessageSend_Log.warn("[{}] ProcessingSendError:ClearBodyResponse=({}) set Queue_Direction == ERROUT,{}fault: {}",
                                    messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString(), whyIsFault, ErrorExceptionMessage);
         }
         return messageRetry_Count;
@@ -419,7 +419,7 @@ public class MessageUtils {
 
 
         } catch (JDOMException | IOException ex) {
-            MessegeSend_Log.error("PrepareConfirmation.documentBuilder fault: {} for {}", ex.getMessage(), parsedMessageConfirmation);
+            MessegeSend_Log.error("[{}] PrepareConfirmation.documentBuilder fault: {} for {}", messageQueueVO.getQueue_Id(), ex.getMessage(), parsedMessageConfirmation);
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                     "PrepareConfirmation.documentBuilder fault: " + ex.getMessage() + " for " + parsedMessageConfirmation, 1233,
                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
@@ -444,7 +444,7 @@ public class MessageUtils {
         SoapEnvelope.append( XML_Request_Method );
         SoapEnvelope.append(XMLchars.Body_noNS_End);
         SoapEnvelope.append(XMLchars.Envelope_noNS_End);
-        MessegeReceive_Log.warn("Queue_Id=[{}] PrepareEnvelope4XSLTExt: {{}}",messageQueueVO.getQueue_Id(), SoapEnvelope.toString());
+        MessegeReceive_Log.warn("[{}] PrepareEnvelope4XSLTExt: {{}}",messageQueueVO.getQueue_Id(), SoapEnvelope.toString());
         return SoapEnvelope.toString();
     }
 
@@ -465,13 +465,13 @@ public class MessageUtils {
             }
             rs.close();
         } catch (SQLException e) {
-            MessegeReceive_Log.error("Queue_Id=[{}] ReadConfirmation() select for tag_Id =Confirmation ,  SQLException:{}", Queue_Id, sStackTrace.strInterruptedException(e));
+            MessegeReceive_Log.error("[{}] ReadConfirmation() select for tag_Id =Confirmation ,  SQLException:{}", Queue_Id, sStackTrace.strInterruptedException(e));
             System.err.println("Queue_Id=[" + Queue_Id + "] :" + e.getMessage() );
             e.printStackTrace();
             return messageDetails.ConfirmationRowNum;
         }
         if ( Tag_Num < 1 ) {
-            MessegeReceive_Log.warn("Queue_Id=[{}] ReadConfirmation(): tag 'Confirmation' is not found in MESSAGE_QUEUEDET", Queue_Id);
+            MessegeReceive_Log.warn("[{}] ReadConfirmation(): tag 'Confirmation' is not found in MESSAGE_QUEUEDET", Queue_Id);
             messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag)
                     .append(XMLchars.TagConfirmation).append(XMLchars.CloseTag)
                     .append(XMLchars.nanXSLT_Result)
@@ -524,7 +524,7 @@ public class MessageUtils {
             }
             rs.close();
         } catch (SQLException e) {
-            MessegeReceive_Log.error("Queue_Id=[{}] ReadConfirmation() read body of has SQLException:{}", Queue_Id, sStackTrace.strInterruptedException(e));
+            MessegeReceive_Log.error("[{}] ReadConfirmation() read body of has SQLException:{}", Queue_Id, sStackTrace.strInterruptedException(e));
             e.printStackTrace();
             return -2;
         }
@@ -1069,7 +1069,7 @@ public class MessageUtils {
             theadDataAccess.stmt_DELETE_Message_Details.setLong(1, Queue_Id);
             theadDataAccess.stmt_DELETE_Message_Details.executeUpdate();
         } catch (SQLException e) {
-            MessegeSend_Log.error("DELETE({}[{}]) ReplaceMessage fault: {}", theadDataAccess.DELETE_Message_Details, Queue_Id, e.getMessage());
+            MessegeSend_Log.error("[{}] DELETE({}) ReplaceMessage fault: {}", Queue_Id, theadDataAccess.DELETE_Message_Details, e.getMessage());
             e.printStackTrace();
             try {
                 theadDataAccess.Hermes_Connection.rollback();

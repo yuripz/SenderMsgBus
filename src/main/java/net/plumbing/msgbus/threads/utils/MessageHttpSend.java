@@ -353,7 +353,7 @@ public class MessageHttpSend {
             } catch ( Exception IOE ) {
                 MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close finally fault, Exception:" + IOE.getMessage());
             }
-        ApiRestHttpClient = null;
+        ApiRestHttpClient = null; // for GC
         /*
         if (syncConnectionManager != null)
             try {
@@ -395,7 +395,7 @@ public class MessageHttpSend {
            )
         {
             if ( IsDebugged ) {
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+                MessageSend_Log.info("[{}] sendPostMessage.POST PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
             }
             ApiRestHttpClient = HttpClient.newBuilder()
                     .authenticator( messageDetails.MessageTemplate4Perform.restPasswordAuthenticator )
@@ -406,7 +406,7 @@ public class MessageHttpSend {
         }
         else {
             if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST PropUser== null (`" + PropUser + "`)" );
+                MessageSend_Log.info("[{}] sendPostMessage.POST PropUser== null (`{}`)", messageQueueVO.getQueue_Id(), PropUser);
             ApiRestHttpClient = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -439,7 +439,7 @@ public class MessageHttpSend {
         }
 
             if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST JSON `" + messageDetails.XML_MsgSEND + "`" );
+                MessageSend_Log.info("[{}] sendPostMessage.POST JSON `{}`", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND);
         }
         else
         { httpHeaders.put("Content-Type", "text/xml;charset=UTF-8"); }
@@ -449,16 +449,17 @@ public class MessageHttpSend {
         {
             headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
             if ( IsDebugged ) {
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST headerParams.length=" + headerParams.length);
+                MessageSend_Log.info("[{}] sendPostMessage.POST headerParams.length={}", messageQueueVO.getQueue_Id(), headerParams.length);
                 for (int i = 0; i < headerParams.length; i++)
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST headerParams[" + i + "] = " + headerParams[i]);
+                    MessageSend_Log.info("[{}] sendPostMessage.POST headerParams[{}] = {}", messageQueueVO.getQueue_Id(), i, headerParams[i]);
             }
             if (headerParams.length > 1  )
             for (int i = 0; i < headerParams.length; i++)
                 httpHeaders.put(headerParams[0], headerParams[1]);
         }
         else { if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
+            MessageSend_Log.info("[{}] sendPostMessage.POST indexOf(XMLchars.TagMsgHeaderEmpty)={}", messageQueueVO.getQueue_Id(),
+                                        messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
         }
         // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post `" + messageDetails.Soap_HeaderRequest + "` httpHeaders.size=" + httpHeaders.size() );
         //+                 "; headerParams= " + headerParams.toString() );
@@ -471,7 +472,7 @@ public class MessageHttpSend {
             } catch (UnsupportedEncodingException e) {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage: UnsupportedEncodingException");
                 e.printStackTrace();
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + e);
+                MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), sStackTrace.strInterruptedException(e));
                 messageDetails.MsgReason.append(" sendPostMessage.post.to").append(messageDetails.MessageTemplate4Perform.getPropEncoding_Out()).append(" fault: ").append(sStackTrace.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "sendPostMessage.POST", true, e, MessageSend_Log);
@@ -482,8 +483,8 @@ public class MessageHttpSend {
 
         try {
             if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
-                    ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() + " PropUser:" + PropUser);
+                MessageSend_Log.info("[{}]sendPostMessage.POST({}).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {} PropUser:{}",
+                            messageQueueVO.getQueue_Id(), EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(), messageTemplate4Perform.getPropTimeout_Read(), PropUser);
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
 
@@ -496,7 +497,7 @@ public class MessageHttpSend {
                 requestBuilder = requestBuilder
                                 .header(entry.getKey(),entry.getValue());
                 if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST .header: `" + entry.getKey() + ":" + entry.getValue() + "`");
+                    MessageSend_Log.info("[{}] sendPostMessage.POST .header: `{}:{}`", messageQueueVO.getQueue_Id(), entry.getKey(), entry.getValue());
                 // queryString.append(entry.getKey()).append("=").append(entry.getValue());
             }
             java.net.http.HttpRequest request = requestBuilder
@@ -512,7 +513,7 @@ public class MessageHttpSend {
             //Headers headers = Response.getHeaders();
             //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Response httpCode=" + restResponseStatus + " getBody().length=" + Response.body().length);
+            MessageSend_Log.warn("[{}] sendPostMessage.Response httpCode={} getBody().length={}", messageQueueVO.getQueue_Id(), restResponseStatus, Response.body().length);
             // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getBody()=" + Arrays.toString(Test) +" getBody().length=" + Test.length );
 
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8 RestResponse = Response.getBody();
@@ -532,8 +533,11 @@ public class MessageHttpSend {
                 else PropEncoding_Out = messageDetails.MessageTemplate4Perform.getPropEncoding_Out();
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString.UnsupportedEncodingException: Encoding `" + PropEncoding_Out + "`");
                 ioExc.printStackTrace();
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from `" + PropEncoding_Out + "` to_UTF_8 fault:" + ioExc);
-                messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `" + PropEncoding_Out + "` :").append(sStackTrace.strInterruptedException(ioExc));
+                MessageSend_Log.error("[{}] IOUtils.toString from `{}` to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), PropEncoding_Out, ioExc.getMessage());
+                messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `")
+                                                .append(PropEncoding_Out)
+                                                .append("` :")
+                                                .append(sStackTrace.strInterruptedException(ioExc));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "sendPostMessage.POST", true, ioExc, MessageSend_Log);
                 if (IsDebugged)
@@ -547,7 +551,7 @@ public class MessageHttpSend {
                ) {
                 Exception e = new Exception(" sendPostMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
                 if (IsDebugged)
-                    MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] call handle_Transport_Errors: `" + e.getMessage() + "`");
+                    MessageSend_Log.error("[{}] sendPostMessage call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
                 return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendPostMessage.POST", e,
                         ROWID_QUEUElog, IsDebugged, MessageSend_Log);
             }
@@ -603,7 +607,7 @@ public class MessageHttpSend {
             }
 
             if (IsDebugged)
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST Envelope_MsgResponse=(" + messageDetails.XML_MsgResponse.toString() + ")");
+                MessageSend_Log.info("[{}] sendPostMessage.POST Envelope_MsgResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString());
 
 
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
@@ -647,7 +651,7 @@ public class MessageHttpSend {
         }
 
         if (IsDebugged)
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.POST httpStatus=[" + restResponseStatus + "], RestResponse=(" + RestResponse + ")");
+            MessageSend_Log.info("[{}] sendPostMessage.POST httpStatus=[{}], RestResponse=({})", messageQueueVO.getQueue_Id(), restResponseStatus, RestResponse);
 
         try {
             // Получили ответ от сервиса, инициируем обработку getResponseBody()
@@ -659,11 +663,12 @@ public class MessageHttpSend {
             try {
                 XMLdocument = documentBuilder.build(parsedRestResponseStream);
                 if (IsDebugged)
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage documentBuilder=[" + XMLdocument.toString() + "], XML_MsgResponse=(" + messageDetails.XML_MsgResponse + ")");
+                    MessageSend_Log.info("[{}] sendPostMessage documentBuilder=[{}], XML_MsgResponse=({})",
+                                        messageQueueVO.getQueue_Id(), XMLdocument.toString(), messageDetails.XML_MsgResponse);
 
             } catch (JDOMException RestResponseE) {
                 XMLdocument = null;
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.documentBuilder fault: " + sStackTrace.strInterruptedException(RestResponseE));
+                MessageSend_Log.error("[{}]sendPostMessage.documentBuilder fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(RestResponseE));
                 // формируем искуственный XML_MsgResponse из Fault ,  меняем XML_MsgResponse
                 append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
             }
@@ -671,13 +676,13 @@ public class MessageHttpSend {
             MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
 
             if (IsDebugged)
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+                MessageSend_Log.info("[{}] sendPostMessage:ClearBodyResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString());
             // client.wait(100);
 
         } catch (Exception e) {
             System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
             e.printStackTrace();
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
+            MessageSend_Log.error("[{}] sendPostMessage.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
             messageDetails.MsgReason.append(" sendPostMessage.getResponseBody fault: ").append(sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
@@ -686,12 +691,12 @@ public class MessageHttpSend {
         }
         if (restResponseStatus != 200) // Rest вызов считаем успешным только при получении
         {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.restResponseStatus != 200: " + restResponseStatus);
+            MessageSend_Log.error("[{}] sendPostMessage.restResponseStatus != 200: {}", messageQueueVO.getQueue_Id(), restResponseStatus);
             messageDetails.MsgReason.append(" sendPostMessage.restResponseStatus != 200: ").append(restResponseStatus);
 
             int messageRetry_Count = MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                     "sendPostMessage.restResponseStatus != 200 ", false, null, MessageSend_Log);
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendPostMessage.messageRetry_Count = " + messageRetry_Count);
+            MessageSend_Log.error("[{}] sendPostMessage.messageRetry_Count = {}", messageQueueVO.getQueue_Id(), messageRetry_Count);
             if ( messageDetails.XML_ClearBodyResponse.length() > XMLchars.nanXSLT_Result.length() )
                 return 0; // ответ от внешней системы разобран в виде XML , надо продолжить обработку
             else
@@ -704,7 +709,7 @@ public class MessageHttpSend {
             ApiRestHttpClient.close();
 
         } catch ( Exception IOE ) {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.ApiRestHttpClient.close fault, Exception:" + IOE.getMessage());
+            MessageSend_Log.error("[{}] sendPostMessage.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(IOE));
         }
         ApiRestHttpClient = null;
         /*
@@ -717,13 +722,13 @@ public class MessageHttpSend {
         syncConnectionManager = null;*/
 
     } finally {
-        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.ApiRestHttpClient.close finally" );
+        MessageSend_Log.warn("[{}] sendPostMessage.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
             } catch ( Exception IOE ) {
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() +"]" + "sendPostMessage.ApiRestHttpClient.close finally fault, UnirestException:" + IOE.getMessage());
+                MessageSend_Log.error("[{}] sendPostMessage.ApiRestHttpClient.close finally fault, UnirestException:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
             }
         ApiRestHttpClient = null;
         /*if (syncConnectionManager != null)
@@ -744,7 +749,7 @@ public class MessageHttpSend {
     {
         System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception"); if (e != null ) e.printStackTrace();
 
-        MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + colledHttpMethodName + " (" + EndPointUrl + ") fault, HttpRequestException:" + e);
+        MessageSend_Log.error("[{}] {} ({}) fault, HttpRequestException:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, sStackTrace.strInterruptedException(e));
         messageDetails.MsgReason.append(" sendPostMessage.POST fault: ");
         if (e != null ) messageDetails.MsgReason.append(sStackTrace.strInterruptedException(e));
 
@@ -754,12 +759,13 @@ public class MessageHttpSend {
 
         // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
         // НАДО проверять количество порыток !!!
-        MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + colledHttpMethodName + ": Retry_Count (" + messageQueueVO.getRetry_Count() + ")>= " +
-                "( ShortRetryCount=" + messageDetails.MessageTemplate4Perform.getShortRetryCount() +
-                " LongRetryCount=" + messageDetails.MessageTemplate4Perform.getLongRetryCount() + ")");
+        MessageSend_Log.error("[{}] {}: Retry_Count ({})>= ( ShortRetryCount={} LongRetryCount={})", messageQueueVO.getQueue_Id(),
+                                            colledHttpMethodName, messageQueueVO.getRetry_Count(),
+                                            messageDetails.MessageTemplate4Perform.getShortRetryCount(),
+                                            messageDetails.MessageTemplate4Perform.getLongRetryCount());
         if (messageQueueVO.getRetry_Count() + 1 >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) {
             // количество порыток исчерпано, формируем результат для выхода из повторов
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + colledHttpMethodName + "(`" + EndPointUrl + "`) fault:" + e);
+            MessageSend_Log.error("[{}] {}(`{}`) fault:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, e);
             append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, 506 ,
                     colledHttpMethodName + " (`").append(EndPointUrl).append("`) fault:").append(e.getMessage() );
 
@@ -852,7 +858,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
     )
     {
         if ( IsDebugged ) {
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+            MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
         }
         ApiRestHttpClient = HttpClient.newBuilder()
                 .authenticator( messageDetails.MessageTemplate4Perform.restPasswordAuthenticator )
@@ -863,7 +869,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
     }
     else {
         if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE PropUser== null (`" + PropUser + "`)" );
+            MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE PropUser== null (`{}`)", messageQueueVO.getQueue_Id(), PropUser);
         ApiRestHttpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -877,11 +883,10 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
     try {
 
         try {
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpDeleteMessage.DELETE(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
-                    ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() +
-                    "; User=" + messageDetails.MessageTemplate4Perform.getPropUser() +
-                    "; Pswd" + messageDetails.MessageTemplate4Perform.getPropPswd() +
-                    "; numOfParams=" + numOfParams);
+            MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE({}).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {}; User={}; Pswd{}; numOfParams={}",
+                                messageQueueVO.getQueue_Id(), EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(),
+                                messageTemplate4Perform.getPropTimeout_Read(), messageDetails.MessageTemplate4Perform.getPropUser(),
+                                messageDetails.MessageTemplate4Perform.getPropPswd(), numOfParams);
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
 
@@ -919,7 +924,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             URI URI_4_GET = URI.create(EndPointUrl + restElmntEscaper.escape(queryString.toString()));
 
             if (IsDebugged) {
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE URI=`" + EndPointUrl + restElmntEscaper.escape(queryString.toString()) + "`");
+                MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE URI=`{}{}`", messageQueueVO.getQueue_Id(), EndPointUrl, restElmntEscaper.escape(queryString.toString()));
                 ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), queryString.toString(), MessageSend_Log);
             }
 
@@ -942,16 +947,16 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             {
                 headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
                 if ( IsDebugged ) {
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE headerParams.length=" + headerParams.length);
+                    MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE headerParams.length={}", messageQueueVO.getQueue_Id(), headerParams.length);
                     for (int i = 0; i < headerParams.length; i++)
-                        MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE headerParams[" + i + "] = " + headerParams[i]);
+                        MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE headerParams[{}] = {}", messageQueueVO.getQueue_Id(), i, headerParams[i]);
                 }
                 if (headerParams.length > 1  )
                     for (int i = 0; i < headerParams.length; i++)
                         httpHeaders.put(headerParams[0], headerParams[1]);
             }
             else { if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
+                MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE indexOf(XMLchars.TagMsgHeaderEmpty)={}", messageQueueVO.getQueue_Id(), messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
             }
 
             HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
@@ -960,7 +965,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 requestBuilder = requestBuilder
                         .header(entry.getKey(),entry.getValue());
                 if ( IsDebugged )
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.DELETE .header: `" + entry.getKey() + ":" + entry.getValue() + "`");
+                    MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE .header: `{}:{}`", messageQueueVO.getQueue_Id(), entry.getKey(), entry.getValue());
                 // queryString.append(entry.getKey()).append("=").append(entry.getValue());
             }
 
@@ -980,7 +985,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
             if (IsDebugged)
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpDeleteMessage.DELETE RestResponse=(" + RestResponse + ")");
+                MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE RestResponse=({})", messageQueueVO.getQueue_Id(), RestResponse);
             // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.get escapeXml.RestResponse=(" + XML.escape(RestResponse) + ")");
 
         } catch (Exception e) {
@@ -995,7 +1000,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             } catch (Exception e) {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] UnsupportedEncodingException");
                 e.printStackTrace();
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + e.toString());
+                MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), sStackTrace.strInterruptedException(e));
                 messageDetails.MsgReason.append(" HttpDeleteMessage.DELETE.to_UTF_8 fault: ").append(sStackTrace.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "HttpDeleteMessage.DELETE", true, e, MessageSend_Log);
@@ -1029,7 +1034,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
                 messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
-                MessageSend_Log.info("HttpDeleteMessage.DELETE: Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
+                MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE: Response=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString());
 
                 ByteArrayInputStream parsedRestResponseStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
                 SAXBuilder documentBuilder = new SAXBuilder();
@@ -1040,7 +1045,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.JSONObject Exception" + RestResponseE.getMessage());
                 RestResponseE.printStackTrace();
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.RestResponse[" + RestResponse + "]");
-                MessageSend_Log.error("HttpDeleteMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(RestResponseE));
+                MessageSend_Log.error("[{}] HttpDeleteMessage.getResponseBody fault: {}" , messageQueueVO.getQueue_Id(),  sStackTrace.strInterruptedException(RestResponseE));
                 XMLdocument = null;
                 messageDetails.XML_MsgResponse.setLength(0);
                 messageDetails.XML_MsgResponse.trimToSize();
@@ -1053,14 +1058,14 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             // Получили ответ от сервиса, инициируем обработку getResponseBody()
 
             MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
-            MessageSend_Log.info("HttpDeleteMessage.DELETE :ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+            MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE :ClearBodyResponse `{}`" , messageQueueVO.getQueue_Id(),  messageDetails.XML_ClearBodyResponse.toString() );
             // client.wait(100);
 
         } catch (Exception e) {
             System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.JSONObject Exception");
             e.printStackTrace();
             System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpDeleteMessage.RestResponse[" + RestResponse + "]");
-            MessageSend_Log.error("HttpDeleteMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
+            MessageSend_Log.error("[{}] HttpDeleteMessage.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
             messageDetails.MsgReason.append(" HttpDeleteMessage.getResponseBody fault: ").append(sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
@@ -1074,18 +1079,18 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 ApiRestHttpClient.close();
 
             } catch ( Exception IOE ) {
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpDeleteMessage.ApiRestHttpClient.close fault, Exception:" + IOE.getMessage());
+                MessageSend_Log.error("[{}] HttpDeleteMessage.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
             }
         ApiRestHttpClient = null;
 
     } finally {
-        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "HttpDeleteMessage.ApiRestHttpClient.close finally" );
+        MessageSend_Log.warn("[{}] HttpDeleteMessage.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
             } catch ( Exception IOE ) {
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpDeleteMessage.ApiRestHttpClient.close finally fault, Exception:" + IOE.getMessage());
+                MessageSend_Log.error("[{}] HttpDeleteMessage.ApiRestHttpClient.close finally fault, Exception:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
             }
         ApiRestHttpClient = null;
 
@@ -1140,7 +1145,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
         )
         {
             if ( IsDebugged ) {
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+                MessageSend_Log.info("[{}] HttpGetMessage.GET PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
             }
             ApiRestHttpClient = HttpClient.newBuilder()
                     .authenticator( messageDetails.MessageTemplate4Perform.restPasswordAuthenticator )
@@ -1151,7 +1156,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
         }
         else {
             if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET PropUser== null (`" + PropUser + "`)" );
+                MessageSend_Log.info("[{}] HttpGetMessage.GET PropUser== null (`{}`)", messageQueueVO.getQueue_Id(), PropUser);
             ApiRestHttpClient = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -1165,11 +1170,10 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
   try {
 
       try {
-          MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.GET(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
-                  ";.readTimeoutInMillis=ReadTimeoutInMillis= " + messageTemplate4Perform.getPropTimeout_Read() +
-                  "; User=" + messageDetails.MessageTemplate4Perform.getPropUser() +
-                  "; Pswd" + messageDetails.MessageTemplate4Perform.getPropPswd() +
-                  "; numOfParams=" + numOfParams);
+          MessageSend_Log.info("[{}] HttpGetMessage.GET({}).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {}; User={}; Pswd{}; numOfParams={}",
+                                                messageQueueVO.getQueue_Id(), EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(),
+                                                messageTemplate4Perform.getPropTimeout_Read(), messageDetails.MessageTemplate4Perform.getPropUser(),
+                                                messageDetails.MessageTemplate4Perform.getPropPswd(), numOfParams);
           messageDetails.Confirmation.clear();
           messageDetails.XML_MsgResponse.setLength(0);
 
@@ -1207,7 +1211,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
           URI URI_4_GET = URI.create(EndPointUrl + restElmntEscaper.escape(queryString.toString()));
 
           if (IsDebugged) {
-              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + " HttpGetMessage.GET URI=`" + EndPointUrl + restElmntEscaper.escape(queryString.toString()) + "`");
+              MessageSend_Log.info("[{}] HttpGetMessage.GET URI=`{}{}`", messageQueueVO.getQueue_Id(), EndPointUrl, restElmntEscaper.escape(queryString.toString()));
               ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), queryString.toString(), MessageSend_Log);
           }
 
@@ -1230,16 +1234,16 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
           {
               headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
               if ( IsDebugged ) {
-                  MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET headerParams.length=" + headerParams.length);
+                  MessageSend_Log.info("[{}] HttpGetMessage.GET headerParams.length={}", messageQueueVO.getQueue_Id(), headerParams.length);
                   for (int i = 0; i < headerParams.length; i++)
-                      MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET headerParams[" + i + "] = " + headerParams[i]);
+                      MessageSend_Log.info("[{}] HttpGetMessage.GET headerParams[{}] = {}", messageQueueVO.getQueue_Id(), i, headerParams[i]);
               }
               if (headerParams.length > 1  )
                   for (int i = 0; i < headerParams.length; i++)
                       httpHeaders.put(headerParams[0], headerParams[1]);
           }
           else { if ( IsDebugged )
-              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET indexOf(XMLchars.TagMsgHeaderEmpty)=" + messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
+              MessageSend_Log.info("[{}] HttpGetMessage.GET indexOf(XMLchars.TagMsgHeaderEmpty)={}", messageQueueVO.getQueue_Id(), messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
           }
 
           HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
@@ -1248,7 +1252,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
               requestBuilder = requestBuilder
                       .header(entry.getKey(),entry.getValue());
               if ( IsDebugged )
-                  MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.GET .header: `" + entry.getKey() + ":" + entry.getValue() + "`");
+                  MessageSend_Log.info("[{}] HttpGetMessage.GET .header: `{}:{}`", messageQueueVO.getQueue_Id(), entry.getKey(), entry.getValue());
               // queryString.append(entry.getKey()).append("=").append(entry.getValue());
           }
 
@@ -1268,7 +1272,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
           // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
           // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
           if (IsDebugged)
-              MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.GET RestResponse=(" + RestResponse + ")");
+              MessageSend_Log.info("[{}] HttpGetMessage.GET RestResponse=({})", messageQueueVO.getQueue_Id(), RestResponse);
           // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Unirest.get escapeXml.RestResponse=(" + XML.escape(RestResponse) + ")");
 
       } catch (Exception e) {
@@ -1283,7 +1287,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
           } catch (Exception e) {
               System.err.println("[" + messageQueueVO.getQueue_Id() + "] UnsupportedEncodingException");
               e.printStackTrace();
-              MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + e.toString());
+              MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), e.toString());
               messageDetails.MsgReason.append(" HttpGetMessage.get.to_UTF_8 fault: ").append(sStackTrace.strInterruptedException(e));
               MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                       "HttpGetMessage.GET", true, e, MessageSend_Log);
@@ -1317,7 +1321,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
               messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
               messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
               messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
-              MessageSend_Log.info("HttpGetMessage.GET: Response=(" + messageDetails.XML_MsgResponse.toString() + ")");
+              MessageSend_Log.info("[{}] HttpGetMessage.GET: Response=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString());
 
               ByteArrayInputStream parsedRestResponseStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
               SAXBuilder documentBuilder = new SAXBuilder();
@@ -1328,7 +1332,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
               System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.JSONObject Exception" + RestResponseE.getMessage());
               RestResponseE.printStackTrace();
               System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.RestResponse[" + RestResponse + "]");
-              MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(RestResponseE));
+              MessageSend_Log.error("[{}] HttpGetMessage.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(RestResponseE));
               XMLdocument = null;
               messageDetails.XML_MsgResponse.setLength(0);
               messageDetails.XML_MsgResponse.trimToSize();
@@ -1341,14 +1345,14 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
           // Получили ответ от сервиса, инициируем обработку getResponseBody()
 
           MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
-          MessageSend_Log.info("HttpGetMessage.GET :ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+          MessageSend_Log.info("[{}] HttpGetMessage.GET :ClearBodyResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString());
           // client.wait(100);
 
       } catch (Exception e) {
           System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.JSONObject Exception");
           e.printStackTrace();
           System.err.println("[" + messageQueueVO.getQueue_Id() + "] HttpGetMessage.RestResponse[" + RestResponse + "]");
-          MessageSend_Log.error("HttpGetMessage.getResponseBody fault: " + sStackTrace.strInterruptedException(e));
+          MessageSend_Log.error("[{}] HttpGetMessage.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
           messageDetails.MsgReason.append(" HttpGetMessage.getResponseBody fault: ").append(sStackTrace.strInterruptedException(e));
 
           MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
@@ -1362,18 +1366,18 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
           ApiRestHttpClient.close();
 
       } catch ( Exception IOE ) {
-          MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.ApiRestHttpClient.close fault, Exception:" + IOE.getMessage());
+          MessageSend_Log.error("[{}] HttpGetMessage.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
       }
       ApiRestHttpClient = null;
 
       } finally {
-          MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.ApiRestHttpClient.close finally" );
+      MessageSend_Log.warn("[{}] HttpGetMessage.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
           if (ApiRestHttpClient != null)
               try {
                   ApiRestHttpClient.close();
 
               } catch ( Exception IOE ) {
-                  MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "HttpGetMessage.ApiRestHttpClient.close finally fault, Exception:" + IOE.getMessage());
+                  MessageSend_Log.error("[{}] HttpGetMessage.ApiRestHttpClient.close finally fault, Exception:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
               }
           ApiRestHttpClient = null;
       }
@@ -1412,9 +1416,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                                 // XML.escape( RestElmnt.getText() )
                              );
                         }
-                    MessageSend_Log.info( "["+ Queue_Id + "] setHttpGetParams=(" + RestElmnt.getName() + "=>`" + paramsInXml.toString() +
-                            //URLEncoder.encode( RestElmnt.getText() , StandardCharsets.UTF_8.toString() ) +
-                            "`");
+                    MessageSend_Log.info("[{}] setHttpGetParams=({}=>`{}`", Queue_Id, RestElmnt.getName(), paramsInXml.toString());
                 }
             }
         return nOfParams;
@@ -1514,7 +1516,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             )
             {
                 if ( IsDebugged ) {
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+                    MessageSend_Log.info("[{}] WebRestExePostExec PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
                 }
                 ApiRestHttpClient = HttpClient.newBuilder()
                         .authenticator( messageTemplate4Perform.postExecPasswordAuthenticator )
@@ -1525,7 +1527,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             }
             else {
                 if ( IsDebugged )
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.4.GET PropUser== null, PreemptivePostExec (`" + messageTemplate4Perform.getPreemptivePostExec() + "`)" );
+                    MessageSend_Log.info("[{}] WebRestExePostExec.4.GET PropUser== null, PreemptivePostExec (`{}`)", messageQueueVO.getQueue_Id(), messageTemplate4Perform.getPreemptivePostExec());
                 ApiRestHttpClient = HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_1_1)
                         .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -1550,8 +1552,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 requestBuilder = requestBuilder
                         .header("Authorization", "Basic " + encodedAuth );
                  if ( messageTemplate4Perform.getIsDebugged() )
-                     MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] Authorization Basic " + encodedAuth +
-                                    " (using User=`" + PropUser + "` Pswd=`" + PropPswd + "`)" );
+                     MessageSend_Log.info("[{}] Authorization Basic {} (using User=`{}` Pswd=`{}`)", messageQueueVO.getQueue_Id(), encodedAuth, PropUser, PropPswd);
             }
 
             java.net.http.HttpRequest request = requestBuilder
@@ -1568,11 +1569,13 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
 
             if ( messageTemplate4Perform.getIsDebugged() )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET(" + EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
+                MessageSend_Log.info("[{}] WebRestExePostExec.GET({}?queue_id={}) httpStatus=[{}] RestResponse=(`{}`)",
+                                     messageQueueVO.getQueue_Id(), EndPointUrl, String.valueOf(Queue_Id), restResponseStatus, RestResponse);
 
         } catch ( Exception e) {
             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
-            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки HttpGet(" + EndPointUrl + "?queue_id=" + String.valueOf(Queue_Id) + "), вызов от имени пользователя(`"+ PropUser + "/" + PropPswd + "`):" + e.toString() );
+            MessageSend_Log.error("[{}] Ошибка пост-обработки HttpGet({}?queue_id={}), вызов от имени пользователя(`{}/{}`):{}",
+                                    messageQueueVO.getQueue_Id(), EndPointUrl, String.valueOf(Queue_Id), PropUser, PropPswd, e.toString());
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
                     "Ошибка пост-обработки HttpGet(" + EndPointUrl + "), вызов от имени пользователя(`"+ PropUser +"`):" + sStackTrace.strInterruptedException(e), 123567,
                     messageQueueVO.getRetry_Count(),  MessageSend_Log);
@@ -1581,7 +1584,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
         }
         try {
             JSONObject RestResponseJSON = new JSONObject( RestResponse );
-            MessageSend_Log.info("["+ messageQueueVO.getQueue_Id() + "] WebRestExePostExec=(`" + RestResponseJSON.toString() + "`)");
+            MessageSend_Log.info("[{}] WebRestExePostExec=(`{}`)", messageQueueVO.getQueue_Id(), RestResponseJSON.toString());
             ReadContext jsonContext = JsonPath.parse(RestResponse);
             Object msgStatus;
             Object queueDirection;
@@ -1619,7 +1622,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
 
         } catch (JSONException | InvalidJsonException  e) {
 
-            MessageSend_Log.warn("["+ messageQueueVO.getQueue_Id() +"] Пост-обработчик HttpGet не вернул JSon(" + EndPointUrl + "):" + e.toString() );
+            MessageSend_Log.warn("[{}] Пост-обработчик HttpGet не вернул JSon({}):{}", messageQueueVO.getQueue_Id(), EndPointUrl, e.toString());
             theadDataAccess.do_SelectMESSAGE_QUEUE(  messageQueueVO, MessageSend_Log );
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, messageQueueVO.getQueue_Direction(), 0 + messageQueueVO.getMsg_Status() ,
                     "Пост-обработчик HttpGet (http="+restResponseStatus + ") не вернул JSon(" + EndPointUrl + "):`" + RestResponse + "` " + messageQueueVO.getMsg_Result(),
@@ -1649,7 +1652,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             )
             {
                 if ( IsDebugged ) {
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+                    MessageSend_Log.info("[{}] WebRestExePostExec.GET PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
                 }
                 ApiRestHttpClient = HttpClient.newBuilder()
                         .authenticator( messageTemplate4Perform.postExecPasswordAuthenticator )
@@ -1660,7 +1663,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             }
             else {
                 if ( IsDebugged )
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestExePostExec.GET PropUser== null (`" + PropUser + "`)" );
+                    MessageSend_Log.info("[{}] WebRestExePostExec.GET PropUser== null (`{}`)", messageQueueVO.getQueue_Id(), PropUser);
                 ApiRestHttpClient = HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_1_1)
                         .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -1690,11 +1693,11 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
 
             if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] WebRestErrOUTPostExec.get(" + EndPointUrl + ") httpStatus=[" + restResponseStatus + "] RestResponse=(`" + RestResponse + "`)");
+                MessageSend_Log.info("[{}] WebRestErrOUTPostExec.get({}) httpStatus=[{}] RestResponse=(`{}`)", messageQueueVO.getQueue_Id(), EndPointUrl, restResponseStatus, RestResponse);
 
         } catch ( Exception e) {
             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
-            MessageSend_Log.error("["+ messageQueueVO.getQueue_Id() +"] Ошибка пост-обработки WebRestErrOUTPostExec HttpGet(" + EndPointUrl + "):" + e.toString() );
+            MessageSend_Log.error("[{}] Ошибка пост-обработки WebRestErrOUTPostExec HttpGet({}):{}", messageQueueVO.getQueue_Id(), EndPointUrl, e.toString());
             theadDataAccess.doUPDATE_MessageQueue_SetMsg_Reason(messageQueueVO,
                     "Ошибка пост-обработки HttpGet(" + EndPointUrl + "):" + sStackTrace.strInterruptedException(e), 135699,
                     messageQueueVO.getRetry_Count(),  MessageSend_Log);

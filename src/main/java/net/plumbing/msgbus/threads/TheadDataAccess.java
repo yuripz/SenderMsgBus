@@ -1153,7 +1153,7 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error(e.getMessage());
             e.printStackTrace();
-            dataAccess_log.error("[{}] do_SelectMESSAGE_QUEUE: что то пошло совсем не так...", Queue_Id);
+            dataAccess_log.error("[{}] do_SelectMESSAGE_QUEUE: `{}` , что то пошло совсем не так...", Queue_Id, selectMESSAGE_QUEUE);
             return -1;
         }
         return  0;
@@ -1185,7 +1185,7 @@ public class TheadDataAccess {
         try {
             stmtSelectMESSAGE_QUEUE = (PreparedStatement)this.Hermes_Connection.prepareStatement( selectMESSAGE_QUEUE );
         } catch (Exception e) {
-            dataAccess_log.error("make_SelectMESSAGE_QUEUE fault: {}", e.getMessage() );
+            dataAccess_log.error("make_SelectMESSAGE_QUEUE 4 `{}` fault: {}", selectMESSAGE_QUEUE, e.getMessage() );
             e.printStackTrace();
             return (  null );
         }
@@ -1201,7 +1201,7 @@ public class TheadDataAccess {
         "select d.Tag_Id, d.Tag_Value, d.Tag_Num, d.Tag_Par_Num from " + dbSchema + ".Message_QueueDet D where (1=1) and d.QUEUE_ID = ? order by d.Tag_Par_Num, d.Tag_Num"
         );
         } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error( "make_Message_Query fault: {}", e.getMessage() );
             e.printStackTrace();
             return ( null );
         }
@@ -1223,7 +1223,7 @@ public class TheadDataAccess {
                     " ) where rownum =1"
                     );
         } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error( "make_Message_LastBodyTag_Query fault: {}", e.getMessage() );
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -1246,7 +1246,7 @@ public class TheadDataAccess {
                                 "limit 1"
                 );
         } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error( "make_Message_ConfirmationTag_Query fault: {}", e.getMessage() );
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -1266,7 +1266,7 @@ public class TheadDataAccess {
                             " order by   Tag_Par_Num, Tag_Num "
             );
         } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error( "make_MessageBody_Query fault: {}", e.getMessage() );
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }
@@ -1286,7 +1286,7 @@ public class TheadDataAccess {
                             " order by   Tag_Par_Num, Tag_Num "
             );
         } catch (Exception e) {
-            dataAccess_log.error( e.getMessage() );
+            dataAccess_log.error( "make_MessageConfirmation_Query fault: {}", e.getMessage() );
             e.printStackTrace();
             return ( (PreparedStatement) null );
         }

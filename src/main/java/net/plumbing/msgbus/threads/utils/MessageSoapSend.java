@@ -162,7 +162,7 @@ public class MessageSoapSend {
 			}
 			catch ( JDOMParseException e)
 			{
-				MessegeSend_Log.error("documentBuilder.build (" + messageDetails.XML_MsgResponse.toString() + ") fault"  );
+                MessegeSend_Log.error("getResponseBody: documentBuilder.build ({}) fault", messageDetails.XML_MsgResponse.toString());
 				throw new JDOMParseException("client.post:getResponseBody=(" + messageDetails.XML_MsgResponse.toString() + ")", e);
 			}
 		}
@@ -202,7 +202,7 @@ public class MessageSoapSend {
 			}
 
 			if ( !isSoapBodyFinded ) {
-				MessegeSend_Log.error("documentBuilder.build (" + messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8) + ")fault"  );
+                MessegeSend_Log.error("documentBuilder.build ({})fault", messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
 				throw new XPathExpressionException("getResponseBody: в SOAP-ответе не найден Element=" + XMLchars.Body);
 			}
 		} else {
