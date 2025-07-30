@@ -1,6 +1,7 @@
 package net.plumbing.msgbus.threads;
 
 
+import net.plumbing.msgbus.common.json.XML;
 import net.sf.saxon.s9api.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -448,12 +449,12 @@ public class PerformQueueMessages {
                                         MessageSend_Log.error("[{}] SEND  XSLT-преобразователь для JSON :{{}}", messageQueueVO.getQueue_Id(), AckXSLT_4_make_JSON);
 
                                         theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-                                                "Header XSLT fault: " + ConvXMLuseXSLTerr + " for " + AckXSLT_4_make_JSON, 1244,
+                                                "XSLT-преобразователь для JSON fault: " + ConvXMLuseXSLTerr + " for " + AckXSLT_4_make_JSON, 1244,
                                                 messageQueueVO.getRetry_Count(), MessageSend_Log);
 
-                                        System.err.println("[" + messageQueueVO.getQueue_Id() + "] SaxonApi TransformerException ");
+                                        System.err.println("[" + messageQueueVO.getQueue_Id() + "] AckXSLT: SaxonApi TransformerException ");
                                         exception.printStackTrace();
-                                        MessageSend_Log.error("[{}] from XML `{}` XSLT: `{}` JSON fault:{}", messageQueueVO.getQueue_Id(), Message.XML_MsgSEND, AckXSLT_4_make_JSON, exception.getMessage());
+                                        MessageSend_Log.error("[{}] AckXSLT: from XML `{}` XSLT: `{}` 2 JSON fault:{}", messageQueueVO.getQueue_Id(), Message.XML_MsgSEND, AckXSLT_4_make_JSON, exception.getMessage());
                                         Message.MsgReason.append(" XSLT-преобразователь для JSON `").append(AckXSLT_4_make_JSON).append("` fault: ").append(sStackTrace.strInterruptedException(exception));
                                         MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
                                                 "XSLT-преобразователь для JSON", true, exception, MessageSend_Log);
@@ -477,7 +478,8 @@ public class PerformQueueMessages {
                         } else { // сообщение Будет отпрвлено через SOAP
                             // готовим SOAP-заголовок
                             Message.Soap_HeaderRequest.setLength(0);
-                            if (Message.MessageTemplate4Perform.getHeaderXSLT() != null && Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10) // Есть чем преобразовывать HeaderXSLT
+                            if (Message.MessageTemplate4Perform.getHeaderXSLT() != null &&
+                                Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10) // Есть чем преобразовывать HeaderXSLT
                                 try {
                                     Message.Soap_HeaderRequest.append(
                                             ConvXMLuseXSLT30(messageQueueVO.getQueue_Id(), MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key), // стандартный заголовок c учетом системы-получателя
@@ -498,9 +500,51 @@ public class PerformQueueMessages {
                                                         messageQueueVO.getRetry_Count(), MessageSend_Log);
                                     return -5L;
                                 }
-                            else
+                            else // Make Entry Out Header
                                 Message.Soap_HeaderRequest.append(MessageUtils.MakeEntryOutHeader(messageQueueVO, MsgDirectionVO_Key));
-                            // Собсвенно, ВЫЗОВ!
+
+                            String AckXSLT_4_make_FinalXML = Message.MessageTemplate4Perform.getAckXSLT() ; // получили XSLT-для
+                            if ( AckXSLT_4_make_FinalXML != null ) {
+                                if (Message.MessageTemplate4Perform.getIsDebugged()) {
+                                    MessageSend_Log.info("[{}] Using SOAP {} XSLT-преобразователь AckXSLT_4_make_FinalXML (чем):`{}`", Queue_Id, Queue_Direction, AckXSLT_4_make_FinalXML);
+                                    MessageSend_Log.info("[{}] Using SOAP {} XSLT-преобразователь AckXSLT_4_make_FinalXML (что):`{}`", Queue_Id, Queue_Direction, Message.XML_MsgSEND);
+                                }
+                                if (Message.MessageTemplate4Perform.getIsDebugged())
+                                    MessageSend_Log.info("[{}] Using SOAP and use AckXSLT_4_make_FinalXML ({})", Queue_Id, AckXSLT_4_make_FinalXML);
+                                try {
+                                    Message.XML_MsgSEND = // make_FinalXML body -> сохраняем для отправки результат преобразования
+                                            XML.unescape(
+                                            ConvXMLuseXSLT30(messageQueueVO.getQueue_Id(),
+                                                    Message.XML_MsgSEND, // то, что подготовлено для передачи во внешнюю систему в формате XML
+                                                    Message.MessageTemplate4Perform.getAckXSLT_processor(),
+                                                    Message.MessageTemplate4Perform.getAckXSLT_xsltCompiler(),
+                                                    Message.MessageTemplate4Perform.getAckXSLT_xslt30Transformer(),
+                                                    AckXSLT_4_make_FinalXML,  // через AckXSLT
+                                                    Message.MsgReason, MessageSend_Log,
+                                                    Message.MessageTemplate4Perform.getIsDebugged()
+                                                )
+                                            );
+
+                                    if (Message.MessageTemplate4Perform.getIsDebugged())
+                                        MessageSend_Log.info("[{}] Using SOAP and use AckXSLT_4_make_FinalXML, (получили):`{}`", Queue_Id, Message.XML_MsgSEND);
+
+                                } catch (SaxonApiException exception) {
+                                    MessageSend_Log.error("[{}] SEND  XSLT-преобразователь для FinalXML :{{}}", messageQueueVO.getQueue_Id(), AckXSLT_4_make_FinalXML);
+
+                                    theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
+                                            "Header XSLT fault: " + ConvXMLuseXSLTerr + " for " + AckXSLT_4_make_FinalXML, 1244,
+                                            messageQueueVO.getRetry_Count(), MessageSend_Log);
+
+                                    System.err.println("[" + messageQueueVO.getQueue_Id() + "] AckXSLT: SaxonApi TransformerException ");
+                                    exception.printStackTrace();
+                                    MessageSend_Log.error("[{}] AckXSLT: from XML `{}` XSLT: `{}` 2 FinalXML fault:{}", messageQueueVO.getQueue_Id(), Message.XML_MsgSEND, AckXSLT_4_make_FinalXML, exception.getMessage());
+                                    Message.MsgReason.append(" XSLT-преобразователь для FinalXML `").append(AckXSLT_4_make_FinalXML).append("` fault: ").append(sStackTrace.strInterruptedException(exception));
+                                    MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
+                                            "XSLT-преобразователь для FinalXML", true, exception, MessageSend_Log);
+                                    return -402L;
+                                }
+                            }
+                            // Собственно, ВЫЗОВ! XML_MsgSEND as Soap body
                             Function_Result = MessageHttpSend.sendSoapMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
                             // MessageSend_Log.info("sendSOAPMessage:" + Queue_Direction + " [" + Queue_Id + "] для SOAP=:\n" + Message.XML_MsgSEND);
                         }
