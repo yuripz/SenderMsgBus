@@ -45,7 +45,7 @@ public class AppendDataAccess {
             Target_Connection.setAutoCommit(false);
 
             AppendDataAccess.Hermes_Connection = Target_Connection;
-            dateFormat = new SimpleDateFormat("YYYY-MM-dd HH24:mi:ss");
+            dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mi:ss");
             dataAccess_log.info("prepareStatement: [insert into {}" + SQLInsertData + "]", dataStoreTableName);
             stmtInsertData = AppendDataAccess.Hermes_Connection.prepareStatement("insert into " + dataStoreTableName + SQLInsertData );
 

@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
+import java.sql.Timestamp;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -126,7 +126,7 @@ public class MessageHttpSend {
         )
         {
             if ( IsDebugged ) {
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendSoapMessage.POST PropUser=`" + PropUser + "` PropPswd=`" + PropPswd + "`");
+                MessageSend_Log.info("[{}] sendSoapMessage.POST PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
             }
             ApiRestHttpClient = HttpClient.newBuilder()
                     .authenticator( messageDetails.MessageTemplate4Perform.restPasswordAuthenticator )
@@ -137,7 +137,7 @@ public class MessageHttpSend {
         }
         else {
             if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendSoapMessage.POST PropUser== null (`" + PropUser + "`)" );
+                MessageSend_Log.info("[{}] sendSoapMessage.POST PropUser== null (`{}`)", messageQueueVO.getQueue_Id(), PropUser);
             ApiRestHttpClient = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -150,7 +150,7 @@ public class MessageHttpSend {
         String RestResponse=null;
 
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
-        messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
+        messageQueueVO.setMsg_Date( Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Queue_Direction(messageQueueVO.getQueue_Direction());
 
         byte[] RequestBody;
@@ -161,7 +161,7 @@ public class MessageHttpSend {
             } catch (UnsupportedEncodingException encodingExc) {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendSoapMessage.POST UnsupportedEncodingException");
                 encodingExc.printStackTrace();
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] from " + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() + " to_UTF_8 fault:" + encodingExc);
+                MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), encodingExc);
                 messageDetails.MsgReason.append(" sendSoapMessage.POST" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTrace.strInterruptedException(encodingExc));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "sendSoapMessage.POST", true, encodingExc, MessageSend_Log);
@@ -176,14 +176,13 @@ public class MessageHttpSend {
 
         try { // Готовим HTTP-запрос
             if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.POST(" + EndPointUrl + ").connectTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Conn() +
-                    ".000;.readTimeoutInMillis=" + messageTemplate4Perform.getPropTimeout_Read() +
-                    ".000;.PropUser=" + messageDetails.MessageTemplate4Perform.getPropUser() +
-                    ";.PropPswd=" + messageDetails.MessageTemplate4Perform.getPropPswd() +
-                    ";."+ messageDetails.MessageTemplate4Perform.SOAP_ACTION_11 + "=" + messageDetails.MessageTemplate4Perform.getSOAPAction()
-            );
+                MessageSend_Log.info("[{}]sendSoapMessage.POST({}).connectTimeoutInMillis={}.000;.readTimeoutInMillis={}.000;.PropUser={};.PropPswd={};.{}= {}",
+                        messageQueueVO.getQueue_Id(), EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(),
+                        messageTemplate4Perform.getPropTimeout_Read(), messageDetails.MessageTemplate4Perform.getPropUser(),
+                        messageDetails.MessageTemplate4Perform.getPropPswd(), messageDetails.MessageTemplate4Perform.SOAP_ACTION_11,
+                        messageDetails.MessageTemplate4Perform.getSOAPAction());
             if ( IsDebugged )
-                MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.POST[" + SoapEnvelope + "]" );
+                MessageSend_Log.info("[{}]sendSoapMessage.POST[{}]", messageQueueVO.getQueue_Id(), SoapEnvelope);
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0); messageDetails.XML_MsgResponse.trimToSize();
 
@@ -221,7 +220,7 @@ public class MessageHttpSend {
             // Headers headers = Response.getHeaders();
             // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
-            MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendSoapMessage.POST.Response.getBody().length =" + Response.body().length );
+            MessageSend_Log.warn("[{}]sendSoapMessage.POST.Response.getBody().length ={}", messageQueueVO.getQueue_Id(), Response.body().length);
             //  byte [] RequestBodyContent = new Response.toString();
             // перекодируем ответ из кодировки, которая была указана в шаблоне для внешней системы в UTF_8
             // Response => RestResponse;
@@ -236,9 +235,8 @@ public class MessageHttpSend {
             catch (Exception ioExc) {
                 System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
                 ioExc.printStackTrace();
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString from " +
-                        ( messageDetails.MessageTemplate4Perform.getPropEncoding_Out() ==  null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out() )
-                        + " to_UTF_8 fault:" + ioExc );
+                MessageSend_Log.error("[{}] IOUtils.toString from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(),
+                        messageDetails.MessageTemplate4Perform.getPropEncoding_Out() == null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), ioExc);
                 messageDetails.MsgReason.append(" sendSoapMessage.POST.to_UTF_8 fault: ").append ( sStackTrace.strInterruptedException(ioExc));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "sendSoapMessage.POST", true,  ioExc ,  MessageSend_Log);
@@ -252,13 +250,14 @@ public class MessageHttpSend {
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
             if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] HTTP status: " + restResponseStatus + " sendSoapMessage.POST.Response=#(`{}`)", messageDetails.XML_MsgResponse.toString());
+                MessageSend_Log.info("[{}] HTTP status: {} sendSoapMessage.POST.Response=#(`{}`)", messageQueueVO.getQueue_Id(),
+                                restResponseStatus, messageDetails.XML_MsgResponse.toString());
             if ( IsDebugged )
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
 
         } catch ( Exception e) {
             // Журналируем ответ как есть
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.POST ("+EndPointUrl+") fault:" + e );
+            MessageSend_Log.error("[{}]sendSoapMessage.POST ({}) fault:{}", messageQueueVO.getQueue_Id(), EndPointUrl, sStackTrace.strInterruptedException(e));
             messageDetails.MsgReason.append(" sendSoapMessage.POST (" ).append ( EndPointUrl )
                                     .append ( ") fault: " ).append ( sStackTrace.strInterruptedException(e));
 
@@ -267,13 +266,13 @@ public class MessageHttpSend {
 
             // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
             // НАДО проверять количество порыток !!!
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "Retry_Count ("+messageQueueVO.getRetry_Count()+")>= " +
-                    "( ShortRetryCount=" +messageDetails.MessageTemplate4Perform.getShortRetryCount() +
-                    " LongRetryCount=" + messageDetails.MessageTemplate4Perform.getLongRetryCount() + ")" );
+            MessageSend_Log.error("[{}]Retry_Count ({})>= ( ShortRetryCount={} LongRetryCount={})", messageQueueVO.getQueue_Id(),
+                                            messageQueueVO.getRetry_Count(), messageDetails.MessageTemplate4Perform.getShortRetryCount(),
+                                            messageDetails.MessageTemplate4Perform.getLongRetryCount());
             if ( messageQueueVO.getRetry_Count() +1  >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() )
             {
                 // количество порыток исчерпано, формируем результат для выхода из повторов
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.POST (" + EndPointUrl + ") fault:" + e);
+                MessageSend_Log.error("[{}]sendSoapMessage.POST ({}) fault:{}", messageQueueVO.getQueue_Id(), EndPointUrl, e);
                 messageDetails.XML_MsgResponse.setLength(0);
                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
                 messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
@@ -293,28 +292,28 @@ public class MessageHttpSend {
                  return -1;
             }
         }
-        messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
+        messageQueueVO.setMsg_Date( Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
 
         try {
             // Получили ответ от сервиса, инициируем обработку SOAP getResponseBody()
             MessageSoapSend.getResponseBody (messageDetails, null, MessageSend_Log);
             if ( IsDebugged )
-            MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse=(" + messageDetails.XML_ClearBodyResponse.toString() + ")");
+                MessageSend_Log.info("[{}]sendSoapMessage:ClearBodyResponse=({})", messageQueueVO.getQueue_Id(),
+                                        messageDetails.XML_ClearBodyResponse.toString());
             else {// HE-9187
                 if (messageDetails.XML_ClearBodyResponse.length() > 2049)
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[2048 char]=(" +
-                            messageDetails.XML_ClearBodyResponse.substring(0, 2048)
-                            + "...)");
+                    MessageSend_Log.info("[{}]sendSoapMessage:ClearBodyResponse[2048 char]=({}...)",
+                                            messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.substring(0, 2048));
                 else
-                    MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage:ClearBodyResponse[all char]=(" +
-                            messageDetails.XML_ClearBodyResponse.toString() + "...)");
+                    MessageSend_Log.info("[{}]sendSoapMessage:ClearBodyResponse[all char]=({}...)",
+                                            messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString());
                 // client.wait(2048); --HE-10763 : Расширить размер логируемого сообщения ( ответ при ответ при сбое на стороне получателя ) до 2 кб
             }
 
         } catch (Exception e) {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Retry_Count=" + messageQueueVO.getRetry_Count() + " SendSoapMessage.getResponseBody fault(" + RestResponse + " : " + sStackTrace.strInterruptedException(e));
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "] Sending SoapEnvelope[" + SoapEnvelope + "]" );
+            MessageSend_Log.error("[{}] Retry_Count={} SendSoapMessage.getResponseBody fault({} : {}", messageQueueVO.getQueue_Id(), messageQueueVO.getRetry_Count(), RestResponse, sStackTrace.strInterruptedException(e));
+            MessageSend_Log.error("[{}] Sending SoapEnvelope[{}]", messageQueueVO.getQueue_Id(), SoapEnvelope);
             messageDetails.MsgReason.append(" sendSoapMessage.getResponseBody fault: " ).append ( sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
@@ -334,7 +333,7 @@ public class MessageHttpSend {
             ApiRestHttpClient.close();
 
         } catch ( Exception IOE ) {
-            MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close fault, Exception:" + IOE.getMessage());
+            MessageSend_Log.error("[{}]sendSoapMessage.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
         }
         ApiRestHttpClient = null;
         /*try {
@@ -345,13 +344,13 @@ public class MessageHttpSend {
         syncConnectionManager = null;*/
 
     } finally {
-        MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close finally" );
+        MessageSend_Log.warn("[{}]sendSoapMessage.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
             } catch ( Exception IOE ) {
-                MessageSend_Log.error("[" + messageQueueVO.getQueue_Id() + "]" + "sendSoapMessage.ApiRestHttpClient.close finally fault, Exception:" + IOE.getMessage());
+                MessageSend_Log.error("[{}]sendSoapMessage.ApiRestHttpClient.close finally fault, Exception:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
             }
         ApiRestHttpClient = null; // for GC
         /*
