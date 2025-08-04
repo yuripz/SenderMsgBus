@@ -135,7 +135,7 @@ public class TheadDataAccess {
             rdbmsVendor = "postgresql";
         }
 
-        dataAccess_log.info("Try(thead) Hermes getConnection: {} as {} , Class.forName:{} RDBMS ({})",
+        dataAccess_log.info("Try(thead) main DB getConnection: {} as {} , Class.forName:{} RDBMS ({})",
                 connectionUrl, db_userid, ClassforName, rdbmsVendor);
         try {
             // Establish the connection.
@@ -144,7 +144,9 @@ public class TheadDataAccess {
             Target_Connection = DriverManager.getConnection(connectionUrl, db_userid, db_password);
             Target_Connection.setAutoCommit(false);
             if (!rdbmsVendor.equals("oracle")) {
-                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
+                String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
+                dataAccess_log.info("(thead) main DB Connection: Try setup Connection as `{}`", setSetupConnection);
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
             }

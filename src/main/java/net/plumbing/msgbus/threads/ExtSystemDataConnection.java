@@ -41,15 +41,16 @@ public class ExtSystemDataConnection {
 
 
         if (!rdbmsVendor.equals("oracle")) {
-            dataAccess_log.info("[{}] try ExtSystem `set SESSION time zone 3`", Queue_Id);
+            String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
+            dataAccess_log.info("[{}] try setSetupConnection for ExtSystem `{}`", Queue_Id, setSetupConnection);
             try {
-                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
             } catch (SQLException e) {
 
-                dataAccess_log.error("[{}] ExtSystem `set SESSION time zone 3` fault: {}", Queue_Id, e.getMessage());
-                System.err.println( "["+ Queue_Id + "] ExtSystem `set SESSION time zone 3` Exception" );
+                dataAccess_log.error("[{}] ExtSystem `{}` fault: {}", Queue_Id, setSetupConnection, e.getMessage());
+                System.err.println( "["+ Queue_Id + "] ExtSystem `" + setSetupConnection +"` Exception" );
                 e.printStackTrace();
                 try { Target_Connection.close(); //.close(); ??
                 } catch (SQLException SQLe) {

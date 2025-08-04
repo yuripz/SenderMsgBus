@@ -56,7 +56,7 @@ public class NotifyByChannel {
                 .connectTimeout(Duration.ofSeconds(10));
 
         if ((httpProxyHost != null ) && (httpProxyPort != null )) {
-            if ( (httpProxyHost.length() > 3 ) && ( httpProxyPort.length() > 3 ))
+            if ( (httpProxyHost.length() > 3 ) && ( httpProxyPort.length() > 1 ))
                 try {
                     int httpProxyPortNum = Integer.parseInt(httpProxyPort);
                     httpClientBuilder.proxy(ProxySelector.of(new InetSocketAddress( httpProxyHost, httpProxyPortNum  )));

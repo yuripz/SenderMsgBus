@@ -66,8 +66,9 @@ public  class DataAccess {
             if ( !rdbmsVendor.equals("oracle") ) {
                 SQLCurrentTimeStringRead= "SELECT to_char( now() AT TIME ZONE 'Europe/Moscow', 'YYYYMMDDHH24MISS') as InitTime";
                 SQLCurrentTimeDateRead= "SELECT now() AT TIME ZONE 'Europe/Moscow' as InitTime";
-                dataAccess_log.info("Try setup Connection: `set SESSION time zone 3`");
-                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
+                String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
+                dataAccess_log.info("Try setup Connection: `{}`", setSetupConnection ) ;
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
                 Target_Connection.commit();

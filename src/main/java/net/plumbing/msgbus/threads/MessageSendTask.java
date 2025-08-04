@@ -336,12 +336,13 @@ public class MessageSendTask  implements Runnable
         // инициализируемся
         MessegeSend_Log .info("Setup Connection for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " rdbmsVendor=`" + rdbmsVendor + "`") ;
         if ( !rdbmsVendor.equals("oracle") ) {
-            MessegeSend_Log .info("Try setup Connection for thead: " + (this.FirstInfoStreamId + theadNum ) + " `set SESSION time zone 3`");
+            String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
+            MessegeSend_Log.info("Try setup Connection for thead: {} `{}`", this.FirstInfoStreamId + theadNum, setSetupConnection);
             try {
                 String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYY-MM-DD-HH24:MI:SS') as currentTime";
                 PreparedStatement stmtCurrentTimeStringRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeStringRead );
                 String CurrentTime="00000-00000";
-                    PreparedStatement stmt_SetTimeZone = theadDataAccess.Hermes_Connection.prepareStatement("set SESSION time zone 3");//.nativeSQL( "set SESSION time zone 3" );
+                    PreparedStatement stmt_SetTimeZone = theadDataAccess.Hermes_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
                     stmt_SetTimeZone.execute();
                     stmt_SetTimeZone.close();
                 ResultSet rs = stmtCurrentTimeStringRead.executeQuery();
@@ -352,7 +353,7 @@ public class MessageSendTask  implements Runnable
                 DataAccess.Hermes_Connection.commit();
                 MessegeSend_Log.info( "RDBMS CurrentTime for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " LocalDate ="+ CurrentTime );
             } catch (Exception e) {
-                MessegeSend_Log.error("RDBMS setup Connection: `set SESSION time zone 3` fault: " + e.toString());
+                MessegeSend_Log.error("RDBMS setup Connection: `{}` fault: {}" , setSetupConnection, e.toString());
                 e.printStackTrace();
             }
         }
