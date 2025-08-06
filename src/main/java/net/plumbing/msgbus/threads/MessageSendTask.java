@@ -63,7 +63,7 @@ public class MessageSendTask  implements Runnable
     private jakarta.jms.Connection JMSQueueConnection;
 
     public String getHrmsPpoint() { return HrmsPoint; }
-    public String getCurrentTuskStatus() {return CurrentTuskStatus; }
+    public String getCurrentTaskStatus() {return CurrentTaskStatus; }
 
     public void setWaitTimeBetweenScan(Integer waitTimeBetweenScan) {
         this.WaitTimeBetweenScan = waitTimeBetweenScan;
@@ -87,7 +87,7 @@ public class MessageSendTask  implements Runnable
     public void setTheadNum( int TheadNum) {
         this.theadNum = TheadNum;
     }
-    private String CurrentTuskStatus;
+    private String CurrentTaskStatus;
 
     public void setJMSQueueConnection (jakarta.jms.Connection JMSQueueConnection  ) { this.JMSQueueConnection = JMSQueueConnection;}
     public void setApiRestWaitTime( int ApiRestWaitTime) { this.ApiRestWaitTime = ApiRestWaitTime; }
@@ -104,10 +104,11 @@ public class MessageSendTask  implements Runnable
     public void run() {
         //if (( theadNum != null ) && ((theadNum == 17) || (theadNum == 18) || (theadNum == 19) || (theadNum == 20)) )
         if (( theadNum == null ) ) // && (theadNum == 0))
-        {  CurrentTuskStatus ="theadNum == null, return";
+        {  CurrentTaskStatus ="theadNum == null, return";
             return;
         }
-
+        CurrentTaskStatus ="theadNum ==" + theadNum + " running";
+        
         MessegeSend_Log.info("AllMessageTemplates[{}]: size={}", theadNum, MessageTemplate.AllMessageTemplate.size()); //.get( theadNum+1 ).getTemplate_name() );
         if ( theadNum == -1 ) {
             for (int i = 0; i < MessageTemplate.AllMessageTemplate.size(); i++) {
@@ -387,7 +388,7 @@ public class MessageSendTask  implements Runnable
                     ResultSet rLock = null;
                     stmtMsgQueue.setInt(1, (theadNum + this.FirstInfoStreamId) );
                     stmtMsgQueue.setInt(2, (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) );
-                    CurrentTuskStatus = "running for msg_InfoStreamId in (`" + (theadNum + this.FirstInfoStreamId) + "`, `" + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + "`)";
+                    CurrentTaskStatus = "running for msg_InfoStreamId in (`" + (theadNum + this.FirstInfoStreamId) + "`, `" + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + "`)";
 
                     ResultSet rs = stmtMsgQueue.executeQuery();
                     // MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: do scanning on `" + selectMessageSQL + "` using msg_InfostreamId in (" + (theadNum + this.FirstInfoStreamId) + ", "  + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + ")");
@@ -477,8 +478,8 @@ public class MessageSendTask  implements Runnable
                                 MessegeSend_Log.warn( "Main Thread: (530:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
                                 PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                             } catch (Exception   e) {
-                                CurrentTuskStatus ="performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage();
-                                System.err.println( CurrentTuskStatus );
+                                CurrentTaskStatus ="performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage();
+                                System.err.println( CurrentTaskStatus );
                                 e.printStackTrace();
                                 MessegeSend_Log.error("performMessage Exception Queue_Id:[{}] {}", messageQueueVO.getQueue_Id(), e.getMessage());
                                 MessegeSend_Log.error("что то пошло совсем не так...");
@@ -491,7 +492,7 @@ public class MessageSendTask  implements Runnable
                     rs.close();
                     theadDataAccess.Hermes_Connection.commit();
                 } catch (Exception e) {
-                    CurrentTuskStatus ="Exception: что то пошло совсем не так... см.:`" + e.getMessage() + "`";
+                    CurrentTaskStatus ="Exception: что то пошло совсем не так... см.:`" + e.getMessage() + "`";
                     MessegeSend_Log.error(e.getMessage());
                     e.printStackTrace();
                     MessegeSend_Log.error("Exception: что то пошло совсем не так... см.:`{}`\n{}", e.getMessage(),e.toString() );
@@ -504,7 +505,7 @@ public class MessageSendTask  implements Runnable
                     // Период ожидания JMS зависит от того, был ли конкурентный досту для "помощи" .
                     // Если помощник не смог взять блокировку - значит, помощников свободных много но работа для них есть, можно из рчереди читать не долго, 1/3 от обычного
                     int WaitTime4JmsQueue = WaitTimeBetweenScan * 1000 ;
-                    CurrentTuskStatus = "running for msg_InfoStreamId in (`" + (theadNum + this.FirstInfoStreamId) + "`, `" + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + "`)";
+                    CurrentTaskStatus = "running for msg_InfoStreamId in (`" + (theadNum + this.FirstInfoStreamId) + "`, `" + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + "`)";
                     // Если это поток-helper, то проверяем, нужна ли помощь
                     if ( stmtHelperMsgQueue != null)
                     { num_HelpedMessage4Perform = 0;
@@ -607,7 +608,7 @@ public class MessageSendTask  implements Runnable
                         } catch (Exception e) {
                             MessegeSend_Log.error(e.getMessage());
                             e.printStackTrace();
-                            CurrentTuskStatus ="Exception: что то пошло совсем не так... см.:`" + e.getMessage() + "`";
+                            CurrentTaskStatus ="Exception: что то пошло совсем не так... см.:`" + e.getMessage() + "`";
                             MessegeSend_Log.error( "что то с помощниками пошло совсем не так...");
                             return;
                         }
@@ -662,7 +663,7 @@ public class MessageSendTask  implements Runnable
                 }
             } catch (Exception e) {
                 MessegeSend_Log.error("MessageSendTask[" + theadNum + "]: is interrapted: " + e.getMessage());
-                CurrentTuskStatus ="Exception: MessageSendTask[" + theadNum + "]: is interrapted:`" + e.getMessage() + "`";
+                CurrentTaskStatus ="Exception: MessageSendTask[" + theadNum + "]: is interrapted:`" + e.getMessage() + "`";
                 e.printStackTrace();
             }
             //   MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: is finished[ " + theadRunCount + "] times");
@@ -674,7 +675,7 @@ public class MessageSendTask  implements Runnable
             Hermes_Connection.close();
         } catch (SQLException e) {
             MessegeSend_Log.error(e.getMessage());
-            CurrentTuskStatus ="Exception: MessageSendTask[" + theadNum + "]: Hermes_Connection.close()`" + e.getMessage() + "`";
+            CurrentTaskStatus ="Exception: MessageSendTask[" + theadNum + "]: Hermes_Connection.close()`" + e.getMessage() + "`";
             e.printStackTrace();
         }
 

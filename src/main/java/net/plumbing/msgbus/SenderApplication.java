@@ -326,11 +326,12 @@ public class SenderApplication implements CommandLineRunner {
 						//InetAddress.getLocalHost().getHostAddress(), AppThead_log );
 						for (i=0; i< TotalNumTasks; i++) {
 							if (messageSendTask[ i ] != null) {
-								if (messageSendTask[ i ].getCurrentTuskStatus().toLowerCase().contains("exception"))
-								{
-									NotifyByChannel.Telegram_sendMessage("Как бы типа надо => *Shutdown* Sender Application Проблема у потока=*" + i + " `" + messageSendTask[ i ].getCurrentTuskStatus() + "` у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
-											+ InetAddress.getLocalHost().getHostName() + " (ip `" + InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC + "`)", AppThead_log);
+								if (messageSendTask[ i ].getCurrentTaskStatus() != null ) {
+									if (messageSendTask[i].getCurrentTaskStatus().toLowerCase().contains("exception")) {
+										NotifyByChannel.Telegram_sendMessage("Как бы типа надо => *Shutdown* Sender Application Проблема у потока=*" + i + " `" + messageSendTask[i].getCurrentTaskStatus() + "` у " + ApplicationName + " -" + connectionProperties.getfirstInfoStreamId() + " on "
+												+ InetAddress.getLocalHost().getHostName() + " (ip `" + InetAddress.getLocalHost().getHostAddress() + "`, db `" + propJDBC + "`)", AppThead_log);
 
+									}
 								}
 							}
 						}
