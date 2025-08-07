@@ -1,5 +1,6 @@
 package net.plumbing.msgbus.scheduler;
 
+import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
 import net.plumbing.msgbus.threads.TheadDataAccess;
@@ -70,7 +71,7 @@ public class ExternSystemCallTask implements Runnable {
         TheadDataAccess theadDataAccess = new TheadDataAccess();
         theadDataAccess.setDbSchema( HrmsSchema );
         // Установаливем " соединение" , что бы зачитывать очередь
-        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, 100000 + theadNum,
+        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, ApplicationProperties.ExtSysPgSetupConnection, 100000 + theadNum,
                 externSystemCallTas_Log
         );
         if ( Hermes_Connection == null) {

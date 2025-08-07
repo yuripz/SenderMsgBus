@@ -162,7 +162,7 @@ public class MessageSendTask  implements Runnable
 
         TheadDataAccess theadDataAccess = new TheadDataAccess();
         theadDataAccess.setDbSchema( HrmsSchema );
-        // Установаливем " соединение", что бы зачитывать очередь
+        // Установаливем "техническое соединение", что бы зачитывать очередь, на нём же будут отрабатываться и забросы к "локальному" экземпляру БД
         Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, ApplicationProperties.InternalDbPgSetupConnection, this.FirstInfoStreamId + theadNum,
                 MessegeSend_Log
         );
@@ -338,14 +338,16 @@ public class MessageSendTask  implements Runnable
         // инициализируемся
         MessegeSend_Log .info("Setup Connection for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " rdbmsVendor=`" + rdbmsVendor + "`") ;
         if ( !rdbmsVendor.equals("oracle") ) {
-            MessegeSend_Log.info("Try setup Connection for thead: {} `{}`", this.FirstInfoStreamId + theadNum, ApplicationProperties.InternalDbPgSetupConnection);
+            String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYY-MM-DD-HH24:MI:SS') as currentTime";
+            MessegeSend_Log.info("Try setup Connection for thead: {} `{}`", this.FirstInfoStreamId + theadNum, SQLCurrentTimeStringRead);
             try {
-                String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYY-MM-DD-HH24:MI:SS') as currentTime";
+
                 PreparedStatement stmtCurrentTimeStringRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeStringRead );
                 String CurrentTime="00000-00000";
-                    PreparedStatement stmt_SetSetupConnection = theadDataAccess.Hermes_Connection.prepareStatement( ApplicationProperties.InternalDbPgSetupConnection);//.nativeSQL( "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;" );
-                    stmt_SetSetupConnection.execute();
-                stmt_SetSetupConnection.close();
+                    // nativeSQL( "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;" ) вызван при установлении соединения
+                    //PreparedStatement stmt_SetSetupConnection = theadDataAccess.Hermes_Connection.prepareStatement( ApplicationProperties.InternalDbPgSetupConnection);
+                    //stmt_SetSetupConnection.execute();
+                    //stmt_SetSetupConnection.close();
                 ResultSet rs = stmtCurrentTimeStringRead.executeQuery();
                 while (rs.next()) {
                     CurrentTime = rs.getString("currentTime");
@@ -354,7 +356,7 @@ public class MessageSendTask  implements Runnable
                 DataAccess.Hermes_Connection.commit();
                 MessegeSend_Log.info("RDBMS CurrentTime for thead:{} CuberNumId:{} LocalDate ={}", this.FirstInfoStreamId + theadNum, CuberNumId, CurrentTime);
             } catch (Exception e) {
-                MessegeSend_Log.error("RDBMS setup Connection: `{}` fault: {}" , ApplicationProperties.InternalDbPgSetupConnection, e.toString());
+                MessegeSend_Log.error("RDBMS 4 {} setup Connection: `{}` fault: {}" , rdbmsVendor, SQLCurrentTimeStringRead, e.toString());
                 e.printStackTrace();
             }
         }
