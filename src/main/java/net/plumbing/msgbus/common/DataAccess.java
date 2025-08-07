@@ -27,7 +27,7 @@ public  class DataAccess {
     public static  String HrmsSchema="orm";
     public static  String rdbmsVendor="oracle";
 
-    public static  Connection make_DataBase_Connection(String DbSchema, String dst_point, String db_userid , String db_password, Logger dataAccess_log) {
+    public static  Connection make_DataBase_Connection(String DbSchema, String dst_point, String db_userid , String db_password, String InternalDbPgSetSetupConnection ,Logger dataAccess_log) {
         Connection Target_Connection = null;
         String connectionUrl ;
         if ( dst_point==null) {
@@ -66,9 +66,8 @@ public  class DataAccess {
             if ( !rdbmsVendor.equals("oracle") ) {
                 SQLCurrentTimeStringRead= "SELECT to_char( now() AT TIME ZONE 'Europe/Moscow', 'YYYYMMDDHH24MISS') as InitTime";
                 SQLCurrentTimeDateRead= "SELECT now() AT TIME ZONE 'Europe/Moscow' as InitTime";
-                String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
-                dataAccess_log.info("Try setup Connection: `{}`", setSetupConnection ) ;
-                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
+                dataAccess_log.info("Try setup Connection: `{}`", InternalDbPgSetSetupConnection ) ;
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(InternalDbPgSetSetupConnection);//.nativeSQL( "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;");
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
                 Target_Connection.commit();

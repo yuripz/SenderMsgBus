@@ -1,6 +1,7 @@
 package net.plumbing.msgbus.threads;
 
 //import com.sun.istack.internal.NotNull;
+import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.DataAccess;
 import net.plumbing.msgbus.model.MessageDetails;
 import org.slf4j.LoggerFactory;
@@ -161,8 +162,8 @@ public class MessageSendTask  implements Runnable
 
         TheadDataAccess theadDataAccess = new TheadDataAccess();
         theadDataAccess.setDbSchema( HrmsSchema );
-        // Установаливем " соединение" , что бы зачитывать очередь
-        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, this.FirstInfoStreamId + theadNum,
+        // Установаливем " соединение", что бы зачитывать очередь
+        Connection Hermes_Connection = theadDataAccess.make_Hermes_Connection(  HrmsPoint, hrmsDbLogin, hrmsDbPasswd, ApplicationProperties.InternalDbPgSetupConnection, this.FirstInfoStreamId + theadNum,
                 MessegeSend_Log
         );
         if ( Hermes_Connection == null) {
@@ -320,7 +321,7 @@ public class MessageSendTask  implements Runnable
                     else // TODO Pg -" and Q.Msg_Date < Current_TimeStamp AT TIME ZONE 'Europe/Moscow'"
                         Lame_selectMessageSQL = Lame_PreSelectMessageSQL + " order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE Limit 1"  ;
 
-                    MessegeSend_Log.info( "Helper_MESSAGE_QueueSelect: " + Lame_selectMessageSQL );
+                    MessegeSend_Log.info("Helper_MESSAGE_QueueSelect: {}", Lame_selectMessageSQL);
                     stmtHelperMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( Lame_selectMessageSQL );
                 }
                 else
@@ -337,24 +338,23 @@ public class MessageSendTask  implements Runnable
         // инициализируемся
         MessegeSend_Log .info("Setup Connection for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " rdbmsVendor=`" + rdbmsVendor + "`") ;
         if ( !rdbmsVendor.equals("oracle") ) {
-            String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
-            MessegeSend_Log.info("Try setup Connection for thead: {} `{}`", this.FirstInfoStreamId + theadNum, setSetupConnection);
+            MessegeSend_Log.info("Try setup Connection for thead: {} `{}`", this.FirstInfoStreamId + theadNum, ApplicationProperties.InternalDbPgSetupConnection);
             try {
                 String SQLCurrentTimeStringRead= "SELECT to_char(current_timestamp, 'YYYY-MM-DD-HH24:MI:SS') as currentTime";
                 PreparedStatement stmtCurrentTimeStringRead = DataAccess.Hermes_Connection.prepareStatement(SQLCurrentTimeStringRead );
                 String CurrentTime="00000-00000";
-                    PreparedStatement stmt_SetTimeZone = theadDataAccess.Hermes_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
-                    stmt_SetTimeZone.execute();
-                    stmt_SetTimeZone.close();
+                    PreparedStatement stmt_SetSetupConnection = theadDataAccess.Hermes_Connection.prepareStatement( ApplicationProperties.InternalDbPgSetupConnection);//.nativeSQL( "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;" );
+                    stmt_SetSetupConnection.execute();
+                stmt_SetSetupConnection.close();
                 ResultSet rs = stmtCurrentTimeStringRead.executeQuery();
                 while (rs.next()) {
                     CurrentTime = rs.getString("currentTime");
                 }
                 rs.close();
                 DataAccess.Hermes_Connection.commit();
-                MessegeSend_Log.info( "RDBMS CurrentTime for thead:" + (this.FirstInfoStreamId + theadNum ) + " CuberNumId:" + CuberNumId + " LocalDate ="+ CurrentTime );
+                MessegeSend_Log.info("RDBMS CurrentTime for thead:{} CuberNumId:{} LocalDate ={}", this.FirstInfoStreamId + theadNum, CuberNumId, CurrentTime);
             } catch (Exception e) {
-                MessegeSend_Log.error("RDBMS setup Connection: `{}` fault: {}" , setSetupConnection, e.toString());
+                MessegeSend_Log.error("RDBMS setup Connection: `{}` fault: {}" , ApplicationProperties.InternalDbPgSetupConnection, e.toString());
                 e.printStackTrace();
             }
         }

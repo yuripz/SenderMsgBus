@@ -40,17 +40,16 @@ public class ExtSystemDataConnection {
         // dataAccess_log.info( "Hermes(thead) getConnection: " + connectionUrl + " as " + db_userid + " done" );
 
 
-        if (!rdbmsVendor.equals("oracle")) {
-            String setSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
-            dataAccess_log.info("[{}] try setSetupConnection for ExtSystem `{}`", Queue_Id, setSetupConnection);
+        if ( connectionUrl.indexOf("postgresql") > 0 ) {
+            dataAccess_log.info("[{}] try setSetupConnection for ExtSystem `{}`", Queue_Id, ApplicationProperties.ExtSysPgSetupConnection);
             try {
-                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(setSetupConnection);//.nativeSQL( "set SESSION time zone 3" );
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement(ApplicationProperties.ExtSysPgSetupConnection);//.nativeSQL( "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;" );
                 stmt_SetTimeZone.execute();
                 stmt_SetTimeZone.close();
             } catch (SQLException e) {
 
-                dataAccess_log.error("[{}] ExtSystem `{}` fault: {}", Queue_Id, setSetupConnection, e.getMessage());
-                System.err.println( "["+ Queue_Id + "] ExtSystem `" + setSetupConnection +"` Exception" );
+                dataAccess_log.error("[{}] ExtSystem `{}` fault: {}", Queue_Id, ApplicationProperties.ExtSysPgSetupConnection, e.getMessage());
+                System.err.println( "["+ Queue_Id + "] ExtSystem `" + ApplicationProperties.ExtSysPgSetupConnection +"` Exception" );
                 e.printStackTrace();
                 try { Target_Connection.close(); //.close(); ??
                 } catch (SQLException SQLe) {

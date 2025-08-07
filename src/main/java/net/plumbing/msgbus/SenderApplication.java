@@ -142,15 +142,30 @@ public class SenderApplication implements CommandLineRunner {
 			FirstInfoStreamId = Integer.parseInt( connectionProperties.getfirstInfoStreamId() );
 		String psqlFunctionRun = connectionProperties.getpsqlFunctionRun();
 		String HrmsSchema =  connectionProperties.gethrmsDbSchema() ;
+		if ( (connectionProperties.gethrmsPgSetupConnection() != null) &&
+				(!connectionProperties.gethrmsPgSetupConnection().isEmpty()) ) {
+			ApplicationProperties.InternalDbPgSetupConnection =  connectionProperties.gethrmsPgSetupConnection();
+		}
+		else
+			ApplicationProperties.InternalDbPgSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
+
 		ApplicationProperties.ExtSysSchema = connectionProperties.getextsysDbSchema();
+		if ( (connectionProperties.getextsysPgSetupConnection() != null) &&
+			 (!connectionProperties.getextsysPgSetupConnection().isEmpty()) ) {
+			ApplicationProperties.ExtSysPgSetupConnection =  connectionProperties.getextsysPgSetupConnection();
+		}
+		else
+			ApplicationProperties.ExtSysPgSetupConnection = "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;";
+
 		ApplicationProperties.ExtSysDbLogin = connectionProperties.getextsysDbLogin();
 		ApplicationProperties.ExtSysPoint = connectionProperties.getextsysPoint();
 		ApplicationProperties.CuberNumId = connectionProperties.getcuberNumId();
 
-		// Установаливем "техническое соединение" , что бы считать конфигурацию из БД в public static HashMap'Z
+		// Установаливем "техническое соединение", что бы считать конфигурацию из БД в public static HashMap's
 		java.sql.Connection Target_Connection = DataAccess.make_DataBase_Connection( HrmsSchema, connectionProperties.gethrmsPoint(),
 				connectionProperties.gethrmsDbLogin(),
 				connectionProperties.gethrmsDbPasswd(),
+				ApplicationProperties.InternalDbPgSetupConnection,
 				AppThead_log
 		);
 
@@ -166,7 +181,8 @@ public class SenderApplication implements CommandLineRunner {
 		try {
 			ApplicationProperties.extSystemDataSource = ExtSystemDataAccess.HiDataSource (connectionProperties.getextsysPoint(),
 					connectionProperties.getextsysDbLogin(),
-					connectionProperties.getextsysDbPasswd()
+					connectionProperties.getextsysDbPasswd(),
+					ApplicationProperties.ExtSysPgSetupConnection
 			);
 			ApplicationProperties.extSystemDataSourcePoolMetadata = ExtSystemDataAccess.DataSourcePoolMetadata;
 		} catch (Exception e) {

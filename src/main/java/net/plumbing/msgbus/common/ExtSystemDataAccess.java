@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class ExtSystemDataAccess {
     public static HikariDataSourcePoolMetadata DataSourcePoolMetadata = null;
     @Bean (destroyMethod = "close")
-    public static  HikariDataSource HiDataSource(String JdbcUrl, String Username, String Password ){
+    public static  HikariDataSource HiDataSource(String JdbcUrl, String Username, String Password, String ExtSysPgSetupConnection ){
         HikariConfig hikariConfig = new HikariConfig();
         String connectionUrl ;
         if ( JdbcUrl==null) {
@@ -95,6 +95,12 @@ public class ExtSystemDataAccess {
             PreparedStatement prepareStatement = tryConn.prepareStatement( connectionTestQuery );
             prepareStatement.executeQuery();
             prepareStatement.close();
+            if ( connectionUrl.indexOf("postgresql") > 0 ) {
+                PreparedStatement stmt_SetSetupConnection = tryConn.prepareStatement(ApplicationProperties.ExtSysPgSetupConnection);//.nativeSQL( "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;" );
+                stmt_SetSetupConnection.execute();
+                stmt_SetSetupConnection.close();
+            }
+
             SenderApplication.AppThead_log.info("DataSourcePool ( at prepareStatement ): getMax: {}, getIdle: {}, getActive: {}, getMax: {}, getMin: {}",
                     DataSourcePoolMetadata.getMax(), DataSourcePoolMetadata.getIdle(), DataSourcePoolMetadata.getActive(), DataSourcePoolMetadata.getMax(), DataSourcePoolMetadata.getMin());
             tryConn.close();

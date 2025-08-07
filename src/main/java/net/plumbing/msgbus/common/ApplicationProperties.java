@@ -10,6 +10,8 @@ public  class ApplicationProperties {
     public static String ExtSysDbLogin;
     public static String ExtSysDbPasswd;
     public static String CuberNumId;
+    public static String ExtSysPgSetupConnection;
+    public static String InternalDbPgSetupConnection;
 
     public void setExtSysSchema(String extSysSchema) {
         this.ExtSysSchema = extSysSchema;
