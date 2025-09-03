@@ -4,6 +4,7 @@ package net.plumbing.msgbus.threads;
 import net.plumbing.msgbus.common.json.XML;
 import net.sf.saxon.s9api.*;
 
+import net.sf.saxon.serialize.SerializationProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -21,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Properties;
 
 import net.plumbing.msgbus.common.sStackTrace;
 import net.plumbing.msgbus.model.*;
@@ -1062,7 +1064,7 @@ public class PerformQueueMessages {
                                     @NotNull Xslt30Transformer xslt30Transformer,
                                     @NotNull String checkXSLTtext, StringBuilder MsgResult, Logger MessageSend_Log, boolean IsDebugged )
             throws SaxonApiException // TransformerException
-    { StreamSource xmlStreamSource ,srcXSLT;
+    { StreamSource xmlStreamSource; // ,srcXSLT;
         //Transformer transformer;
         // StreamResult result;
 
@@ -1080,6 +1082,12 @@ public class PerformQueueMessages {
                 MessageSend_Log.info("[{}] ConvXMLuseXSLT30: length XSLTdata 4 transform is null OR  < {}", QueueId, XMLchars.EmptyXSLT_Result.length());
             return XMLchars.EmptyXSLT_Result ;
         }
+        String serializer_Property_METHOD;
+        if(checkXSLTtext.contains("method=\"text\"")) {
+            serializer_Property_METHOD =  "text";
+        }
+        else serializer_Property_METHOD =  "xml";
+        ;
 
         ByteArrayInputStream xmlInputStream=null;
         //BufferedInputStream  _xmlInputStream;
@@ -1103,15 +1111,26 @@ public class PerformQueueMessages {
         try
         {
             if (IsDebugged)
-                MessageSend_Log.warn("[{}] ConvXMLuseXSLT30: using XsltLanguageVersion {}", QueueId, xslt30Compiler.getXsltLanguageVersion());
-            Serializer outSerializer = xslt30Processor.newSerializer();
-            outSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
-            outSerializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
-            outSerializer.setOutputProperty(Serializer.Property.INDENT, "no");
-            outSerializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
-            outSerializer.setOutputStream(outputByteArrayStream);
-            xslt30Transformer.transform( xmlStreamSource, outSerializer);
+                MessageSend_Log.warn("[{}] ConvXMLuseXSLT30: using XsltLanguageVersion {}, Serializer.Property.METHOD {}", QueueId, xslt30Compiler.getXsltLanguageVersion(), serializer_Property_METHOD);
+            Serializer outSerializer = xslt30Processor.newSerializer( outputByteArrayStream );
 
+            outSerializer.setOutputProperty(Serializer.Property.METHOD, serializer_Property_METHOD ); // "xml");
+            outSerializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
+            if ( serializer_Property_METHOD.equals("xml")) {
+                outSerializer.setOutputProperty(Serializer.Property.INDENT, "no");
+                outSerializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
+            }
+            SerializationProperties serializationProperties ;
+            serializationProperties = outSerializer.getSerializationProperties();
+            Properties properties= serializationProperties.getProperties();
+
+            int  serializationPropertiesSise;
+            if (IsDebugged)
+                MessageSend_Log.warn("[{}] ConvXMLuseXSLT30: Serializer.Property {}, Serializer.Property.all {}", QueueId, properties.size(), properties.toString());
+
+            //for ( serializationPropertiesSise=0; serializationPropertiesSise < properties.size(); serializationPropertiesSise++ ) {     }
+            // outSerializer.setOutputStream(outputByteArrayStream);
+            xslt30Transformer.transform( xmlStreamSource, outSerializer);
 
             stringResult_of_XSLT = outputByteArrayStream.toString();
             if (!stringResult_of_XSLT.isEmpty()) {
