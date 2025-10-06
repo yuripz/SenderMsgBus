@@ -1023,6 +1023,8 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
         try {
             Document XMLdocument;
             try {
+                // если в ответ пришла пустая строка, то заменяем её на пустой JSON "[]"
+                if (RestResponse.isEmpty()) RestResponse="[]";
                 final String RestResponse_with_HttpResponseStatusCode = "{ \"HttpResponseStatusCode\":" + String.valueOf(restResponseStatus) + ",\"payload\":"
                         + RestResponse + "}";
                 JSONObject RestResponseJSON = new JSONObject(RestResponse_with_HttpResponseStatusCode);
@@ -1033,7 +1035,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
                 messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
-                MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE: Response=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString());
+                MessageSend_Log.info("[{}] HttpDeleteMessage.DELETE: RestResponse(`{}`) - xmlResponse=({})", messageQueueVO.getQueue_Id(), RestResponse_with_HttpResponseStatusCode, messageDetails.XML_MsgResponse.toString());
 
                 ByteArrayInputStream parsedRestResponseStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
                 SAXBuilder documentBuilder = new SAXBuilder();
