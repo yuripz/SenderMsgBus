@@ -106,6 +106,9 @@ public class XMLchars {
     public static final String EmptyXSLT_Result ="<nan/>"; //"<?xml version=\"1.0\" encoding=\"utf-8\"?><nan></nan>"; -- outSerializer.setOutputProperty(Serializer.Property.OMIT_XML_DECLARATION, "yes");
       public static final String nanXSLT_Result ="<nan/>";
 
+    public static final String URL_File_Path_Begin="URLBegin$$`";
+    public static final String URL_File_Path_End="`$$EndURL";
+
     //   for Oracle it must be 3992
     /*
             if ( connectionUrl.indexOf("oracle") > 0 ) {

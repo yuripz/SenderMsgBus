@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -367,6 +369,54 @@ public class MessageHttpSend {
         return 0;
     } // sendSoapMessage
 
+    public static byte[] replaceUrlPlaceholders( String inputStr, boolean[]  isReplaceContent) {
+
+        StringBuilder output = new StringBuilder();
+
+        int currentIndex = 0; isReplaceContent[0] = false;
+
+        while (true) {
+            int startIdx = inputStr.indexOf( XMLchars.URL_File_Path_Begin, currentIndex);
+            if (startIdx == -1) {
+                // Нет больше маркеров, добавляем оставшуюся часть
+                output.append(inputStr.substring(currentIndex));
+                break;
+            }
+            // Добавляем часть перед маркером
+            output.append(inputStr, currentIndex, startIdx);
+
+            int pathStartIdx = startIdx + XMLchars.URL_File_Path_Begin.length();
+
+            int endIdx = inputStr.indexOf(XMLchars.URL_File_Path_End, pathStartIdx);
+            if (endIdx == -1) {
+                // Нет закрывающего маркера, добавляем всё и завершаем
+                output.append(inputStr.substring(startIdx));
+                break;
+            }
+
+            // Извлекаем путь
+            String filePath = inputStr.substring(pathStartIdx, endIdx);
+            String fileContentBase64;
+            try {
+                byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+                // Конвертируем содержимое файла в base64 строку
+                fileContentBase64 = Base64.getEncoder().encodeToString(fileBytes);
+            } catch (IOException e) {
+                // В случае ошибки, вставляем сообщение или оставляем маркер
+                fileContentBase64 = "[Ошибка при чтении файла: " + filePath + "]";
+            }
+
+            // Вставляем содержимое файла
+            output.append(fileContentBase64);
+            isReplaceContent[0] = true;
+
+            // Продвигаемся дальше
+            currentIndex = endIdx + XMLchars.URL_File_Path_End.length();
+        }
+
+        return output.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
     public static int sendPostMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         //
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
@@ -431,12 +481,10 @@ public class MessageHttpSend {
         {  if (messageDetails.XML_MsgSEND.charAt(0) =='{')
             httpHeaders.put("Content-Type","application/json;charset=UTF-8");
             else {
-                // grant_type=password&username=t-hospital-dzm&password=ORzmj1%5B3IJ%25Y9%231&client_id=t-hospital-dzm&client_secret=GyuwLz0UyZvnwvDmtfGLH13UEkm2RhMB
             httpHeaders.put("Content-Type","application/x-www-form-urlencoded");
             //String urlEncoded = URLEncoder.encode(messageDetails.XML_MsgSEND, StandardCharsets.UTF_8);
             // messageDetails.XML_MsgSEND = urlEncoded;
         }
-
             if ( IsDebugged )
                 MessageSend_Log.info("[{}] sendPostMessage.POST JSON `{}`", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND);
         }
@@ -463,6 +511,7 @@ public class MessageHttpSend {
         // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post `" + messageDetails.Soap_HeaderRequest + "` httpHeaders.size=" + httpHeaders.size() );
         //+                 "; headerParams= " + headerParams.toString() );
     try {
+        boolean[] isReplaceContent4UrlPlaceholder = { false };
 
         if ((messageDetails.MessageTemplate4Perform.getPropEncoding_Out() != null) &&
                 (!messageDetails.MessageTemplate4Perform.getPropEncoding_Out().equalsIgnoreCase("UTF-8"))) {
@@ -477,8 +526,12 @@ public class MessageHttpSend {
                         "sendPostMessage.POST", true, e, MessageSend_Log);
                 return -1;
             }
-        } else
-            RequestBody = messageDetails.XML_MsgSEND.getBytes(StandardCharsets.UTF_8);
+        } else {
+            if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 )
+                RequestBody = replaceUrlPlaceholders( messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder );
+            else
+                RequestBody = messageDetails.XML_MsgSEND.getBytes(StandardCharsets.UTF_8);
+        }
 
         try {
             if ( IsDebugged )
@@ -487,8 +540,14 @@ public class MessageHttpSend {
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
 
-            if (IsDebugged)
-                ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.toString(), MessageSend_Log);
+            if (IsDebugged) {
+                if ( isReplaceContent4UrlPlaceholder[0])
+                    ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND, MessageSend_Log);
+                else {
+                    String QUEUElogString = new  String(RequestBody, StandardCharsets.UTF_8);
+                    ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), QUEUElogString, MessageSend_Log);
+                }
+            }
 
             HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
             // добавляем все заголовки как есть через HttpRequest.Builder
