@@ -80,14 +80,22 @@ public class MessageUtils {
                 );
             }
             rs.close();
-            theadDataAccess.Hermes_Connection.commit();
+            rs = null;
+            // commit делаем после insert into stmt_New_Queue_Insert.executeUpdate();
+            // theadDataAccess.Hermes_Connection.commit();
         }
         catch (SQLException e)
         {
             MessegeReceive_Log.error(e.getMessage());
             e.printStackTrace();
             MessegeReceive_Log.error( "что то пошло совсем не так...:" + theadDataAccess.selectMessageStatement);
-            //if ( rs !=null ) rs.close();
+
+            try {
+                if ( rs !=null ) rs.close();
+                theadDataAccess.Hermes_Connection.rollback();
+            } catch (SQLException exp) {
+                MessegeReceive_Log.error("[{} ]Hermes_Connection.rollback()fault: {}", theadDataAccess.selectMessageStatement, exp.getMessage());
+            }
             return null;
         }
 
