@@ -541,7 +541,7 @@ public class MessageHttpSend {
             messageDetails.XML_MsgResponse.setLength(0);
 
             if (IsDebugged) {
-                if ( isReplaceContent4UrlPlaceholder[0])
+                if ( isReplaceContent4UrlPlaceholder[0] == false)
                     ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND, MessageSend_Log);
                 else {
                     String QUEUElogString = new  String(RequestBody, StandardCharsets.UTF_8);
