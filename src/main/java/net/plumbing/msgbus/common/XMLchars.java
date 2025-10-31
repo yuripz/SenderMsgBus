@@ -36,7 +36,8 @@ public class XMLchars {
     public static final String Fault_noNS_End="</faultstring></Fault>";
 
     public static final String Success_ExtResponse_Begin="<Envelope><Body><MsgData><HttpResponseStatusCode>";
-    public static final String Success_ExtResponse_PayloadString="</HttpResponseStatusCode><payload><![CDATA[";
+    public static final String Success_ExtResponse_HeadersString="</HttpResponseStatusCode><Headers>" ;
+     public static final String Success_ExtResponse_PayloadString="</Headers><payload><![CDATA[";
     public static final String Success_ExtResponse_End="]]></payload></MsgData></Body></Envelope>";
 
     final public static String TagContext     = "Context";

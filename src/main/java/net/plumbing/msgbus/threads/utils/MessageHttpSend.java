@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.http.HttpHeaders;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
@@ -50,10 +51,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 //import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 //import java.util.concurrent.TimeUnit;
 // import com.google.common.escape.Escaper;
 import com.google.common.net.UrlEscapers;
@@ -563,12 +561,32 @@ public class MessageHttpSend {
                     .uri(URI.create(EndPointUrl))
                     .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
                     .build();
+            HttpResponse<byte[]> Response= null;
+        try {
+               Response= ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
 
-            HttpResponse<byte[]> Response = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
+                } catch (IOException  sendIoExc) {
+            MessageSend_Log.error("[{}] sendPostMessage.ApiRestHttpClient (.isTerminated=`{}`).send fault={}", messageQueueVO.getQueue_Id(),
+                    ApiRestHttpClient.isTerminated(),
+                    sStackTrace.strInterruptedException (sendIoExc));
+
+            // Missing www-authenticate header when receiving 401 responses.
+            /*
+            As per section 4.1 of RFC-7235, when an HTTP server returns a 401 response, it must also return a WWW-Authenticate header :
+            A server generating a 401 (Unauthorized) response MUST send a
+            WWW-Authenticate header field containing at least one challenge.
+            However, when the refinitiv server returns 401, it returns the following header :
+            Authorization: WWW-Authenticate: Signature realm="World-Check One API",algorithm="hmac-sha256",headers="(request-target) host date content-type content-length"
+             */
+            System.err.println("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString.IOException: Encoding `" + sendIoExc.getMessage() + "`");
+            sendIoExc.printStackTrace();
+                }
+
             restResponseStatus = Response.statusCode();
 
             //Test = Response.getBody();
-            //Headers headers = Response.getHeaders();
+            // HttpHeaders responseHttpHeaders = null;
+            HttpHeaders responseHttpHeaders = Response.headers();
             //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
 
             MessageSend_Log.warn("[{}] sendPostMessage.Response httpCode={} getBody().length={}", messageQueueVO.getQueue_Id(), restResponseStatus, Response.body().length);
@@ -627,7 +645,7 @@ public class MessageHttpSend {
             messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
 
             if (RestResponse.isEmpty()) {  // добавляем <HttpStatusCode>httpStatus</HttpStatusCode>
-                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , null );
+                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , null, responseHttpHeaders );
                  } else // получили НЕпустой ответ, пробуем его разобрать
             {
                 if (RestResponse.startsWith("<?xml") || RestResponse.startsWith("<?XML")) {
@@ -644,21 +662,42 @@ public class MessageHttpSend {
                     } else { // возможно, Json
                         if ((RestResponse.startsWith("{") ) || (RestResponse.startsWith("[") ) ) { // Разбираем Json
                             try {
-                                final String RestResponse_with_HttpResponseStatusCode = "{ \"HttpResponseStatusCode\":" + String.valueOf(restResponseStatus) + ",\"payload\":"
-                                         + RestResponse + "}";
-                                JSONObject RestResponseJSON = new JSONObject(RestResponse_with_HttpResponseStatusCode);
-                                messageDetails.XML_MsgResponse.append(XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse));
+                                //final String
+                                StringBuilder
+                                        RestResponse_with_HttpResponseStatusCode = new StringBuilder("{ \"HttpResponseStatusCode\":" + String.valueOf(restResponseStatus) + ",");
+                                        RestResponse_with_HttpResponseStatusCode.append("\"HeadersHTTP\": {");
+                                do_Append_responseHttpHeaders_2_jSon( RestResponse_with_HttpResponseStatusCode, responseHttpHeaders );
+                                        RestResponse_with_HttpResponseStatusCode.append(" },");
+                                        RestResponse_with_HttpResponseStatusCode.append("\"payload\":")
+                                        .append(RestResponse)
+                                        .append("}");
+                                if (IsDebugged)
+                                    MessageSend_Log.info("[{}] sendPostMessage.POST RestResponseJSON=({})", messageQueueVO.getQueue_Id(), RestResponse_with_HttpResponseStatusCode.toString());
+
+                                JSONObject RestResponseJSON = new JSONObject( RestResponse_with_HttpResponseStatusCode.toString() );
+                                String XML_MsgResponse_Body = XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse);
+                                if (IsDebugged)
+                                    MessageSend_Log.info("[{}] sendPostMessage.POST XML_MsgResponse_Body=({})", messageQueueVO.getQueue_Id(), XML_MsgResponse_Body);
+
+                                messageDetails.XML_MsgResponse.append( XML_MsgResponse_Body );
                                 messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
                                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
+                                if (IsDebugged)
+                                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse_with_HttpResponseStatusCode.toString(), MessageSend_Log);
                             } catch (Exception JSONe) { // получили непонятно что
+                                    MessageSend_Log.error("[{}] sendPostMessage.POST Exception JSONe получили непонятно что=({})", messageQueueVO.getQueue_Id(),
+                                            JSONe.getMessage());
+
                                 // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
-                                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
+                                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, responseHttpHeaders );
                                 }
 
                         } else {
+                                MessageSend_Log.error("[{}] sendPostMessage.POST UNKNOWN ответ и не `{` и не `<` - опять же получили непонятно что=({})", messageQueueVO.getQueue_Id(),
+                                        RestResponse);
                             // ответ и не `{` и не `<` - опять же получили непонятно что
                             // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
-                            append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
+                            append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, responseHttpHeaders );
                         }
                     }
                 }
@@ -721,14 +760,14 @@ public class MessageHttpSend {
             try {
                 XMLdocument = documentBuilder.build(parsedRestResponseStream);
                 if (IsDebugged)
-                    MessageSend_Log.info("[{}] sendPostMessage documentBuilder=[{}], XML_MsgResponse=({})",
+                    MessageSend_Log.info("[{}] sendPostMessage documentBuilder info=`{}`, XML_MsgResponse=({})",
                                         messageQueueVO.getQueue_Id(), XMLdocument.toString(), messageDetails.XML_MsgResponse);
 
             } catch (JDOMException RestResponseE) {
                 XMLdocument = null;
                 MessageSend_Log.error("[{}]sendPostMessage.documentBuilder fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(RestResponseE));
                 // формируем искуственный XML_MsgResponse из Fault ,  меняем XML_MsgResponse
-                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse );
+                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, null );
             }
 
             MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
@@ -825,7 +864,8 @@ public class MessageHttpSend {
             // количество порыток исчерпано, формируем результат для выхода из повторов
             MessageSend_Log.error("[{}] {}(`{}`) fault:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, e);
             append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, 506 ,
-                    colledHttpMethodName + " (`").append(EndPointUrl).append("`) fault:").append(e.getMessage() );
+                    colledHttpMethodName + " (`", null)
+                                              .append(EndPointUrl).append("`) fault:").append(e.getMessage() );
 
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                     colledHttpMethodName + " (" + EndPointUrl + "), do re-Send: ", false, e, MessageSend_Log);
@@ -840,12 +880,63 @@ public class MessageHttpSend {
         return -1;
     }
 
-    private static StringBuilder append_Http_ResponseStatus_and_PlaneResponse ( @NotNull StringBuilder XML_MsgResponse, @NotNull Integer restResponseStatus, String restResponse )
+    private static void do_Append_responseHttpHeaders_2_jSon(@NotNull StringBuilder JSON_MsgResponse, HttpHeaders responseHttpHeaders ) {
+        // JSON_MsgResponse.append("{");
+        if (responseHttpHeaders != null) {
+            Map<String, List<String>> allHeaders = responseHttpHeaders.map();
+            for (Map.Entry<String, List<String>> entry : allHeaders.entrySet() )
+            { String httpHeader =  entry.getKey();
+                JSON_MsgResponse.append("\"").append(httpHeader).append("\":");
+                if (httpHeader.equals("set-cookie"))
+                {
+                    JSON_MsgResponse.append("{");
+                }
+                else {
+                    JSON_MsgResponse.append("\"");
+                }
+                List<String> values = entry.getValue();
+                for (String value : values)
+                {
+                    if (httpHeader.equals("set-cookie"))
+                    {
+                        String queryParams[];
+                        queryParams = value.split(";");
+                        // Set-Cookie: TOKEN=NjI3Y2FhZDQtM2U0Zi00YzNmLTk2NDYtZjNkYmQ5YTdhZDFl; Max-Age=1209600; Expires=Thu, 13 Nov 2025 23:35:01 GMT; Path=/; HttpOnly; SameSite=Lax
+                        // TOKEN=OWNmYWZmZDYtMjBmZi00YzllLTg5MDYtYmRlMDBhY2Q4MzAy
+                        // Max-Age=1209600
+                        // Expires=Thu, 13 Nov 2025 22:50:15 GMT; Path=/; HttpOnly; SameSite=Lax
+                        for (String queryParam : queryParams) {
+                            String ParamElements[] = queryParam.split("=");
+                            if ((ParamElements.length > 1) && (ParamElements[1] != null)) {
+                                JSON_MsgResponse.append("\"")
+                                        .append(ParamElements[0].trim())
+                                        .append("\":\"")
+                                        .append(ParamElements[1]).append("\",");
+                            } else
+                                JSON_MsgResponse.append("\"")
+                                        .append(ParamElements[0].trim())
+                                        .append("\":\"\",");
+                        }
+                    }
+                    else
+                    JSON_MsgResponse.append(value.trim()).append("");
+                }
+                if (httpHeader.equals("set-cookie"))
+                {
+                    JSON_MsgResponse.append(" },");
+                }
+                else JSON_MsgResponse.append("\",");
+            }
+        }
+        //JSON_MsgResponse.append("},");
+    }
+
+    private static StringBuilder append_Http_ResponseStatus_and_PlaneResponse ( @NotNull StringBuilder XML_MsgResponse, @NotNull Integer restResponseStatus,
+                                                                                String restResponse, HttpHeaders responseHttpHeaders )
     {
         XML_MsgResponse.setLength(0);
         XML_MsgResponse.trimToSize();
         if ( (restResponseStatus < 200) || (restResponseStatus > 299)  ) {
-
             XML_MsgResponse.append(XMLchars.Fault_ExtResponse_Begin)
                             .append(restResponseStatus)
                             .append(XMLchars.FaultExtResponse_FaultString);
@@ -858,11 +949,24 @@ public class MessageHttpSend {
 
             XML_MsgResponse.append(XMLchars.Success_ExtResponse_Begin)
                         .append(restResponseStatus)
-                        .append(XMLchars.Success_ExtResponse_PayloadString);
+                        .append(XMLchars.Success_ExtResponse_HeadersString);
+            if (responseHttpHeaders != null) {
+                Map<String, List<String>> allHeaders = responseHttpHeaders.map();
+                for (Map.Entry<String, List<String>> entry : allHeaders.entrySet() )
+                { String httpHeader =  entry.getKey();
+                    XML_MsgResponse.append(XMLchars.OpenTag).append(httpHeader).append(XMLchars.CloseTag);
+                    List<String> values = entry.getValue();
+                    for (String value : values)
+                    { XML_MsgResponse.append(value).append("; "); }
+                    XML_MsgResponse.append(XMLchars.OpenTag).append(XMLchars.EndTag).append(httpHeader).append(XMLchars.CloseTag);
+                }
+            }
+            XML_MsgResponse.append(XMLchars.Success_ExtResponse_PayloadString);
             if (restResponse!= null)
                 XML_MsgResponse.append(restResponse);
             //else XML_MsgResponse.append("");
             XML_MsgResponse.append(XMLchars.Success_ExtResponse_End);
+
         }
 
         return XML_MsgResponse;

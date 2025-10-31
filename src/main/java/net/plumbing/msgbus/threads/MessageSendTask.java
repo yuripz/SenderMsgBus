@@ -218,7 +218,7 @@ public class MessageSendTask  implements Runnable
                             select * from ( select q.ROWID,
                                     q.queue_Id,
                                     q.queue_Direction,
-                                    COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute ) as Queue_Date,
+                                    q.queue_date,
                                     q.msg_Status,
                                     q.Msg_Date,
                                     q.Operation_id,
@@ -233,7 +233,7 @@ public class MessageSendTask  implements Runnable
                                     COALESCE(q.retry_count, 0) as Retry_Count,
                                     q.Prev_Queue_Direction,
                                     q.Prev_Msg_Date,
-                                    COALESCE(q.queue_create_date, COALESCE(q.queue_date, Current_TimeStamp - Interval '1' Minute )) as Queue_Create_Date,
+                                    COALESCE(q.queue_create_date, q.queue_date) as Queue_Create_Date,
                                     q.Perform_Object_Id, Current_TimeStamp as Curr_Server_Time
                                     from\040
                             """

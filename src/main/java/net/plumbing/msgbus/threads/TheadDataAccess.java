@@ -166,6 +166,12 @@ public class TheadDataAccess {
                 //Target_Connection.setClientInfo("v$session.program","SenderMsgBus");
                 // Target_Connection.setClientInfo("v$session.process",String.valueOf(theadNum) );
                 //Target_Connection.setClientInfo("OCSID.MODULE", "SenderThread");
+                //;
+                dataAccess_log.info("(thead) main DB Connection: Try setup Connection as `{}`", "ALTER SESSION SET TIME_ZONE = 'Europe/Moscow'"); // "set SESSION time zone 3; set enable_bitmapscan to off; set max_parallel_workers_per_gather = 0;"
+                PreparedStatement stmt_SetTimeZone = Target_Connection.prepareStatement("ALTER SESSION SET TIME_ZONE = 'Europe/Moscow'");//.nativeSQL( "set SESSION time zone 3" );
+                stmt_SetTimeZone.execute();
+                stmt_SetTimeZone.close();
+
                 Target_Connection.setClientInfo("OCSID.ACTION", "Pull messages");
                 Target_Connection.setClientInfo("OCSID.CLIENTID", "Sender");
                 Target_Connection.setClientInfo("OCSID.MODULE", ("Thead_" + String.valueOf(theadNum)) );
