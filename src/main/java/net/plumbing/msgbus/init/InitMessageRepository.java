@@ -118,7 +118,7 @@ public class InitMessageRepository {
                     "t.operation_id, t.msg_type, t.msg_type_own, t.msg_typedesc, t.msg_direction, " +
                     "t.msg_handler, t.url_soap_send, t.url_soap_ack, t.max_retry_count, t.max_retry_time, t.Last_Update_Dt " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
-                        "where (1=1) and t.msg_direction like '%OUT%' " +
+                        "where (1=1) and t.msg_direction like '%OUT%' " + // " and t.interface_id=79 "
                         "and t.LAST_UPDATE_DT > ( sysDate - ( 120 + " + intervalReInit + " )/(24*3600)  )" +
                         "order by t.interface_id, t.operation_id";
         else //  PostGree
@@ -205,7 +205,7 @@ public class InitMessageRepository {
                     "t.template_name, t.template_dir, t.source_id, t.destin_id, t.conf_text, t.src_subcod, " +
                     "t.dst_subcod, t.lastmaker, t.lastdate " +
                     "from " + DataAccess.HrmsSchema + ".MESSAGE_TemplateS t " +
-                    "where (1=1) " +
+                    "where (1=1)  " + //  and t.interface_id=79
                     "and t.LastDate > ( sysDate - (120 + " + intervalReInit + " )/(24*3600))" +
                     "and t.template_dir like '%OUT%' " +
                     "order by t.interface_id, t.operation_id, t.destin_id, t.dst_subcod";
@@ -420,7 +420,7 @@ public class InitMessageRepository {
                         "t.max_retry_count, " +
                         "t.max_retry_time, t.Last_Update_Dt " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
-                        "where (1=1) and t.msg_direction like '%OUT%' " +
+                        "where (1=1) and t.msg_direction like '%OUT%' " + // " and t.interface_id=79 "
                         "and t.operation_id !=0 order by t.interface_id, t.operation_id");
 
             } catch (Exception e) {
@@ -501,7 +501,7 @@ public class InitMessageRepository {
                                 "t.lastmaker, " +
                                 "t.lastdate " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_TemplateS t " +
-                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " +
+                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + // " and t.interface_id=79 "
                         "order by t.interface_id, t.operation_id, t.destin_id, t.dst_subcod");
 
             } catch (Exception e) {
