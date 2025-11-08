@@ -427,11 +427,14 @@ public class PerformQueueMessages {
                                 Function_Result = MessageHttpSend.HttpDeleteMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
                             }
                             //
-                            if (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) {
+                            if ( (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) ||
+                                 (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM"))
+                               )
+                            {
                                 String AckXSLT_4_make_JSON = Message.MessageTemplate4Perform.getAckXSLT() ; // получили XSLT-для
                                 if ( AckXSLT_4_make_JSON != null ) {
                                     if (Message.MessageTemplate4Perform.getIsDebugged())
-                                        MessageSend_Log.info("[{}] PropWebMetod is `post`, AckXSLT_4_make_JSON ({})", Queue_Id, AckXSLT_4_make_JSON);
+                                        MessageSend_Log.info("[{}] PropWebMetod is `{}`, AckXSLT_4_make_JSON ({})", Queue_Id, Message.MessageTemplate4Perform.getPropWebMetod(), AckXSLT_4_make_JSON);
                                     try {
                                         Message.XML_MsgSEND = // make_JSON -> сохраняем для отправки результат преобразования
                                                 ConvXMLuseXSLT30(messageQueueVO.getQueue_Id(),
@@ -445,10 +448,10 @@ public class PerformQueueMessages {
                                                 );
 
                                         if (Message.MessageTemplate4Perform.getIsDebugged())
-                                            MessageSend_Log.info("[{}] PropWebMetod is `post`as JSON ({})", Queue_Id, Message.XML_MsgResponse);
+                                            MessageSend_Log.info("[{}] PropWebMetod is `{}`as JSON ({})", Queue_Id, Message.MessageTemplate4Perform.getPropWebMetod(), Message.XML_MsgResponse);
 
                                     } catch (SaxonApiException exception) {
-                                        MessageSend_Log.error("[{}] SEND  XSLT-преобразователь для JSON :{{}}", messageQueueVO.getQueue_Id(), AckXSLT_4_make_JSON);
+                                        MessageSend_Log.error("[{}] SEND XSLT-преобразователь для JSON :{{}}", messageQueueVO.getQueue_Id(), AckXSLT_4_make_JSON);
 
                                         theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                                                 "XSLT-преобразователь для JSON fault: " + ConvXMLuseXSLTerr + " for " + AckXSLT_4_make_JSON, 1244,
@@ -463,15 +466,23 @@ public class PerformQueueMessages {
                                         return -402L;
                                     }
                                 }
+                                if  (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST"))
+                                    Function_Result = MessageHttpSend.sendPostMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
 
-                                Function_Result = MessageHttpSend.sendPostMessage(messageQueueVO, Message, theadDataAccess, MessageSend_Log);
+                                if  (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM")) {
+                                    // для передачи формы используем поле messageTypes.Msg_Type_Own
+                                    String formDataFieldName = MessageType.AllMessageType.get(messageTypeVO_Key).getMsg_Type_own();
+                                    Function_Result = MessageHttpSend.sendWebFormMessage(formDataFieldName, messageQueueVO, Message, theadDataAccess, MessageSend_Log);
+                                }
+
                             }
-                            if ((!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("GET")) &&
-                                    (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) &&
-                                    (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("DELETE"))
-                                ) {
+                            if ( (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("GET")) &&
+                                 (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) &&
+                                 (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("DELETE")) &&
+                                 (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM"))
+                               ) {
                                 MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
-                                        "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указанное в шаблоне, не 'get', не 'post' и не 'delete'", true,
+                                        "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указанное в шаблоне, не 'get', не 'post', не 'delete' и не `web-form`", true,
                                         null, MessageSend_Log);
                                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessageSend_Log);
                                 //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessageSend_Log);

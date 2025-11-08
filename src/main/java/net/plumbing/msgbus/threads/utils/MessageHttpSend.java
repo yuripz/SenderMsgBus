@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpHeaders;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -414,6 +415,352 @@ public class MessageHttpSend {
 
         return output.toString().getBytes(StandardCharsets.UTF_8);
     }
+
+    public static int sendWebFormMessage(@NotNull String formDataFieldName,
+            @NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
+        //
+        MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
+
+        String EndPointUrl;
+        String ROWID_QUEUElog=null;
+        if ( StringUtils.substring(messageTemplate4Perform.getEndPointUrl(),0,"http".length()).equalsIgnoreCase("http") )
+            EndPointUrl = messageTemplate4Perform.getEndPointUrl();
+        else
+            EndPointUrl = "http://" + messageTemplate4Perform.getEndPointUrl();
+
+        // int ConnectTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Conn() * 1000;
+        // int ReadTimeoutInMillis = messageTemplate4Perform.getPropTimeout_Read() * 1000;
+        String RestResponse;
+        int restResponseStatus;
+        String AckXSLT_4_make_JSON = messageTemplate4Perform.getAckXSLT() ;
+        boolean IsDebugged = messageDetails.MessageTemplate4Perform.getIsDebugged();
+
+        HttpClient ApiRestHttpClient;
+
+        String PropUser = messageDetails.MessageTemplate4Perform.getPropUser();
+        String PropPswd = messageDetails.MessageTemplate4Perform.getPropPswd();
+        if ( (messageDetails.MessageTemplate4Perform.restPasswordAuthenticator != null) &&
+                (!messageDetails.MessageTemplate4Perform.getIsPreemptive())  // adding the header to the HttpRequest and removing Authenticator
+        )
+        {
+            if ( IsDebugged ) {
+                MessageSend_Log.info("[{}] sendWebFormMessage.POST PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
+            }
+            ApiRestHttpClient = HttpClient.newBuilder()
+                    .authenticator( messageDetails.MessageTemplate4Perform.restPasswordAuthenticator )
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .connectTimeout(Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Conn()))
+                    .build();
+        }
+        else {
+            if ( IsDebugged )
+                MessageSend_Log.info("[{}] sendWebFormMessage.POST PropUser== null (`{}`)", messageQueueVO.getQueue_Id(), PropUser);
+            ApiRestHttpClient = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .connectTimeout(Duration.ofSeconds(messageTemplate4Perform.getPropTimeout_Conn()))
+                    .build();
+        }
+        String RequestBody;
+
+        Map<String, String> httpHeaders= new HashMap<>();
+        String headerParams[];
+        httpHeaders.put("User-Agent", "msgBus/Java-21");
+        httpHeaders.put("Accept", "*/*");
+        httpHeaders.put("Connection", "close");
+        if ( (messageDetails.MessageTemplate4Perform.restPasswordAuthenticator != null) &&
+                (messageDetails.MessageTemplate4Perform.getIsPreemptive())  // adding the header to the HttpRequest
+        ) {
+            String encodedAuth = Base64.getEncoder()
+                    .encodeToString((PropUser + ":" + PropPswd ).getBytes(StandardCharsets.UTF_8));
+            httpHeaders.put("Authorization", "Basic " + encodedAuth );
+        }
+
+        httpHeaders.put("Content-Type","application/x-www-form-urlencoded");
+          if (messageDetails.XML_MsgSEND.charAt(0) =='{') {
+            if (IsDebugged)
+                MessageSend_Log.info("[{}] sendPostMessage.POST JSON `{}`", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND);
+        }
+        else {
+                if ( IsDebugged )
+                    MessageSend_Log.error("[{}] sendWebFormMessage.POST NOT JSON `{}`", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND);
+                // TO_DO: здесь надо бы формировать ошибку с руганью
+        }
+
+        if (( messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty) == -1 )// NOT Header_is_empty
+                && ( ! messageDetails.Soap_HeaderRequest.isEmpty() ))
+        {
+            headerParams = messageDetails.Soap_HeaderRequest.toString().split(":");
+            if ( IsDebugged ) {
+                MessageSend_Log.info("[{}] sendWebFormMessage.POST headerParams.length={}", messageQueueVO.getQueue_Id(), headerParams.length);
+                for (int i = 0; i < headerParams.length; i++)
+                    MessageSend_Log.info("[{}] sendWebFormMessage.POST headerParams[{}] = {}", messageQueueVO.getQueue_Id(), i, headerParams[i]);
+            }
+            if (headerParams.length > 1  )
+                for (int i = 0; i < headerParams.length; i++)
+                    httpHeaders.put(headerParams[0], headerParams[1]);
+        }
+        else { if ( IsDebugged )
+            MessageSend_Log.info("[{}] sendWebFormMessage.POST indexOf(XMLchars.TagMsgHeaderEmpty)={}", messageQueueVO.getQueue_Id(),
+                    messageDetails.Soap_HeaderRequest.indexOf(XMLchars.TagMsgHeaderEmpty));
+        }
+        // MessageSend_Log.info("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.Unirest.post `" + messageDetails.Soap_HeaderRequest + "` httpHeaders.size=" + httpHeaders.size() );
+        //+                 "; headerParams= " + headerParams.toString() );
+        try {
+            boolean[] isReplaceContent4UrlPlaceholder = { false };
+
+            // Используется только UTF-8 кодировка, прочие игнорируем
+                if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 ) {
+                    RequestBody = formDataFieldName + "=" + URLEncoder.encode(
+                             IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder),"UTF-8" ),
+                             StandardCharsets.UTF_8);
+                }
+                else {
+                    RequestBody = ( formDataFieldName + "=" + URLEncoder.encode( messageDetails.XML_MsgSEND, "UTF-8") );
+                }
+
+            try {
+                if ( IsDebugged )
+                    MessageSend_Log.info("[{}]sendWebFormMessage.POST({}).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {} PropUser:{}",
+                            messageQueueVO.getQueue_Id(), EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(), messageTemplate4Perform.getPropTimeout_Read(), PropUser);
+                messageDetails.Confirmation.clear();
+                messageDetails.XML_MsgResponse.setLength(0);
+
+                if (IsDebugged) {
+                    if ( isReplaceContent4UrlPlaceholder[0] == false)
+                        ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND, MessageSend_Log);
+                    else {
+
+                        ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), RequestBody, MessageSend_Log);
+                    }
+                }
+
+                HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
+                // добавляем все заголовки как есть через HttpRequest.Builder
+                for (Map.Entry<String, String> entry: httpHeaders.entrySet()) {
+                    requestBuilder = requestBuilder
+                            .header(entry.getKey(),entry.getValue());
+                    if ( IsDebugged )
+                        MessageSend_Log.info("[{}] sendWebFormMessage.POST .header: `{}:{}`", messageQueueVO.getQueue_Id(), entry.getKey(), entry.getValue());
+                    // queryString.append(entry.getKey()).append("=").append(entry.getValue());
+                }
+                java.net.http.HttpRequest request = requestBuilder
+                        .POST( HttpRequest.BodyPublishers.ofString(RequestBody) )
+                        .uri(URI.create(EndPointUrl))
+                        .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
+                        .build();
+                HttpResponse<String> Response= null;
+                try {
+                    Response= ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofString() );
+
+                } catch (IOException  sendIoExc) {
+                    MessageSend_Log.error("[{}] sendWebFormMessage.ApiRestHttpClient (.isTerminated=`{}`).send fault={}", messageQueueVO.getQueue_Id(),
+                            ApiRestHttpClient.isTerminated(),
+                            sStackTrace.strInterruptedException (sendIoExc));
+
+                    // Missing www-authenticate header when receiving 401 responses.
+            /*
+            As per section 4.1 of RFC-7235, when an HTTP server returns a 401 response, it must also return a WWW-Authenticate header :
+            A server generating a 401 (Unauthorized) response MUST send a
+            WWW-Authenticate header field containing at least one challenge.
+            However, when the refinitiv server returns 401, it returns the following header :
+            Authorization: WWW-Authenticate: Signature realm="World-Check One API",algorithm="hmac-sha256",headers="(request-target) host date content-type content-length"
+             */
+                    System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendWebFormMessage.POST ApiRestHttpClient.send IOException: `" + sendIoExc.getMessage() + "`");
+                    sendIoExc.printStackTrace();
+                }
+
+                restResponseStatus = Response.statusCode();
+
+                //Test = Response.getBody();
+                // HttpHeaders responseHttpHeaders = null;
+                HttpHeaders responseHttpHeaders = Response.headers();
+                //MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getHeaders()=" + headers.all().toString() +" getHeaders().size=" + headers.size() );
+
+                MessageSend_Log.warn("[{}] sendWebFormMessage.Response httpCode={} getBody().length={}", messageQueueVO.getQueue_Id(), restResponseStatus, Response.body().length());
+                // MessageSend_Log.warn("[" + messageQueueVO.getQueue_Id() + "]" +"sendPostMessage.Response getBody()=" + Arrays.toString(Test) +" getBody().length=" + Test.length );
+
+
+                        RestResponse = stripNonValidXMLCharacters( Response.body() ); // StandardCharsets.UTF_8);
+
+                    if (IsDebugged)
+                        theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
+
+
+                // обработку HTTP статусов 502, 503 и 504 от внешних систем как транспортную ошибку
+                if (( restResponseStatus == 502)
+                        || ( restResponseStatus == 503 )
+                        || ( restResponseStatus == 504 )
+                ) {
+                    Exception e = new Exception(" sendWebFormMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
+                    if (IsDebugged)
+                        MessageSend_Log.error("[{}] sendWebFormMessage call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
+                      return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendWebFormMessage.POST", e,
+                            ROWID_QUEUElog, IsDebugged, MessageSend_Log);
+                }
+
+
+                //  формируем в XML_MsgResponse ответ а-ля SOAP
+                messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
+                // --бессмысленно добавлять в Header, обработка берёт из /Body/MsgData , но для чтения лога буде полезно
+                messageDetails.XML_MsgResponse.append(XMLchars.Header_Begin);
+                messageDetails.XML_MsgResponse.append( XMLchars.NameTagHttpStatusCode_Begin );
+                messageDetails.XML_MsgResponse.append(restResponseStatus);
+                messageDetails.XML_MsgResponse.append( XMLchars.NameTagHttpStatusCode_End );
+                messageDetails.XML_MsgResponse.append(XMLchars.Header_End);
+
+                messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
+
+                if (RestResponse.isEmpty()) {  // добавляем <HttpStatusCode>httpStatus</HttpStatusCode>
+                    append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , null, responseHttpHeaders );
+                } else // получили НЕпустой ответ, пробуем его разобрать
+                {
+                    if (RestResponse.startsWith("<?xml") || RestResponse.startsWith("<?XML")) {
+                        int index2 = RestResponse.indexOf("?>"); //6
+                        messageDetails.XML_MsgResponse.append(RestResponse.substring(index2 + 2));
+                        messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                        messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
+                    } else {
+                        if (RestResponse.startsWith("<")) { // чтитаем, что в ответе XML
+                            messageDetails.XML_MsgResponse.append(RestResponse);
+                            messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                            messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
+
+                        } else { // возможно, Json
+                            if ((RestResponse.startsWith("{") ) || (RestResponse.startsWith("[") ) ) { // Разбираем Json
+                                try {
+                                    //final String
+                                    StringBuilder
+                                            RestResponse_with_HttpResponseStatusCode = new StringBuilder("{ \"HttpResponseStatusCode\":" + String.valueOf(restResponseStatus) + ",");
+                                    RestResponse_with_HttpResponseStatusCode.append("\"HeadersHTTP\": {");
+                                    do_Append_responseHttpHeaders_2_jSon( RestResponse_with_HttpResponseStatusCode, responseHttpHeaders );
+                                    RestResponse_with_HttpResponseStatusCode.append(" },");
+                                    RestResponse_with_HttpResponseStatusCode.append("\"payload\":")
+                                            .append(RestResponse)
+                                            .append("}");
+                                    if (IsDebugged)
+                                        MessageSend_Log.info("[{}] sendWebFormMessage.POST RestResponseJSON=({})", messageQueueVO.getQueue_Id(), RestResponse_with_HttpResponseStatusCode.toString());
+
+                                    JSONObject RestResponseJSON = new JSONObject( RestResponse_with_HttpResponseStatusCode.toString() );
+                                    String XML_MsgResponse_Body = XML.toString(RestResponseJSON, XMLchars.NameRootTagContentJsonResponse);
+                                    if (IsDebugged)
+                                        MessageSend_Log.info("[{}] sendWebFormMessage.POST XML_MsgResponse_Body=({})", messageQueueVO.getQueue_Id(), XML_MsgResponse_Body);
+
+                                    messageDetails.XML_MsgResponse.append( XML_MsgResponse_Body );
+                                    messageDetails.XML_MsgResponse.append(XMLchars.Body_End);
+                                    messageDetails.XML_MsgResponse.append(XMLchars.Envelope_End);
+                                    if (IsDebugged)
+                                        theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse_with_HttpResponseStatusCode.toString(), MessageSend_Log);
+                                } catch (Exception JSONe) { // получили непонятно что
+                                    MessageSend_Log.error("[{}] sendWebFormMessage.POST Exception JSONe получили непонятно что=({})", messageQueueVO.getQueue_Id(),
+                                            JSONe.getMessage());
+
+                                    // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
+                                    append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, responseHttpHeaders );
+                                }
+
+                            } else {
+                                MessageSend_Log.error("[{}] sendWebFormMessage.POST UNKNOWN ответ и не `{` и не `<` - опять же получили непонятно что=({})", messageQueueVO.getQueue_Id(),
+                                        RestResponse);
+                                // ответ и не `{` и не `<` - опять же получили непонятно что
+                                // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
+                                append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, responseHttpHeaders );
+                            }
+                        }
+                    }
+                }
+
+                if (IsDebugged)
+                    MessageSend_Log.info("[{}] sendWebFormMessage.POST Envelope_MsgResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString());
+
+
+                // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
+                // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
+
+            } catch (Exception e) {
+                return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendPostMessage.POST", e,
+                        ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
+
+            }
+
+            if (IsDebugged)
+                MessageSend_Log.info("[{}] sendWebFormMessage.POST httpStatus=[{}], RestResponse=({})", messageQueueVO.getQueue_Id(), restResponseStatus, RestResponse);
+
+            try {
+                // Получили ответ от сервиса, инициируем обработку getResponseBody()
+                InputStream parsedRestResponseStream;
+                parsedRestResponseStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
+                SAXBuilder documentBuilder = new SAXBuilder();
+                Document XMLdocument;
+
+                try {
+                    XMLdocument = documentBuilder.build(parsedRestResponseStream);
+                    if (IsDebugged)
+                        MessageSend_Log.info("[{}] sendWebFormMessage documentBuilder info=`{}`, XML_MsgResponse=({})",
+                                messageQueueVO.getQueue_Id(), XMLdocument.toString(), messageDetails.XML_MsgResponse);
+
+                } catch (JDOMException RestResponseE) {
+                    XMLdocument = null;
+                    MessageSend_Log.error("[{}]sendWebFormMessage.documentBuilder fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(RestResponseE));
+                    // формируем искуственный XML_MsgResponse из Fault ,  меняем XML_MsgResponse
+                    append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, null );
+                }
+
+                MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
+
+                if (IsDebugged)
+                    MessageSend_Log.info("[{}] sendWebFormMessage:ClearBodyResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString());
+                // client.wait(100);
+
+            } catch (Exception e) {
+                System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
+                e.printStackTrace();
+                MessageSend_Log.error("[{}] v.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
+                messageDetails.MsgReason.append(" sendWebFormMessage.getResponseBody fault: ").append(sStackTrace.strInterruptedException(e));
+
+                MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                        "sendWebFormMessage.getResponseBody", true, e, MessageSend_Log);
+                return -3;
+            }
+            if (restResponseStatus != 200) // Rest вызов считаем успешным только при получении
+            {
+                MessageSend_Log.error("[{}] sendWebFormMessage.restResponseStatus != 200: {}", messageQueueVO.getQueue_Id(), restResponseStatus);
+                messageDetails.MsgReason.append(" sendWebFormMessage.restResponseStatus != 200: ").append(restResponseStatus);
+
+                int messageRetry_Count = MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                        "sendWebFormMessage.restResponseStatus != 200 ", false, null, MessageSend_Log);
+                MessageSend_Log.error("[{}] sendWebFormMessage.messageRetry_Count = {}", messageQueueVO.getQueue_Id(), messageRetry_Count);
+                if ( messageDetails.XML_ClearBodyResponse.length() > XMLchars.nanXSLT_Result.length() )
+                    return 0; // ответ от внешней системы разобран в виде XML , надо продолжить обработку
+                else
+                    return -5; // и restResponseStatus != 200 и ответ неразбрчив
+            } else
+                return 0;
+        } catch ( Exception allE) {
+            if (ApiRestHttpClient != null)
+                try {
+                    ApiRestHttpClient.close();
+
+                } catch ( Exception IOE ) {
+                    MessageSend_Log.error("[{}] sendWebFormMessage.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(IOE));
+                }
+            ApiRestHttpClient = null;
+
+        } finally {
+            MessageSend_Log.warn("[{}] sendWebFormMessage.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
+            if (ApiRestHttpClient != null)
+                try {
+                    ApiRestHttpClient.close();
+
+                } catch ( Exception IOE ) {
+                    MessageSend_Log.error("[{}] sendWebFormMessage.ApiRestHttpClient.close finally fault, UnirestException:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
+                }
+            ApiRestHttpClient = null;
+        }
+        return 0;
+    }
+
 
     public static int sendPostMessage(@NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
         //
