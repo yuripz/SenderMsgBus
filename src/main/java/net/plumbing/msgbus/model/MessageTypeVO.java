@@ -18,7 +18,7 @@ public class MessageTypeVO {
     public void setMessageTypeVO( int Interface_Id,
                                         int Operation_Id,
                                         String Msg_Type,
-                                        String Msg_Type_own,
+                                        String Msg_Type_Own,
                                         String Msg_TypeDesc,
                                         String Msg_Direction,
                                         int Msg_Handler,
@@ -30,13 +30,13 @@ public class MessageTypeVO {
     ) {
         this.Interface_Id=   Interface_Id ;
         this.Operation_Id= Operation_Id  ;
-        this. Msg_Type= Msg_Type  ;
-        this. Msg_Type_own= Msg_Type_own  ;
-        this. Msg_TypeDesc=  Msg_TypeDesc ;
-        this. Msg_Direction=  Msg_Direction  ;
+        this.Msg_Type= Msg_Type  ;
+        this.Msg_Type_own= Msg_Type_Own  ;
+        this.Msg_TypeDesc=  Msg_TypeDesc ;
+        this.Msg_Direction=  Msg_Direction  ;
         this.Msg_Handler=   Msg_Handler ;
-        this. URL_SOAP_Send=  URL_SOAP_Send ;
-        this. URL_SOAP_Ack=  URL_SOAP_Ack  ;
+        this.URL_SOAP_Send=  URL_SOAP_Send ;
+        this.URL_SOAP_Ack=  URL_SOAP_Ack  ;
         this.Max_Retry_Count= Max_Retry_Count ;
         this.Max_Retry_Time = Max_Retry_Time;
         this.Last_Update_Dt = Last_Update_Dt;

@@ -1,8 +1,6 @@
 package net.plumbing.msgbus.model;
 
-import net.sf.saxon.s9api.Processor;
-import net.sf.saxon.s9api.Xslt30Transformer;
-import net.sf.saxon.s9api.XsltCompiler;
+import net.sf.saxon.s9api.*;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
@@ -163,6 +161,11 @@ public class MessageTemplate4Perform {
     private XsltCompiler MsgAnswXSLT_xsltCompiler; // = processor.newXsltCompiler();
     private Processor HeaderXSLT_processor; // = new Processor(false);
     private XsltCompiler HeaderXSLT_xsltCompiler; // = processor.newXsltCompiler();
+
+    private final Processor XPathProcessor = new Processor(false);
+    private final XPathCompiler xpathCompiler = XPathProcessor.newXPathCompiler();
+    private XPathSelector xPathSelector;
+
 
     private String EndPointUrl;
     private String Type_Connection = null;
@@ -429,14 +432,22 @@ public class MessageTemplate4Perform {
             this.MessageXSD = messageTemplateVO.getMessageXSD();
             this.ErrTransXSLT = messageTemplateVO.getErrTransXSLT();
             this.AckXSLT = messageTemplateVO.getAckXSLT();
+            try {
+                this.xPathSelector = this.xpathCompiler.compile("//*[@formDataFieldName and @ContentType] | //Query_KEY_Value").load();
+            } catch (SaxonApiException e) {
+                throw new RuntimeException(e);
+            }
+
     }
-    public Xslt30Transformer getEnvelopeXSLTExt_xslt30Transformer() {return EnvelopeXSLTExt_xslt30Transformer;}
-    public Xslt30Transformer getEnvelopeXSLTPost_xslt30Transformer() {return EnvelopeXSLTPost_xslt30Transformer;}
-    public Xslt30Transformer getAckXSLT_xslt30Transformer() {return AckXSLT_xslt30Transformer;}
-    public Xslt30Transformer getMessageXSLT_xslt30Transformer() {return MessageXSLT_xslt30Transformer;}
-    public Xslt30Transformer getMsgAnswXSLT_xslt30Transformer() {return MsgAnswXSLT_xslt30Transformer;}
-    public Xslt30Transformer getHeaderXSLT_xslt30Transformer() {return HeaderXSLT_xslt30Transformer;}
-    public Xslt30Transformer getErrTransXSLT_xslt30Transformer() {return ErrTransXSLT_xslt30Transformer;}
+    public XPathSelector getXPathSelector() { return this.xPathSelector; }
+    public Processor getXPathProcessor() { return this.XPathProcessor; }
+    public Xslt30Transformer getEnvelopeXSLTExt_xslt30Transformer() {return this.EnvelopeXSLTExt_xslt30Transformer;}
+    public Xslt30Transformer getEnvelopeXSLTPost_xslt30Transformer() {return this.EnvelopeXSLTPost_xslt30Transformer;}
+    public Xslt30Transformer getAckXSLT_xslt30Transformer() {return this.AckXSLT_xslt30Transformer;}
+    public Xslt30Transformer getMessageXSLT_xslt30Transformer() {return this.MessageXSLT_xslt30Transformer;}
+    public Xslt30Transformer getMsgAnswXSLT_xslt30Transformer() {return this.MsgAnswXSLT_xslt30Transformer;}
+    public Xslt30Transformer getHeaderXSLT_xslt30Transformer() {return this.HeaderXSLT_xslt30Transformer;}
+    public Xslt30Transformer getErrTransXSLT_xslt30Transformer() {return this.ErrTransXSLT_xslt30Transformer;}
 
     public Processor getHeaderXSLT_processor() {return HeaderXSLT_processor;}
     public XsltCompiler getHeaderXSLT_xsltCompiler() {return HeaderXSLT_xsltCompiler;}

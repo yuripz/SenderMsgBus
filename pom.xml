@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.3.25.11.06a-SaX</version>
+	<version>0.3.25.11.13-SaX</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -158,7 +158,7 @@
 		<dependency>
 			<groupId>net.sf.saxon</groupId>
 			<artifactId>Saxon-HE</artifactId>
-			<version>12.8</version>
+			<version>12.9</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/xalan/xalan

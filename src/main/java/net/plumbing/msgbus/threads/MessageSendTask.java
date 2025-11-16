@@ -94,8 +94,8 @@ public class MessageSendTask  implements Runnable
     public void setApiRestWaitTime( int ApiRestWaitTime) { this.ApiRestWaitTime = ApiRestWaitTime; }
     public void setFirstInfoStreamId( int FirstInfoStreamId) { this.FirstInfoStreamId=FirstInfoStreamId;}
     public void setCuberNumId( int cuberNumId) { this.CuberNumId=cuberNumId;}
-    private int theadRunCount = 0;
-    private  int  theadRunTotalCount = 1;
+    private long theadRunCount = 0L;
+    private  long  theadRunTotalCount = 1L;
     // private SSLContext sslContext = null;
     //private HttpClientBuilder httpClientBuilder  = null;
     // private java.net.http.HttpClient ApiRestHttpClient = null;
@@ -377,12 +377,12 @@ public class MessageSendTask  implements Runnable
 */
 
         MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: main stream scanning on " + HrmsSchema + ".MESSAGE_QUEUE is starting, InfoStreamId=" +  (this.FirstInfoStreamId + theadNum ) );
-        for ( theadRunCount = 0; theadRunCount < theadRunTotalCount; theadRunCount += 1 ) {
+        for ( theadRunCount = 0L; theadRunCount < theadRunTotalCount; theadRunCount += 1L ) {
             long secondsFromEpoch = Instant.ofEpochSecond(0L).until(Instant.now(), ChronoUnit.SECONDS);
             if ( secondsFromEpoch - startTimestamp > Long.valueOf(60L * TotalTimeTasks) )
                 break;
             else
-                theadRunTotalCount += 1;
+                theadRunTotalCount += 1L;
             try {
                 int num_Message4Perform = 0; // Если в очереди для потока нет данных, он заснет
                 int num_HelpedMessage4Perform = 0; // Если поток обработал что-либо, помогая, то спать на чтении из очереди уже не нужно
@@ -417,7 +417,7 @@ public class MessageSendTask  implements Runnable
                                 rs.getTimestamp("Queue_Create_Date"),
                                 rs.getLong("Perform_Object_Id")
                         );
-
+                        if ( (theadRunCount % 10L) == 0L )
                         MessegeSend_Log.info( "messageQueueVO.Queue_Id:" + rs.getLong("Queue_Id") + " [Msg_InfoStreamId=" + rs.getInt("Msg_InfoStreamId") + "]" +
                                 " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") +
                                 "Curr_Server_Time=`" + (rs.getTimestamp("Curr_Server_Time").toString() ) +
@@ -652,6 +652,7 @@ public class MessageSendTask  implements Runnable
                                 }
 
                             }else {
+                                if ( (theadRunCount % 100L) == 0L )
                                 MessegeSend_Log.info("Received message: empty" );
                             }
                         } catch (JMSException e) {
@@ -661,6 +662,7 @@ public class MessageSendTask  implements Runnable
                 }
                 else {
                     theadDataAccess.Hermes_Connection.commit();
+                    if ( (theadRunCount % 100L) == 0L )
                     MessegeSend_Log.info("НЕ ждём'c: в {} раз, а идем читать дальше {}сек., уже {}сек., начиная с ={} текущее время ={}", theadRunCount, WaitTimeBetweenScan, secondsFromEpoch - startTimestamp, startTimestamp, secondsFromEpoch);
                 }
             } catch (Exception e) {

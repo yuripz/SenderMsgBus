@@ -432,6 +432,7 @@ public class PerformQueueMessages {
                                )
                             {
                                 String AckXSLT_4_make_JSON = Message.MessageTemplate4Perform.getAckXSLT() ; // получили XSLT-для
+                                String saved_XML_MsgSEND = Message.XML_MsgSEND; // сохранили XML после MessageXSLT но перед  getAckXSLT
                                 if ( AckXSLT_4_make_JSON != null ) {
                                     if (Message.MessageTemplate4Perform.getIsDebugged())
                                         MessageSend_Log.info("[{}] PropWebMetod is `{}`, AckXSLT_4_make_JSON ({})", Queue_Id, Message.MessageTemplate4Perform.getPropWebMetod(), AckXSLT_4_make_JSON);
@@ -471,8 +472,14 @@ public class PerformQueueMessages {
 
                                 if  (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM")) {
                                     // для передачи формы используем поле messageTypes.Msg_Type_Own
-                                    String formDataFieldName = MessageType.AllMessageType.get(messageTypeVO_Key).getMsg_Type_own();
-                                    Function_Result = MessageHttpSend.sendWebFormMessage(formDataFieldName, messageQueueVO, Message, theadDataAccess, MessageSend_Log);
+                                    // если нет специальной разметки типа formDataFieldName="cancelActionDto" в шаблоне
+                                    if (Message.MessageTemplate4Perform.getIsDebugged())
+                                        MessageSend_Log.info("[{}] WEB-FORM is `{}`fo messageTypeVO_Key = ({})", Queue_Id, messageQueueVO.getMsg_Type_own(), messageTypeVO_Key);
+
+                                    Function_Result = MessageHttpSend.sendWebFormMessage(saved_XML_MsgSEND,
+                                            Message.MessageTemplate4Perform.getXPathProcessor(),
+                                            Message.MessageTemplate4Perform.getXPathSelector(),
+                                            messageQueueVO, Message, theadDataAccess, MessageSend_Log);
                                 }
 
                             }
