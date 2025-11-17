@@ -118,7 +118,7 @@ public class XmlSQLStatement {
                     // Step 2.B: Creating JDBC CallableStatement
                     callableStatement = theadDataAccess.Hermes_Connection.prepareCall (SQLcallableStatementExpression);
 
-                    MessegeSend_Log.info("[{}] SQLcallableStatementExpression: {}", messageQueueVO.getQueue_Id(), SQLcallableStatementExpression);
+                    MessegeSend_Log.info("[{}] ExecuteSQLincludedXML() SQLcallableStatementExpression: {}", messageQueueVO.getQueue_Id(), SQLcallableStatementExpression);
                     // register OUT parameter
                     callableStatement.registerOutParameter(1, Types.INTEGER);
                     callableStatement.setString(2, SQLparamValue );
@@ -130,7 +130,7 @@ public class XmlSQLStatement {
                     theadDataAccess.Hermes_Connection.commit();
                     } catch (SQLException e) {
                         messageDetails.MsgReason.append(", SQLException callableStatement.execute():=").append(e.toString());
-                        MessegeSend_Log.error("[{}] {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
+                        MessegeSend_Log.error("[{}] ExecuteSQLincludedXML {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                         callableStatement.close();
                         theadDataAccess.Hermes_Connection.rollback();
                         return -3;
@@ -147,7 +147,7 @@ public class XmlSQLStatement {
                     // get count and print in console
                     int count = callableStatement.getInt(1);
                     if (isDebugged ) {
-                        MessegeSend_Log.error("[{}] {} return {}", messageQueueVO.getQueue_Id(), SQLcallableStatementExpression, count );
+                        MessegeSend_Log.info("[{}] ExecuteSQLincludedXML: {}.getInt return {}", messageQueueVO.getQueue_Id(), SQLcallableStatementExpression, count );
                     }
                     callableStatement.close();
 
@@ -185,14 +185,14 @@ public class XmlSQLStatement {
             } catch (Exception ex) {
                 ex.printStackTrace(System.err);
                 messageDetails.MsgReason.setLength(0);
-                messageDetails.MsgReason.append("ExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirst fault: " + sStackTrace.strInterruptedException(ex));
+                messageDetails.MsgReason.append("ExecuteSQLincludedXML.XPathFactory.xpath.evaluateFirst fault: ").append(sStackTrace.strInterruptedException(ex));
 
                 return -1;
             }
         }catch (JDOMException | IOException ex) {
             ex.printStackTrace(System.err);
             messageDetails.MsgReason.setLength(0);
-            messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: " + sStackTrace.strInterruptedException(ex));
+            messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: ").append(sStackTrace.strInterruptedException(ex));
         }
 
 /******************** ПОТОМ

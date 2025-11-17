@@ -372,12 +372,18 @@ public class MessageHttpSend {
 
     public static byte[] replaceUrlPlaceholders( String inputStr, boolean[]  isReplaceContent) {
 
+
+        int startIdx = inputStr.indexOf( XMLchars.URL_File_Path_Begin, 0);
+        if (startIdx == -1) {
+            // Нет маркеров, выходим как есть
+            return inputStr.getBytes(StandardCharsets.UTF_8);
+        }
         StringBuilder output = new StringBuilder();
 
         int currentIndex = 0; isReplaceContent[0] = false;
 
         while (true) {
-            int startIdx = inputStr.indexOf( XMLchars.URL_File_Path_Begin, currentIndex);
+            startIdx = inputStr.indexOf( XMLchars.URL_File_Path_Begin, currentIndex);
             if (startIdx == -1) {
                 // Нет больше маркеров, добавляем оставшуюся часть
                 output.append(inputStr.substring(currentIndex));
@@ -600,32 +606,27 @@ public class MessageHttpSend {
             boolean[] isReplaceContent4UrlPlaceholder = { false };
 
             // Используется только UTF-8 кодировка, прочие игнорируем
-                if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 ) {
-                    RequestBody.append("--").append(boundary).append("\r\n")
-                            .append("Content-Disposition: form-data; name=\"")
-                            .append(formDataFieldName)
-                            .append("\"\r\n")
-                            .append("Content-Type: application/json\r\n\r\n")
-                            .append(IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder),"UTF-8" ))
-                            .append("\r\n")
-                            .append("--").append(boundary)
-                            .append("--").append("\r\n");
-                }
-                else {
-                    if  (formDataFieldName.isEmpty()  ) //
-                    {     // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
+            if  (formDataFieldName.isEmpty()  ) //
+                {     // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
+                    MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.formDataFieldName: {} для {}, BO={} " , messageQueueVO.getQueue_Id() ,
+                                        messageQueueVO.getMsg_Type_own(), messageQueueVO.getMsg_Type(), messageQueueVO.getOperation_Id());
                         RequestBody.append("--").append(boundary).append("\r\n")
                                 .append("Content-Disposition: form-data; name=\"")
                                 .append( messageQueueVO.getMsg_Type_own() )
                                 .append("\"\r\n")
                                 .append("Content-Type: application/json\r\n\r\n")
-                                .append(messageDetails.XML_MsgSEND)
-                                .append("\r\n")
+                                ;
+                        if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 )
+                            RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder),"UTF-8" ));
+                        else
+                            RequestBody.append(messageDetails.XML_MsgSEND);
+
+                            RequestBody.append("\r\n")
                                 .append("--").append(boundary)
                                 .append("--").append("\r\n")
                         ;
-                    }
-                    else { // для каждой секции с formDataFieldName формируем multipart
+                }
+            else { // для каждой секции с formDataFieldName формируем multipart
                         for (ElementInfo info : elements) {
                             if ((info.formDataFieldName() != null) && ( !info.formDataFieldName().equalsIgnoreCase("null")) )
                             {
@@ -657,10 +658,13 @@ public class MessageHttpSend {
                                         ;
                                     } else
                                     RequestBody.append( "[]")
-                                                    .append("\r\n")
+                                               .append("\r\n")
                                             ;
                                 } else { // text/plain
                                     MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.содержимое элемента: {}" , messageQueueVO.getQueue_Id() , info.element().getStringValue() );
+                                    if ( info.element().getStringValue().indexOf( XMLchars.URL_File_Path_Begin) > 0 )
+                                        RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(info.element().getStringValue(), isReplaceContent4UrlPlaceholder),"UTF-8" ));
+                                    else
                                     RequestBody.append(info.element().getStringValue() )
                                             .append("\r\n")
                                             ;
@@ -669,9 +673,8 @@ public class MessageHttpSend {
                             }
                         }
                         RequestBody.append("--").append(boundary).append("--").append("\r\n");
-                    }
+            }
                     // = ( formDataFieldName + "=" + URLEncoder.encode( messageDetails.XML_MsgSEND, StandardCharsets.UTF_8) );
-                }
 
             try {
                 if ( IsDebugged ) {
