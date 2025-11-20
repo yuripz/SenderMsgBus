@@ -1,0 +1,4 @@
+include:
+  - project: '$CI_REMOTE_PROJECT'
+    file: '/$CI_REMOTE_YML_FILE.yml'
+    ref: '$CI_REMOTE_REF'

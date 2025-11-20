@@ -140,7 +140,7 @@ public class InitMessageRepository {
 
                 MessageTypeVOkey  = MessageRepositoryHelper.look4MessageTypeVO_2_Perform(rs.getInt("operation_id"), AppThead_log );
                 if ( MessageTypeVOkey >= 0 ) {
-                    AppThead_log.info("Update MessageTypes[" +   MessageTypeVOkey + "]: Msg_Type " + MessageType.AllMessageType.get( MessageTypeVOkey ).getMsg_Type() );
+                    AppThead_log.info("Update MessageTypes[{}]: Msg_Type {}", MessageTypeVOkey, MessageType.AllMessageType.get(MessageTypeVOkey).getMsg_Type());
                     MessageType.AllMessageType.get( MessageTypeVOkey ).setURL_SOAP_Send( rs.getString("url_soap_send") );
                     MessageType.AllMessageType.get( MessageTypeVOkey ).setMax_Retry_Count( rs.getInt("max_retry_count") );
                     MessageType.AllMessageType.get( MessageTypeVOkey ).setMax_Retry_Time( rs.getInt("max_retry_time"));
@@ -148,6 +148,7 @@ public class InitMessageRepository {
                 }
                 else {
                     MessageTypeVO messageTypeVO = new MessageTypeVO();
+                    AppThead_log.info("Add operation_id[{}]: Msg_Type {}", rs.getInt("operation_id"), rs.getString("msg_type") );
                     messageTypeVO.setMessageTypeVO(
                             rs.getInt("interface_id"),
                             rs.getInt("operation_id"),
@@ -224,7 +225,7 @@ public class InitMessageRepository {
             AppThead_log.info("selectMsgTemplateReRead: `" + selectMsgTemplateReRead + "`" );
             rs = stmtMsgTemplateReRead.executeQuery();
             while (rs.next()) {
-                AppThead_log.info("ReReadMsgTemplates: Обновляем template_id[" + rs.getInt("template_id") + "]");
+                AppThead_log.info("ReReadMsgTemplates: Обновляем template_id[{}] под операцию {}", rs.getInt("template_id"), rs.getString("Msg_Type"));
                 MessageTemplateVOkey  = MessageRepositoryHelper.look4MessageTemplate(rs.getInt("template_id"), AppThead_log );
                 if ( MessageTemplateVOkey >= 0 ) {
                     MessageTemplateVO messageTemplateVO = MessageTemplate.AllMessageTemplate.get( MessageTemplateVOkey );
