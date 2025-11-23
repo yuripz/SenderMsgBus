@@ -21,7 +21,9 @@ import net.plumbing.msgbus.common.XMLchars;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.net.http.HttpHeaders;
 import java.nio.file.Files;
@@ -60,7 +62,7 @@ import static net.plumbing.msgbus.common.XMLchars.OpenTag;
 import static net.plumbing.msgbus.threads.utils.MessageUtils.stripNonValidXMLCharacters;
 
 // Record для хранения результата
-record ElementInfo(String elementName, XdmNode element, String formDataFieldName, String contentType) { }
+record ElementInfo(String elementName, XdmNode element, String formDataFieldName, String contentType, String fileName) { }
 
 public class MessageHttpSend {
 
@@ -370,7 +372,9 @@ public class MessageHttpSend {
         return 0;
     } // sendSoapMessage
 
-    public static byte[] replaceUrlPlaceholders( String inputStr, boolean[]  isReplaceContent) {
+    public static byte[] replaceUrlPlaceholders( String inputStr, boolean[]  isReplaceContent, long Queue_Id, int ApiRestWaitTime,
+                                                 MessageTemplate4Perform messageTemplate4Perform,
+                                                 Logger MessageSend_Log ) {
 
 
         int startIdx = inputStr.indexOf( XMLchars.URL_File_Path_Begin, 0);
@@ -402,15 +406,17 @@ public class MessageHttpSend {
             }
 
             // Извлекаем путь
-            String filePath = inputStr.substring(pathStartIdx, endIdx);
+            String httpURLFilePath = inputStr.substring(pathStartIdx, endIdx);
             String fileContentBase64;
             try {
-                byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+                byte[] fileBytes = readBytesFromUrlWithAuthPreemptive(httpURLFilePath, ApiRestWaitTime, Queue_Id,
+                                                        messageTemplate4Perform, MessageSend_Log);
                 // Конвертируем содержимое файла в base64 строку
                 fileContentBase64 = Base64.getEncoder().encodeToString(fileBytes);
             } catch (IOException e) {
+                MessageSend_Log.error("[{}][Ошибка при чтении URL:`{}`: {} ", Queue_Id, httpURLFilePath, e.getMessage());
                 // В случае ошибки, вставляем сообщение или оставляем маркер
-                fileContentBase64 = "[Ошибка при чтении файла: " + filePath + "]";
+                fileContentBase64 = "`[]`" + Queue_Id +"[Ошибка при чтении URL: " + httpURLFilePath + "]";
             }
 
             // Вставляем содержимое файла
@@ -450,7 +456,8 @@ public class MessageHttpSend {
                     QName qName = node.getNodeName();
                     String formDataFieldName = node.getAttributeValue(new QName("formDataFieldName"));
                     String contentType = node.getAttributeValue(new QName("ContentType"));
-                    results.add(new ElementInfo(qName.getLocalName(), node, formDataFieldName, contentType));
+                    String fileName  = node.getAttributeValue(new QName("filename"));
+                    results.add(new ElementInfo(qName.getLocalName(), node, formDataFieldName, contentType, fileName));
                 }
             }
         } catch (SaxonApiException e) {
@@ -464,8 +471,116 @@ public class MessageHttpSend {
         return extractElements(XMLdoc, xPathSelector);
     }
 
+    public static byte[] readBytesFromUrlWithAuthPreemptive(@NotNull String EndPointUrl, int ApiRestWaitTime, long Queue_Id,
+                                                            MessageTemplate4Perform messageTemplate4Perform,
+                                                            Logger MessageSend_Log  ) throws IOException {
+        URL url = new URL(EndPointUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        String PropUser = messageTemplate4Perform.getPropUserPostExec();
+        String PropPswd = messageTemplate4Perform.getPropPswdPostExec();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(ApiRestWaitTime *1000);
+
+        // Создаем строку для Basic Auth
+        String auth = PropUser + ":" + PropPswd;
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+        if ( messageTemplate4Perform.getIsDebugged() )
+            MessageSend_Log.info("[{}] Authorization Basic {} (using User=`{}` Pswd=`{}`)",Queue_Id, encodedAuth, PropUser, PropPswd);
+        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+
+        try (InputStream in = connection.getInputStream();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int n;
+            while ((n = in.read(buffer)) != -1) {
+                baos.write(buffer, 0, n);
+            }
+            return baos.toByteArray();
+        }
+    }
+
+    public static byte[] getFileContentByURL(@NotNull String  EndPointUrl, MessageQueueVO messageQueueVO, MessageTemplate4Perform messageTemplate4Perform,
+                                           int ApiRestWaitTime, Logger MessageSend_Log ) {
+        byte[] RestResponse = null;
+        int restResponseStatus=0;
+        long Queue_Id =  messageQueueVO.getQueue_Id();
+        boolean IsDebugged = messageTemplate4Perform.getIsDebugged();
+        HttpClient ApiRestHttpClient = null;
+
+        String PropUser = messageTemplate4Perform.getPropUserPostExec();
+        String PropPswd = messageTemplate4Perform.getPropPswdPostExec();
+        try {
+            if ( (messageTemplate4Perform.postExecPasswordAuthenticator != null)
+                    // В гермесе БАСИК-Authenticator, пока что!
+                    && (! messageTemplate4Perform.getPreemptivePostExec())  // adding the header to the HttpRequest and removing Authenticator
+            )
+            {
+                if ( IsDebugged ) {
+                    MessageSend_Log.info("[{}] WebRestExePostExec PropUser=`{}` PropPswd=`{}`", messageQueueVO.getQueue_Id(), PropUser, PropPswd);
+                }
+                ApiRestHttpClient = HttpClient.newBuilder()
+                        .authenticator( messageTemplate4Perform.postExecPasswordAuthenticator )
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(Duration.ofSeconds( 5 ))
+                        .build();
+            }
+            else {
+                if ( IsDebugged )
+                    MessageSend_Log.info("[{}] WebRestExePostExec.4.GET PropUser== null, PreemptivePostExec (`{}`)", messageQueueVO.getQueue_Id(), messageTemplate4Perform.getPreemptivePostExec());
+                ApiRestHttpClient = HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
+                        .connectTimeout(Duration.ofSeconds(5))
+                        .build();
+            }
+
+
+            HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder();
+
+            if ( messageTemplate4Perform.getPreemptivePostExec() ) // adding the header to the HttpRequest
+            {  // добавляем Authorization заголовки через HttpRequest.Builder
+                String encodedAuth = Base64.getEncoder()
+                        .encodeToString((PropUser + ":" + PropPswd ).getBytes(StandardCharsets.UTF_8));
+                requestBuilder = requestBuilder
+                        .header("Authorization", "Basic " + encodedAuth );
+                if ( messageTemplate4Perform.getIsDebugged() )
+                    MessageSend_Log.info("[{}] Authorization Basic {} (using User=`{}` Pswd=`{}`)", messageQueueVO.getQueue_Id(), encodedAuth, PropUser, PropPswd);
+            }
+
+            java.net.http.HttpRequest request = requestBuilder
+                    .GET()
+                    .uri( URI.create(EndPointUrl ))
+                    .header("User-Agent", "msgBus/Java-21")
+                    .header("Accept", "*/*")
+                    .header("Connection", "close")
+                    .timeout( Duration.ofSeconds( ApiRestWaitTime ) )
+                    .build();
+            HttpResponse<byte[]> RestResponseGet = ApiRestHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray() );
+            RestResponse = RestResponseGet.body(); //.toString();
+
+            restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
+
+            if ( messageTemplate4Perform.getIsDebugged() )
+                MessageSend_Log.info("[{}] WebRestExePostExec.GET({}?queue_id={}) httpStatus=[{}] RestResponse=(`{}`)",
+                        messageQueueVO.getQueue_Id(), EndPointUrl, String.valueOf(Queue_Id), restResponseStatus, RestResponse);
+
+        } catch ( Exception e) {
+            // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
+            MessageSend_Log.error("[{}] Ошибка получения файла HttpGet `{}`, вызов от имени пользователя(`{}/{}`):{}",
+                    messageQueueVO.getQueue_Id(), EndPointUrl,  PropUser, PropPswd, e.toString());
+            ApiRestHttpClient.close();
+            return null;
+        }
+
+        ApiRestHttpClient.close();
+        return RestResponse;
+
+    }
+
     public static int sendWebFormMessage(@NotNull String saved_XML_MsgSEND, @NotNull Processor xPathProcessor,@NotNull XPathSelector xPathSelector,
-            @NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, Logger MessageSend_Log) {
+            @NotNull MessageQueueVO messageQueueVO, @NotNull MessageDetails messageDetails, TheadDataAccess theadDataAccess, int ApiRestWaitTime, Logger MessageSend_Log) {
         //
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
 
@@ -484,6 +599,7 @@ public class MessageHttpSend {
             MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.Метка элемента: {}" , messageQueueVO.getQueue_Id() , info.element().toString() );
             MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.formDataFieldName: {} " , messageQueueVO.getQueue_Id() , info.formDataFieldName());
             MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.ContentType: {}", messageQueueVO.getQueue_Id() , info.contentType());
+            MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.filename: {}", messageQueueVO.getQueue_Id() , info.fileName());
             if ( info.elementName().equalsIgnoreCase("Query_KEY_Value"))
             {
                 EndPointUrl = EndPointUrl + info.element().getStringValue();
@@ -617,7 +733,9 @@ public class MessageHttpSend {
                                 .append("Content-Type: application/json\r\n\r\n")
                                 ;
                         if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 )
-                            RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder),"UTF-8" ));
+                            RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder,
+                                                messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log),
+                                    "UTF-8" ));
                         else
                             RequestBody.append(messageDetails.XML_MsgSEND);
 
@@ -636,8 +754,11 @@ public class MessageHttpSend {
                                 formDataFieldName = info.formDataFieldName();
                                 RequestBody.append("--").append(boundary).append("\r\n")
                                         .append("Content-Disposition: form-data; name=\"")
-                                        .append( info.formDataFieldName() )
-                                        .append("\"\r\n")
+                                        .append( info.formDataFieldName() );
+                                if (info.fileName() != null) {
+                                    RequestBody.append("; filename=\"").append( info.fileName() );
+                                }
+                                RequestBody.append("\"\r\n")
                                         .append("Content-Type: ").append(info.contentType()).append("\r\n\r\n")
                                         ;
                                 if ( info.contentType().contains("json") ) {
@@ -660,14 +781,48 @@ public class MessageHttpSend {
                                     RequestBody.append( "[]")
                                                .append("\r\n")
                                             ;
-                                } else { // text/plain
-                                    MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.содержимое элемента: {}" , messageQueueVO.getQueue_Id() , info.element().getStringValue() );
-                                    if ( info.element().getStringValue().indexOf( XMLchars.URL_File_Path_Begin) > 0 )
-                                        RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(info.element().getStringValue(), isReplaceContent4UrlPlaceholder),"UTF-8" ));
-                                    else
-                                    RequestBody.append(info.element().getStringValue() )
-                                            .append("\r\n")
-                                            ;
+                                } else {
+                                    if (info.fileName() == null) {// text/plain
+                                        MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.содержимое элемента: {}", messageQueueVO.getQueue_Id(), info.element().getStringValue());
+                                        if (info.element().getStringValue().indexOf(XMLchars.URL_File_Path_Begin) > 0)
+                                            RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(info.element().getStringValue(), isReplaceContent4UrlPlaceholder,
+                                                            messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log), "UTF-8"))
+                                                    .append("\r\n");
+                                        else
+                                            RequestBody.append(info.element().getStringValue())
+                                                    .append("\r\n")
+                                                    ;
+                                    }
+                                    else {
+                                        MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.путь к файлу: {}", messageQueueVO.getQueue_Id(),
+                                                info.element().getStringValue());
+                                        try {
+                                        RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(info.element().getStringValue(), isReplaceContent4UrlPlaceholder,
+                                                        messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log), "UTF-8"))
+                                                  .append("\r\n");
+                                        } catch (Exception  sendIoExc) {
+                                            MessageSend_Log.error("[{}] sendWebFormMessage.replaceUrlPlaceholders fault={}", messageQueueVO.getQueue_Id(),
+                                                                     sStackTrace.strInterruptedException (sendIoExc));
+
+                                            // Missing www-authenticate header when receiving 401 responses.
+            /*
+            As per section 4.1 of RFC-7235, when an HTTP server returns a 401 response, it must also return a WWW-Authenticate header :
+            A server generating a 401 (Unauthorized) response MUST send a
+            WWW-Authenticate header field containing at least one challenge.
+            However, when the refinitiv server returns 401, it returns the following header :
+            Authorization: WWW-Authenticate: Signature realm="World-Check One API",algorithm="hmac-sha256",headers="(request-target) host date content-type content-length"
+             */
+                                            System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendWebFormMessage.POST ApiRestHttpClient.send IOException: `" + sendIoExc.getMessage() + "`");
+                                            sendIoExc.printStackTrace();
+                                            return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendWebFormMessage.POST", sendIoExc,
+                                                    ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
+                                        }
+                                        // записываем байты
+                                        // в конце (после каждого файла) добавим \r\n
+                                        // Для этого лучше собрать байтовый массив, но для простоты используем StringBuilder с encode
+                                        // или создаем массив байтов вручную позже
+
+                                    }
                                 }
 
                             }
@@ -901,7 +1056,7 @@ public class MessageHttpSend {
                         "sendWebFormMessage.restResponseStatus != 200 ", false, null, MessageSend_Log);
                 MessageSend_Log.error("[{}] sendWebFormMessage.messageRetry_Count = {}", messageQueueVO.getQueue_Id(), messageRetry_Count);
                 if ( messageDetails.XML_ClearBodyResponse.length() > XMLchars.nanXSLT_Result.length() )
-                    return 0; // ответ от внешней системы разобран в виде XML , надо продолжить обработку
+                    return 0; // ответ от внешней системы разобран в виде XML, надо продолжить обработку
                 else
                     return -5; // и restResponseStatus != 200 и ответ неразбрчив
             } else
@@ -1042,7 +1197,8 @@ public class MessageHttpSend {
             }
         } else {
             if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 )
-                RequestBody = replaceUrlPlaceholders( messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder );
+                RequestBody = replaceUrlPlaceholders( messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder,
+                        messageQueueVO.getQueue_Id(), 120, messageTemplate4Perform, MessageSend_Log);
             else
                 RequestBody = messageDetails.XML_MsgSEND.getBytes(StandardCharsets.UTF_8);
         }

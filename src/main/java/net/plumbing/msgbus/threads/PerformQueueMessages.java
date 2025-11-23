@@ -479,7 +479,7 @@ public class PerformQueueMessages {
                                     Function_Result = MessageHttpSend.sendWebFormMessage(saved_XML_MsgSEND,
                                             Message.MessageTemplate4Perform.getXPathProcessor(),
                                             Message.MessageTemplate4Perform.getXPathSelector(),
-                                            messageQueueVO, Message, theadDataAccess, MessageSend_Log);
+                                            messageQueueVO, Message, theadDataAccess, Message.ApiRestWaitTime, MessageSend_Log);
                                 }
 
                             }
