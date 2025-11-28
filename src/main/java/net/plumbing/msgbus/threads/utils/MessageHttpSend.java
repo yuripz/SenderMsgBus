@@ -594,12 +594,15 @@ public class MessageHttpSend {
         String formDataFieldName = ""; // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
         List<ElementInfo> elements = processXml(xPathProcessor, xPathSelector,
                                                 saved_XML_MsgSEND);
+        boolean IsDebugged = messageDetails.MessageTemplate4Perform.getIsDebugged();
         for (ElementInfo info : elements) {
-            MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.Элемент: {}", messageQueueVO.getQueue_Id(), info.elementName() );
-            MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.Метка элемента: {}" , messageQueueVO.getQueue_Id() , info.element().toString() );
-            MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.formDataFieldName: {} " , messageQueueVO.getQueue_Id() , info.formDataFieldName());
-            MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.ContentType: {}", messageQueueVO.getQueue_Id() , info.contentType());
-            MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.filename: {}", messageQueueVO.getQueue_Id() , info.fileName());
+            if (IsDebugged ) {
+                MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.Элемент: {}", messageQueueVO.getQueue_Id(), info.elementName());
+                MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.Метка элемента: {}", messageQueueVO.getQueue_Id(), info.element().toString());
+                MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.formDataFieldName: {} ", messageQueueVO.getQueue_Id(), info.formDataFieldName());
+                MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.ContentType: {}", messageQueueVO.getQueue_Id(), info.contentType());
+                MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.filename: {}", messageQueueVO.getQueue_Id(), info.fileName());
+            }
             if ( info.elementName().equalsIgnoreCase("Query_KEY_Value"))
             {
                 EndPointUrl = EndPointUrl + info.element().getStringValue();
@@ -618,7 +621,7 @@ public class MessageHttpSend {
         String RestResponse;
         int restResponseStatus;
         String AckXSLT_4_make_JSON = messageTemplate4Perform.getAckXSLT() ;
-        boolean IsDebugged = messageDetails.MessageTemplate4Perform.getIsDebugged();
+
 
         HttpClient ApiRestHttpClient;
 
@@ -664,7 +667,10 @@ public class MessageHttpSend {
         String boundary = "----------------" + UUID.randomUUID().toString().replace("-", "");
         httpHeaders.put("Content-Type","multipart/form-data; boundary=" + boundary);
 
-        if  (formDataFieldName.isEmpty()  ) // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
+        if  (formDataFieldName.isEmpty() ||
+            (! ((AckXSLT_4_make_JSON == null) || AckXSLT_4_make_JSON.isEmpty() ) ) // с помощью AckXSLT_4_make_JSON было выполнено преобразование в
+                                                                                  // JSON должно быть проверено
+            ) // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
         {
             // если XML с помощью .MessageXSLT. не метили тегами formDataFieldName, то преобразование к JSON должно быть в .AckXSLT.
             if ((messageDetails.XML_MsgSEND.charAt(0) == '{') || (messageDetails.XML_MsgSEND.charAt(0) == '[')) {

@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-	<version>0.3.25.11.17-SaX</version>
+	<version>0.3.25.11.19-SaX</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -190,7 +190,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.17.0</version>
+			<version>3.19.0</version>
 		</dependency>
 
 		<dependency>
