@@ -924,6 +924,7 @@ public class MessageUtils {
             Document document = (Document) documentBuilder.build(parsedMessageStream); // .parse(parsedConfigStream);
 
             Element RootElement = document.getRootElement();
+            // MessegeSend_Log.info("[{}] ReplaceMessage4SEND: start from RootElement=`{}`", Queue_Id, RootElement.getName());
             // HE-5864 Спец.символ UTF-16 или любой другой invalid XML character
             // Надо переносить пепеинициализацию messageDetails.Message после того, как распарселили новый XML
             //int Tag_Par_Num = 0;
@@ -957,8 +958,9 @@ public class MessageUtils {
         // Tag_Num - сквозной!!! нумератор записей
 
         int nn = 0;
-        //MessegeSend_Log.info("Split[" + tag_Par_Num + "][" + messageDetails.Message_Tag_Num + "]: <" + EntryElement.getName() + ">");
-
+        // MessegeSend_Log.info("Split[" + tag_Par_Num + "][" + messageDetails.Message_Tag_Num + "]: <" + EntryElement.getName() + ">");
+        String AttributePrefix;
+        String AttributeEntry;
         if ( EntryElement.isRootElement() ) {
             // Tag_Num += 1;
             String ElementPrefix = EntryElement.getNamespacePrefix();
@@ -969,7 +971,7 @@ public class MessageUtils {
                 ElementEntry = EntryElement.getName();
 
 
-            //MessegeSend_Log.info("Tag_Par_Num[0][1]: <" + ElementEntry + ">");
+            // MessegeSend_Log.info("RootElement Tag_Par_Num[0][1]: <" + ElementEntry + ">");
             MessageDetailVO messageDetailVO = new MessageDetailVO();
             messageDetailVO.setMessageQueue(ElementEntry, // "Tag_Id"
                     "", // Tag_Value
@@ -984,7 +986,7 @@ public class MessageUtils {
                 // в БД имеет Tag_Num= 0, ссылается на элемент.
                 Namespace Namespace = ElementNamespaces.get(j);
 
-                //MessegeSend_Log.info("Tag_Par_Num[1][0]: " + XMLchars.XMLns + Namespace.getPrefix() + "=" + Namespace.getURI());
+                // MessegeSend_Log.info("RootElement Tag_Par_Num[1][0]: " + XMLchars.XMLns + Namespace.getPrefix() + "=" + Namespace.getURI());
                 MessageDetailVO NSmessageDetailVO = new MessageDetailVO();
                 NSmessageDetailVO.setMessageQueue(XMLchars.XMLns + Namespace.getPrefix(), // "Tag_Id"
                         Namespace.getURI(), // Tag_Value
@@ -998,6 +1000,28 @@ public class MessageUtils {
             // после заполнения данных для корневого элемента, для всех его детей нужен  Tag_Par_Num== 1 !
             tag_Par_Num = 1;
             messageDetails.Message_Tag_Num += 1;
+
+            List<Attribute> ElementAttributes = EntryElement.getAttributes();
+            for (int j = 0; j < ElementAttributes.size(); j++) {
+                Attribute XMLattribute = ElementAttributes.get(j);
+                MessageDetailVO ATTRmessageDetailVO = new MessageDetailVO();
+                AttributePrefix = XMLattribute.getNamespacePrefix();
+                if ( AttributePrefix.length() > 0 ) {
+                    AttributeEntry = AttributePrefix + ":" + XMLattribute.getName();
+                } else
+                    AttributeEntry = XMLattribute.getName();
+                String AttributeValue = XMLattribute.getValue();
+                // Attribute не увеличивает Tag_Num ( сквозной нумератор записей )
+                // в БД имеет Tag_Num= 0, ссылается на элемент.
+                // MessegeSend_Log.info("RootElement AttributeEntry: Tag_Par_Num[" + messageDetails.Message_Tag_Num + "][" + 0 + "]: \"" + AttributeEntry + "\"=" + AttributeValue);
+                ATTRmessageDetailVO.setMessageQueue(AttributeEntry, // "Tag_Id"
+                        AttributeValue, // Tag_Value
+                        0,
+                        messageDetails.Message_Tag_Num
+                );
+                messageDetails.Message.put(messageDetails.MessageRowNum, ATTRmessageDetailVO);
+                messageDetails.MessageRowNum += 1;
+            }
         }
 
         String ElementPrefix;
@@ -1019,14 +1043,14 @@ public class MessageUtils {
             messageDetails.Message_Tag_Num += 1;
 
             if ( ElementContent.length() > 0 ) {
-                //MessegeSend_Log.info("Tag_Par_Num[" + tag_Par_Num + "][" + messageDetails.Message_Tag_Num + "]: <" + ElementEntry + ">=" + ElementContent);
+                // MessegeSend_Log.info("Tag_Par_Num[" + tag_Par_Num + "][" + messageDetails.Message_Tag_Num + "]: <" + ElementEntry + ">=" + ElementContent);
                 messageDetailVO.setMessageQueue(ElementEntry, // "Tag_Id"
                         ElementContent, // Tag_Value
                         messageDetails.Message_Tag_Num,
                         tag_Par_Num
                 );
             } else {
-                //MessegeSend_Log.info("Tag_Par_Num[" + tag_Par_Num + "][" + messageDetails.Message_Tag_Num + "]: <" + ElementEntry + ">");
+                // MessegeSend_Log.info("ElementContent: Tag_Par_Num[" + tag_Par_Num + "][" + messageDetails.Message_Tag_Num + "]: <" + ElementEntry + ">");
 
                 messageDetailVO.setMessageQueue(ElementEntry, // "Tag_Id"
                         "", // Tag_Value
@@ -1036,8 +1060,7 @@ public class MessageUtils {
             }
             messageDetails.Message.put(messageDetails.MessageRowNum, messageDetailVO);
             messageDetails.MessageRowNum += 1;
-            String AttributePrefix;
-            String AttributeEntry;
+
 
             List<Attribute> ElementAttributes = XMLelement.getAttributes();
             for (int j = 0; j < ElementAttributes.size(); j++) {
@@ -1051,7 +1074,7 @@ public class MessageUtils {
                 String AttributeValue = XMLattribute.getValue();
                 // Attribute не увеличивает Tag_Num ( сквозной нумератор записей )
                 // в БД имеет Tag_Num= 0, ссылается на элемент.
-                // MessegeSend_Log.info("Tag_Par_Num[" + messageDetails.Message_Tag_Num + "][" + 0 + "]: \"" + AttributeEntry + "\"=" + AttributeValue);
+                // MessegeSend_Log.info("AttributeEntry: Tag_Par_Num[" + messageDetails.Message_Tag_Num + "][" + 0 + "]: \"" + AttributeEntry + "\"=" + AttributeValue);
                 ATTRmessageDetailVO.setMessageQueue(AttributeEntry, // "Tag_Id"
                         AttributeValue, // Tag_Value
                         0,
@@ -1083,12 +1106,13 @@ public class MessageUtils {
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             } catch (SQLException exp) {
-                MessegeSend_Log.error("[{}]Hermes_Connection.rollback()fault: {}" , Queue_Id, exp.getMessage());
+                MessegeSend_Log.error("[{}] ReplaceMessage Hermes_Connection.rollback()fault: {}" , Queue_Id, exp.getMessage());
             }
             return -1;
         }
 
         try {
+            MessegeSend_Log.info("[{}] ReplaceMessage: INSERT_Message_Details `{}`" , Queue_Id, theadDataAccess.INSERT_Message_Details);
             for (int i = 0; i < messageDetails.Message.size(); i++) {
                 MessageDetailVO MessageDetailVO = messageDetails.Message.get(i);
                 theadDataAccess.stmt_INSERT_Message_Details.setLong(1, Queue_Id);
@@ -1104,13 +1128,7 @@ public class MessageUtils {
                 theadDataAccess.stmt_INSERT_Message_Details.setInt(5, MessageDetailVO.Tag_Par_Num);
                 //theadDataAccess.stmt_INSERT_Message_Details.executeUpdate();
                 theadDataAccess.stmt_INSERT_Message_Details.addBatch();
-        /*MessegeSend_Log.info( i + ">" + theadDataAccess.INSERT_Message_Details + ":Queue_Id=[" + Queue_Id + "]" +
-                "\n Tag_Id=" + MessageDetailVO.Tag_Id +
-                "\n Tag_Value=" + MessageDetailVO.Tag_Value +
-                "\n Tag_Num=" + MessageDetailVO.Tag_Num +
-                "\n Tag_Par_Num=" + MessageDetailVO.Tag_Par_Num +
-                " done");
-                */
+                // MessegeSend_Log.info("[{}] RowNN {}, Tag_Id={} Tag_Value={} Tag_Num={} Tag_Par_Num={} done", Queue_Id, i, MessageDetailVO.Tag_Id, MessageDetailVO.Tag_Value, MessageDetailVO.Tag_Num, MessageDetailVO.Tag_Par_Num);
                 nn = i;
             }
             // Insert data in Oracle with Java … Batched mode
@@ -1122,7 +1140,7 @@ public class MessageUtils {
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             } catch (SQLException exp) {
-                MessegeSend_Log.error("[{}] Hermes_Connection.rollback()fault: {}", Queue_Id, exp.getMessage());
+                MessegeSend_Log.error("[{}] ReplaceMessage: Hermes_Connection.rollback()fault: {}", Queue_Id, exp.getMessage());
             }
             return -2;
         }
@@ -1134,7 +1152,7 @@ public class MessageUtils {
             return -3;
         }
         */
-        MessegeSend_Log.info("Queue_Id=[{}] : Delete and INSERT new Message Details, {} rows done", Queue_Id, nn);
+        MessegeSend_Log.info("[{}] ReplaceMessage: Delete and INSERT new Message Details, {} rows done", Queue_Id, nn);
         return nn;
     }
 

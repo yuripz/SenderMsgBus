@@ -143,7 +143,7 @@ public class PerformQueueMessages {
                     if (( Message.MessageTemplate4Perform.getPropSearchString() != null ) && ( Message.MessageTemplate4Perform.getPropReplacement() != null ))
                     {
                         if ( Message.MessageTemplate4Perform.getIsDebugged() )
-                            MessageSend_Log.info(Queue_Direction + "[{}] SearchString:`{}`, Replacement:`{}`", Queue_Id, Message.MessageTemplate4Perform.getPropSearchString() , Message.MessageTemplate4Perform.getPropReplacement());
+                            MessageSend_Log.info("[{}] {} SearchString:`{}`, Replacement:`{}`", Queue_Id, Queue_Direction, Message.MessageTemplate4Perform.getPropSearchString(), Message.MessageTemplate4Perform.getPropReplacement());
                         srcXML_4_XSLT_String = StringUtils.replace( Message.XML_MsgOUT.toString(),
                                 Message.MessageTemplate4Perform.getPropSearchString(),
                                 Message.MessageTemplate4Perform.getPropReplacement(),
@@ -165,12 +165,12 @@ public class PerformQueueMessages {
                         ) //.substring(XMLchars.xml_xml.length()) // НЕ берем после <?xml version="1.0" encoding="UTF-8"?> , Property.OMIT_XML_DECLARATION = "yes"
                         ;
                         if ( Message.MessageTemplate4Perform.getIsDebugged() )
-                            MessageSend_Log.info(Queue_Direction + " [" + Queue_Id + "] после XSLT=:{" + Message.XML_MsgSEND + "}");
+                            MessageSend_Log.info("[{}] Queue_Direction=`{}`, после XSLT=`{}`", Queue_Id, Queue_Direction, Message.XML_MsgSEND);
                     } catch ( SaxonApiException exception ) // TransformerException ==> SaxonApiException
                     {
                         MessageSend_Log.error("{} [{}] ConvXMLuseXSLT fault: {}", Queue_Direction, Queue_Id, exception.getMessage());
-                        MessageSend_Log.error("{} [{}] XSLT-преобразователь тела:`{}}`", Queue_Direction, Queue_Id, MessageXSLT_4_OUT_2_SEND);
-                        MessageSend_Log.error("{} [{}] после XSLT=:{{}}", Queue_Direction, Queue_Id, Message.XML_MsgSEND);
+                        MessageSend_Log.error("{} [{}] XSLT-преобразователь тела:`{}`", Queue_Direction, Queue_Id, MessageXSLT_4_OUT_2_SEND);
+                        MessageSend_Log.error("{} [{}] после XSLT=:`{}`", Queue_Direction, Queue_Id, Message.XML_MsgSEND);
                         MessageUtils.ProcessingOut2ErrorOUT(  messageQueueVO,   Message,  theadDataAccess,
                                 "XSLT fault: message=`" + ConvXMLuseXSLTerr + "` XSLT=`" + srcXML_4_XSLT_String+ "` on " + MessageXSLT_4_OUT_2_SEND ,
                                 null ,  MessageSend_Log);
@@ -210,7 +210,7 @@ public class PerformQueueMessages {
                     { Message.XML_MsgSEND = Message.XML_MsgOUT.toString();}
                 }
                 if ( Message.MessageTemplate4Perform.getIsDebugged() )
-                    MessageSend_Log.info("{} [{}] 209 Message.MessageRowNum:{{}}, Message.size:{{}}", Queue_Direction, Queue_Id, Message.MessageRowNum, Message.Message.size());
+                    MessageSend_Log.info("[{}] 213 {} Message.MessageRowNum:{{}}, Message.size:{{}}",  Queue_Id, Queue_Direction, Message.MessageRowNum, Message.Message.size());
 
                 // устанавливаем признак "SEND" & COMMIT
                 if ( theadDataAccess.doUPDATE_MessageQueue_Out2Send( messageQueueVO, "XSLT (OUT) -> (SEND) ok",  MessageSend_Log) < 0 )
@@ -390,8 +390,8 @@ public class PerformQueueMessages {
                             Message.MessageTemplate4Perform.getHeaderXSLT().length() > 10) // Есть чем преобразовывать HeaderXSLT
                         {
                             if (Message.MessageTemplate4Perform.getIsDebugged()) {
-                                MessageSend_Log.info("{} [{}] XSLT-преобразователь заголовка (чем):`{}`", Queue_Direction, Queue_Id, Message.MessageTemplate4Perform.getHeaderXSLT());
-                                MessageSend_Log.info("{} [{}] XSLT-преобразователь заголовка (что):`{}`", Queue_Direction, Queue_Id, Message.XML_MsgOUT);
+                                MessageSend_Log.info("[{}] {} XSLT-преобразователь заголовка (чем):`{}`", Queue_Id, Queue_Direction, Message.MessageTemplate4Perform.getHeaderXSLT());
+                                MessageSend_Log.info("[{}] {} XSLT-преобразователь заголовка (что):`{}`", Queue_Id, Queue_Direction, Message.XML_MsgOUT);
                             }
                             try {
                                 Message.Soap_HeaderRequest.append(
@@ -406,7 +406,8 @@ public class PerformQueueMessages {
                                         //.substring(XMLchars.xml_xml.length()) // НЕ берем после <?xml version="1.0" encoding="UTF-8"?> , Property.OMIT_XML_DECLARATION = "yes"
                                 );
                             } catch (SaxonApiException exception) {
-                                MessageSend_Log.error("{} [{}] XSLT-преобразователь заголовка:{{}}", Queue_Direction, Queue_Id, Message.MessageTemplate4Perform.getHeaderXSLT());
+                                MessageSend_Log.error("[{}] {} XSLT-преобразователь заголовка:`{}` fault:`{}`",
+                                                      Queue_Id, Queue_Direction, Message.MessageTemplate4Perform.getHeaderXSLT(), exception.getMessage());
 
                                 theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
                                         "Header XSLT fault: " + ConvXMLuseXSLTerr + " for " + Message.MessageTemplate4Perform.getHeaderXSLT(), 1244,
@@ -417,6 +418,8 @@ public class PerformQueueMessages {
                                 //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessageSend_Log);
                                 return -5L;
                             }
+                            if (Message.MessageTemplate4Perform.getIsDebugged())
+                            MessageSend_Log.info("[{}] {} XSLT-преобразователь заголовка (получили):`{}`", Queue_Id, Queue_Direction, Message.Soap_HeaderRequest.toString());
                         }
 
                         if (Message.MessageTemplate4Perform.getPropWebMetod() != null) {

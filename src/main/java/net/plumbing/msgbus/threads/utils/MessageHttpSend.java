@@ -62,7 +62,7 @@ import static net.plumbing.msgbus.common.XMLchars.OpenTag;
 import static net.plumbing.msgbus.threads.utils.MessageUtils.stripNonValidXMLCharacters;
 
 // Record для хранения результата
-record ElementInfo(String elementName, XdmNode element, String formDataFieldName, String contentType, String fileName) { }
+record ElementInfo(String elementName, XdmNode element, String formDataFieldName, String contentType, String fileName, String isJsonMadeManually) { }
 
 public class MessageHttpSend {
 
@@ -374,7 +374,7 @@ public class MessageHttpSend {
 
     public static byte[] replaceUrlPlaceholders( String inputStr, boolean[]  isReplaceContent, long Queue_Id, int ApiRestWaitTime,
                                                  MessageTemplate4Perform messageTemplate4Perform,
-                                                 Logger MessageSend_Log ) {
+                                                 Logger MessageSend_Log ) throws IOException, SaxonApiException {
 
 
         int startIdx = inputStr.indexOf( XMLchars.URL_File_Path_Begin, 0);
@@ -413,10 +413,12 @@ public class MessageHttpSend {
                                                         messageTemplate4Perform, MessageSend_Log);
                 // Конвертируем содержимое файла в base64 строку
                 fileContentBase64 = Base64.getEncoder().encodeToString(fileBytes);
-            } catch (IOException e) {
-                MessageSend_Log.error("[{}][Ошибка при чтении URL:`{}`: {} ", Queue_Id, httpURLFilePath, e.getMessage());
+            } catch (IOException IOe) {
+                MessageSend_Log.error("[{}][Ошибка при чтении URL:`{}`: {} ", Queue_Id, httpURLFilePath, IOe.getMessage());
                 // В случае ошибки, вставляем сообщение или оставляем маркер
                 fileContentBase64 = "`[]`" + Queue_Id +"[Ошибка при чтении URL: " + httpURLFilePath + "]";
+                // В случае ошибки, генерим IOException
+                throw new IOException ("Ошибка при чтении URL:`"+ httpURLFilePath +"`: "+ IOe.getMessage() + " , полученного для передачи вложений", IOe);
             }
 
             // Вставляем содержимое файла
@@ -431,15 +433,15 @@ public class MessageHttpSend {
     }
 
     // Парсим XML строку в XdmNode
-    public static XdmNode parseXml(String xmlString, Processor xPathProcessor ) {
+    public static XdmNode parseXml(String xmlString, Processor xPathProcessor )  {
         try {
             DocumentBuilder xPathBuilder = xPathProcessor.newDocumentBuilder();
             StreamSource xmlSource = new StreamSource(new StringReader(xmlString));
-            return xPathBuilder.build(xmlSource)
-                    ;
+            return xPathBuilder.build(xmlSource);
 
         } catch (SaxonApiException e) {
-            throw new RuntimeException("Ошибка парсинга XML", e);
+            throw new RuntimeException("Ошибка парсинга XML `" + xmlString +"` :" + e.getMessage(), e);
+            //throw new SaxonApiException("Ошибка парсинга XML `" + xmlString +"` :" + e.getMessage(), e);
         }
     }
 
@@ -457,11 +459,12 @@ public class MessageHttpSend {
                     String formDataFieldName = node.getAttributeValue(new QName("formDataFieldName"));
                     String contentType = node.getAttributeValue(new QName("ContentType"));
                     String fileName  = node.getAttributeValue(new QName("filename"));
-                    results.add(new ElementInfo(qName.getLocalName(), node, formDataFieldName, contentType, fileName));
+                    String isJsonMadeManually = node.getAttributeValue(new QName("isJsonMade"));
+                    results.add(new ElementInfo(qName.getLocalName(), node, formDataFieldName, contentType, fileName, isJsonMadeManually));
                 }
             }
         } catch (SaxonApiException e) {
-            throw new RuntimeException("Ошибка выполнения XPath", e);
+            throw new RuntimeException("Ошибка выполнения XPath для получения значений атрибутов", e);
         }
         return results;
     }
@@ -593,7 +596,7 @@ public class MessageHttpSend {
 
         String formDataFieldName = ""; // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
         List<ElementInfo> elements = processXml(xPathProcessor, xPathSelector,
-                                                saved_XML_MsgSEND);
+                                                                saved_XML_MsgSEND);
         boolean IsDebugged = messageDetails.MessageTemplate4Perform.getIsDebugged();
         for (ElementInfo info : elements) {
             if (IsDebugged ) {
@@ -602,6 +605,7 @@ public class MessageHttpSend {
                 MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.formDataFieldName: {} ", messageQueueVO.getQueue_Id(), info.formDataFieldName());
                 MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.ContentType: {}", messageQueueVO.getQueue_Id(), info.contentType());
                 MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.filename: {}", messageQueueVO.getQueue_Id(), info.fileName());
+                MessageSend_Log.warn("[{}] ElementInfo sendWebFormMessage.isJsonMadeManually: {}", messageQueueVO.getQueue_Id(), info.isJsonMadeManually());
             }
             if ( info.elementName().equalsIgnoreCase("Query_KEY_Value"))
             {
@@ -757,6 +761,7 @@ public class MessageHttpSend {
                                 MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.Элемент: {}", messageQueueVO.getQueue_Id(), info.elementName() );
                                 MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.formDataFieldName: {} " , messageQueueVO.getQueue_Id() , info.formDataFieldName());
                                 MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.ContentType: {}", messageQueueVO.getQueue_Id() , info.contentType());
+                                MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.isJsonMadeManually: {}", messageQueueVO.getQueue_Id() , info.isJsonMadeManually());
                                 formDataFieldName = info.formDataFieldName();
                                 RequestBody.append("--").append(boundary).append("\r\n")
                                         .append("Content-Disposition: form-data; name=\"")
@@ -768,25 +773,34 @@ public class MessageHttpSend {
                                         .append("Content-Type: ").append(info.contentType()).append("\r\n\r\n")
                                         ;
                                 if ( info.contentType().contains("json") ) {
-                                    MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.Метка элемента: {}" , messageQueueVO.getQueue_Id() , info.element().toString() );
-                                    XdmNode parentNode = info.element();
-                                    // Предполагаем, что внутри один дочерний элемент
-                                    XdmNode childNode = null;
-                                    for (XdmSequenceIterator<XdmNode> it = parentNode.axisIterator(Axis.CHILD); ; ) {
-                                        XdmNode child = it.next();
-                                        childNode = child;
-                                        break; // берем только первый
+                                    if ((info.isJsonMadeManually() !=null) && ( info.isJsonMadeManually().contains("true") )) {
+                                        MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.Тело элемента: {}", messageQueueVO.getQueue_Id(),
+                                                                            messageDetails.XML_MsgSEND);
+                                        RequestBody.append( messageDetails.XML_MsgSEND)
+                                                   .append("\r\n");
+
                                     }
-                                    if (childNode != null) {
-                                        RequestBody.append(
-                                                        XML.toJSONObject( childNode.toString()) .toString(0)
-                                                )
-                                                .append("\r\n")
-                                        ;
-                                    } else
-                                    RequestBody.append( "[]")
-                                               .append("\r\n")
+                                    else {
+                                        MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.Метка элемента: {}", messageQueueVO.getQueue_Id(), info.element().toString());
+                                        XdmNode parentNode = info.element();
+                                        // Предполагаем, что внутри один дочерний элемент
+                                        XdmNode childNode = null;
+                                        for (XdmSequenceIterator<XdmNode> it = parentNode.axisIterator(Axis.CHILD); ; ) {
+                                            XdmNode child = it.next();
+                                            childNode = child;
+                                            break; // берем только первый
+                                        }
+                                        if (childNode != null) {
+                                            RequestBody.append(
+                                                            XML.toJSONObject(childNode.toString()).toString(0)
+                                                    )
+                                                    .append("\r\n")
                                             ;
+                                        } else
+                                            RequestBody.append("[]")
+                                                    .append("\r\n")
+                                                    ;
+                                    }
                                 } else {
                                     if (info.fileName() == null) {// text/plain
                                         MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.содержимое элемента: {}", messageQueueVO.getQueue_Id(), info.element().getStringValue());
@@ -1195,7 +1209,7 @@ public class MessageHttpSend {
             } catch (UnsupportedEncodingException e) {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage: UnsupportedEncodingException");
                 e.printStackTrace();
-                MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), sStackTrace.strInterruptedException(e));
+                MessageSend_Log.error("[{}] sendPostMessage.POST from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), sStackTrace.strInterruptedException(e));
                 messageDetails.MsgReason.append(" sendPostMessage.post.to").append(messageDetails.MessageTemplate4Perform.getPropEncoding_Out()).append(" fault: ").append(sStackTrace.strInterruptedException(e));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "sendPostMessage.POST", true, e, MessageSend_Log);
@@ -1211,7 +1225,7 @@ public class MessageHttpSend {
 
         try {
             if ( IsDebugged )
-                MessageSend_Log.info("[{}]sendPostMessage.POST({}).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {} PropUser:{}",
+                MessageSend_Log.info("[{}] sendPostMessage.POST({}).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {} PropUser:{}",
                             messageQueueVO.getQueue_Id(), EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(), messageTemplate4Perform.getPropTimeout_Read(), PropUser);
             messageDetails.Confirmation.clear();
             messageDetails.XML_MsgResponse.setLength(0);
@@ -1256,7 +1270,7 @@ public class MessageHttpSend {
             However, when the refinitiv server returns 401, it returns the following header :
             Authorization: WWW-Authenticate: Signature realm="World-Check One API",algorithm="hmac-sha256",headers="(request-target) host date content-type content-length"
              */
-            System.err.println("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString.IOException: Encoding `" + sendIoExc.getMessage() + "`");
+            System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST: IOUtils.toString.IOException: Encoding `" + sendIoExc.getMessage() + "`");
             sendIoExc.printStackTrace();
                 }
 
@@ -1287,7 +1301,7 @@ public class MessageHttpSend {
                 else PropEncoding_Out = messageDetails.MessageTemplate4Perform.getPropEncoding_Out();
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] IOUtils.toString.UnsupportedEncodingException: Encoding `" + PropEncoding_Out + "`");
                 ioExc.printStackTrace();
-                MessageSend_Log.error("[{}] IOUtils.toString from `{}` to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), PropEncoding_Out, ioExc.getMessage());
+                MessageSend_Log.error("[{}] sendPostMessage.POST: IOUtils.toString from `{}` to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), PropEncoding_Out, ioExc.getMessage());
                 messageDetails.MsgReason.append(" HttpGetMessage.post.to_UTF_8 Encoding fault `")
                                                 .append(PropEncoding_Out)
                                                 .append("` :")
@@ -1305,7 +1319,7 @@ public class MessageHttpSend {
                ) {
                 Exception e = new Exception(" sendPostMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
                 if (IsDebugged)
-                    MessageSend_Log.error("[{}] sendPostMessage call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
+                    MessageSend_Log.error("[{}] sendPostMessage.POST call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
                 return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendPostMessage.POST", e,
                         ROWID_QUEUElog, IsDebugged, MessageSend_Log);
             }
@@ -1438,12 +1452,12 @@ public class MessageHttpSend {
             try {
                 XMLdocument = documentBuilder.build(parsedRestResponseStream);
                 if (IsDebugged)
-                    MessageSend_Log.info("[{}] sendPostMessage documentBuilder info=`{}`, XML_MsgResponse=({})",
+                    MessageSend_Log.info("[{}] sendPostMessage.POST documentBuilder info=`{}`, XML_MsgResponse=({})",
                                         messageQueueVO.getQueue_Id(), XMLdocument.toString(), messageDetails.XML_MsgResponse);
 
             } catch (JDOMException RestResponseE) {
                 XMLdocument = null;
-                MessageSend_Log.error("[{}]sendPostMessage.documentBuilder fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(RestResponseE));
+                MessageSend_Log.error("[{}]sendPostMessage.POST.documentBuilder fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(RestResponseE));
                 // формируем искуственный XML_MsgResponse из Fault ,  меняем XML_MsgResponse
                 append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, null );
             }
@@ -1451,13 +1465,13 @@ public class MessageHttpSend {
             MessageSoapSend.getResponseBody(messageDetails, XMLdocument, MessageSend_Log);
 
             if (IsDebugged)
-                MessageSend_Log.info("[{}] sendPostMessage:ClearBodyResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString());
+                MessageSend_Log.info("[{}] sendPostMessage.POST:ClearBodyResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_ClearBodyResponse.toString());
             // client.wait(100);
 
         } catch (Exception e) {
             System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception");
             e.printStackTrace();
-            MessageSend_Log.error("[{}] sendPostMessage.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
+            MessageSend_Log.error("[{}] sendPostMessage.POST.getResponseBody fault: {}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
             messageDetails.MsgReason.append(" sendPostMessage.getResponseBody fault: ").append(sStackTrace.strInterruptedException(e));
 
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
@@ -1466,12 +1480,12 @@ public class MessageHttpSend {
         }
         if (restResponseStatus != 200) // Rest вызов считаем успешным только при получении
         {
-            MessageSend_Log.error("[{}] sendPostMessage.restResponseStatus != 200: {}", messageQueueVO.getQueue_Id(), restResponseStatus);
+            MessageSend_Log.error("[{}] sendPostMessage.POST.restResponseStatus != 200: {}", messageQueueVO.getQueue_Id(), restResponseStatus);
             messageDetails.MsgReason.append(" sendPostMessage.restResponseStatus != 200: ").append(restResponseStatus);
 
             int messageRetry_Count = MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
-                    "sendPostMessage.restResponseStatus != 200 ", false, null, MessageSend_Log);
-            MessageSend_Log.error("[{}] sendPostMessage.messageRetry_Count = {}", messageQueueVO.getQueue_Id(), messageRetry_Count);
+                    "sendPostMessage.POST.restResponseStatus != 200 ", false, null, MessageSend_Log);
+            MessageSend_Log.error("[{}] sendPostMessage.POST.messageRetry_Count = {}", messageQueueVO.getQueue_Id(), messageRetry_Count);
             if ( messageDetails.XML_ClearBodyResponse.length() > XMLchars.nanXSLT_Result.length() )
                 return 0; // ответ от внешней системы разобран в виде XML , надо продолжить обработку
             else
@@ -1484,7 +1498,7 @@ public class MessageHttpSend {
             ApiRestHttpClient.close();
 
         } catch ( Exception IOE ) {
-            MessageSend_Log.error("[{}] sendPostMessage.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(IOE));
+            MessageSend_Log.error("[{}] sendPostMessage.POST.ApiRestHttpClient.close fault, Exception:{}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(IOE));
         }
         ApiRestHttpClient = null;
         /*
@@ -1497,13 +1511,13 @@ public class MessageHttpSend {
         syncConnectionManager = null;*/
 
     } finally {
-        MessageSend_Log.warn("[{}] sendPostMessage.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
+        MessageSend_Log.warn("[{}] sendPostMessage.POST.ApiRestHttpClient.close finally", messageQueueVO.getQueue_Id());
         if (ApiRestHttpClient != null)
             try {
                 ApiRestHttpClient.close();
 
             } catch ( Exception IOE ) {
-                MessageSend_Log.error("[{}] sendPostMessage.ApiRestHttpClient.close finally fault, UnirestException:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
+                MessageSend_Log.error("[{}] sendPostMessage.POST.ApiRestHttpClient.close finally fault, UnirestException:{}", messageQueueVO.getQueue_Id(), IOE.getMessage());
             }
         ApiRestHttpClient = null;
         /*if (syncConnectionManager != null)
@@ -1524,7 +1538,7 @@ public class MessageHttpSend {
     {
         System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception"); if (e != null ) e.printStackTrace();
 
-        MessageSend_Log.error("[{}] {} ({}) fault, HttpRequestException:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, sStackTrace.strInterruptedException(e));
+        MessageSend_Log.error("[{}] handle_Transport_Errors: {} ({}) fault, HttpRequestException:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, sStackTrace.strInterruptedException(e));
         messageDetails.MsgReason.append(" sendPostMessage.POST fault: ");
         if (e != null ) messageDetails.MsgReason.append(sStackTrace.strInterruptedException(e));
 
@@ -1534,13 +1548,13 @@ public class MessageHttpSend {
 
         // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
         // НАДО проверять количество порыток !!!
-        MessageSend_Log.error("[{}] {}: Retry_Count ({})>= ( ShortRetryCount={} LongRetryCount={})", messageQueueVO.getQueue_Id(),
+        MessageSend_Log.error("[{}] handle_Transport_Errors: {}: Retry_Count ({})>= ( ShortRetryCount={} LongRetryCount={})", messageQueueVO.getQueue_Id(),
                                             colledHttpMethodName, messageQueueVO.getRetry_Count(),
                                             messageDetails.MessageTemplate4Perform.getShortRetryCount(),
                                             messageDetails.MessageTemplate4Perform.getLongRetryCount());
         if (messageQueueVO.getRetry_Count() + 1 >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) {
             // количество порыток исчерпано, формируем результат для выхода из повторов
-            MessageSend_Log.error("[{}] {}(`{}`) fault:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, e);
+            MessageSend_Log.error("[{}] handle_Transport_Errors: {}(`{}`) fault:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, sStackTrace.strInterruptedException(e) );
             append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, 506 ,
                     colledHttpMethodName + " (`", null)
                                               .append(EndPointUrl).append("`) fault:").append(e.getMessage() );
