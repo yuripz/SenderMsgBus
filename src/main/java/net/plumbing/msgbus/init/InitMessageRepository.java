@@ -421,7 +421,7 @@ public class InitMessageRepository {
                         "t.max_retry_count, " +
                         "t.max_retry_time, t.Last_Update_Dt " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
-                        "where (1=1) and t.msg_direction like '%OUT%' " + " and t.interface_id=79 " +
+                        "where (1=1) and t.msg_direction like '%OUT%' " + //" and t.interface_id=79 " +
                         "and t.operation_id !=0 order by t.interface_id, t.operation_id");
 
             } catch (Exception e) {
@@ -502,7 +502,7 @@ public class InitMessageRepository {
                                 "t.lastmaker, " +
                                 "t.lastdate " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_TemplateS t " +
-                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + " and t.interface_id=79 " +
+                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + //" and t.interface_id=79 " +
                         "order by t.interface_id, t.operation_id, t.destin_id, t.dst_subcod");
 
             } catch (Exception e) {

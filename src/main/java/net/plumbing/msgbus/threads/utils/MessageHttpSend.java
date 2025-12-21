@@ -1554,10 +1554,11 @@ public class MessageHttpSend {
                                             messageDetails.MessageTemplate4Perform.getLongRetryCount());
         if (messageQueueVO.getRetry_Count() + 1 >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount()) {
             // количество порыток исчерпано, формируем результат для выхода из повторов
-            MessageSend_Log.error("[{}] handle_Transport_Errors: {}(`{}`) fault:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, sStackTrace.strInterruptedException(e) );
+            MessageSend_Log.error("[{}] handle_Transport_Errors: {}(`{}`) make fault:{}", messageQueueVO.getQueue_Id(), colledHttpMethodName, EndPointUrl, sStackTrace.strInterruptedException(e) );
             append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, 506 ,
-                    colledHttpMethodName + " (`", null)
-                                              .append(EndPointUrl).append("`) fault:").append(e.getMessage() );
+                                              colledHttpMethodName + " (`" + EndPointUrl+ "`) fault:" + e.getMessage()  ,
+                                        null);
+            MessageSend_Log.error("[{}] handle_Transport_Errors: XML_MsgResponse is:`{}`", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString() );
 
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                     colledHttpMethodName + " (" + EndPointUrl + "), do re-Send: ", false, e, MessageSend_Log);
@@ -1576,8 +1577,12 @@ public class MessageHttpSend {
         // JSON_MsgResponse.append("{");
         if (responseHttpHeaders != null) {
             Map<String, List<String>> allHeaders = responseHttpHeaders.map();
+            int i = 0;
             for (Map.Entry<String, List<String>> entry : allHeaders.entrySet() )
-            { String httpHeader =  entry.getKey();
+            { i = i+1;
+                String httpHeader =  entry.getKey();
+                if (httpHeader.equalsIgnoreCase("Path"))
+                    httpHeader = httpHeader + i;
                 JSON_MsgResponse.append("\"").append(httpHeader).append("\":");
                 if (httpHeader.equals("set-cookie"))
                 {
@@ -1598,12 +1603,20 @@ public class MessageHttpSend {
                         // Max-Age=1209600
                         // Expires=Thu, 13 Nov 2025 22:50:15 GMT; Path=/; HttpOnly; SameSite=Lax
                         for (String queryParam : queryParams) {
+                            i = i+1;
                             String ParamElements[] = queryParam.split("=");
                             if ((ParamElements.length > 1) && (ParamElements[1] != null)) {
+                                if ( ParamElements[0].trim().equalsIgnoreCase("Path"))
                                 JSON_MsgResponse.append("\"")
-                                        .append(ParamElements[0].trim())
+                                        .append(ParamElements[0].trim() ).append(i)
                                         .append("\":\"")
                                         .append(ParamElements[1]).append("\",");
+                                else
+                                    JSON_MsgResponse.append("\"")
+                                            .append(ParamElements[0].trim())
+                                            .append("\":\"")
+                                            .append(ParamElements[1]).append("\",");
+
                             } else
                                 JSON_MsgResponse.append("\"")
                                         .append(ParamElements[0].trim())
@@ -1611,7 +1624,8 @@ public class MessageHttpSend {
                         }
                     }
                     else
-                    JSON_MsgResponse.append(value.trim()).append("");
+                    JSON_MsgResponse.append(
+                            (value.trim().replace('"', ' ')) );
                 }
                 if (httpHeader.equals("set-cookie"))
                 {
