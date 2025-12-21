@@ -1270,8 +1270,13 @@ public class MessageHttpSend {
             However, when the refinitiv server returns 401, it returns the following header :
             Authorization: WWW-Authenticate: Signature realm="World-Check One API",algorithm="hmac-sha256",headers="(request-target) host date content-type content-length"
              */
-            System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST: IOUtils.toString.IOException: Encoding `" + sendIoExc.getMessage() + "`");
+            System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST: ApiRestHttpClient.send.IOException: `" + sendIoExc.getMessage() + "`");
             sendIoExc.printStackTrace();
+            MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    "sendPostMessage.POST", true, sendIoExc, MessageSend_Log);
+            if (IsDebugged)
+                theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(sendIoExc), MessageSend_Log);
+            return -1;
                 }
 
             restResponseStatus = Response.statusCode();
