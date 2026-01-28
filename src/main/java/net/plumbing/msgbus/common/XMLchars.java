@@ -121,7 +121,8 @@ public class XMLchars {
             XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 32778;
         }
      */
-    public static int MAX_TAG_VALUE_BYTE_SIZE= 3992; //   for PostGreSQL 32778;
+    //  for Oracle it must be 3968 - 2
+    public static int MAX_TAG_VALUE_BYTE_SIZE= 3966; //   for PostGreSQL 32778;
 
     public static byte @NotNull [] cutUTF8ToMAX_TAG_VALUE_BYTE_SIZE(@NotNull String s)  {
         byte[] utf8;

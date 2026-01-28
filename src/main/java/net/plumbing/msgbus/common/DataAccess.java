@@ -42,7 +42,7 @@ public  class DataAccess {
         String ClassforName;
         if ( connectionUrl.indexOf("oracle") > 0 ) {
             ClassforName = "oracle.jdbc.driver.OracleDriver";
-            XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 3992;  //   for Oracle, it must be 3992
+            XMLchars.MAX_TAG_VALUE_BYTE_SIZE = 3966; // for Oracle, it must be 3968 - 2
         }
         else {
             ClassforName = "org.postgresql.Driver";
