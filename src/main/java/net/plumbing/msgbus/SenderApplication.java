@@ -55,7 +55,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.01.28SaX";
+	public static final String ApplicationName="*Sender_BUS* v.6.02.04SaX";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -205,8 +205,11 @@ public class SenderApplication implements CommandLineRunner {
 					", db `" + connectionProperties.getextsysPoint() + "` as `"+ connectionProperties.getextsysDbLogin() + "`), *stopping*", AppThead_log );
 			System.exit(-20);
 		}
-		// Зачитываем MessageDirection
 
+        // Create a Saxon configuration 4  Register the extension functions.
+        InitMessageRepository.SaxonExtensionConfiguration( AppThead_log );
+
+		// Зачитываем MessageDirection
 		int num_of_Systems = InitMessageRepository.SelectMsgDirections(ShortRetryCount, ShortRetryInterval, LongRetryCount, LongRetryInterval,
 				AppThead_log );
 		if ( num_of_Systems < 1 )

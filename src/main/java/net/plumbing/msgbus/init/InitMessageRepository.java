@@ -2,6 +2,8 @@ package net.plumbing.msgbus.init;
 
 import net.plumbing.msgbus.common.DataAccess;
 import net.plumbing.msgbus.common.sStackTrace;
+import net.sf.saxon.lib.Feature;
+import net.sf.saxon.lib.FeatureKeys;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.model.MessageDirectionsVO;
 import net.plumbing.msgbus.model.MessageDirections;
@@ -11,12 +13,32 @@ import net.plumbing.msgbus.model.MessageTemplateVO;
 import net.plumbing.msgbus.model.MessageTemplate;
 
 import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
-
+import net.sf.saxon.Configuration;
 
 import java.sql.*;
 
 public class InitMessageRepository {
+public static Configuration SaxonExtensionConfig;
 
+public static void SaxonExtensionConfiguration( Logger AppThead_log  ) {
+    Configuration config = new Configuration();
+// Register the extension functions. Register *each function individually*.
+    //config.
+    config.registerExtensionFunction(new MsgBusSaxonJavaExtensions.MyConcatenateFunction());
+    config.registerExtensionFunction(new MsgBusSaxonJavaExtensions.GetSystemPropertyFunction());
+    // Base64ToString
+    config.registerExtensionFunction(new MsgBusSaxonJavaExtensions.Base64ToStringFunction());
+    // StringToBase64Function
+    config.registerExtensionFunction(new MsgBusSaxonJavaExtensions.StringToBase64Function());
+    config.setConfigurationProperty(FeatureKeys.ALLOW_EXTERNAL_FUNCTIONS, true);
+    SaxonExtensionConfig = config;
+    // **Get boolean parameter from the config: "allowExternalFunctions"**
+    // boolean allowExternalFunctions = config.getBooleanProperty(FeatureKeys.ALLOW_EXTERNAL_FUNCTIONS);
+    boolean allowExternalFunctions = config.getBooleanProperty(Feature.ALLOW_EXTERNAL_FUNCTIONS);
+    AppThead_log.info("SaxonExtensionConfiguration: `ALLOW_EXTERNAL_FUNCTIONS` value from config: {}" , allowExternalFunctions);
+    AppThead_log.info( "SaxonExtensionConfiguration: " + " done;" );
+    return ;
+}
     //private static PreparedStatement stmtMsgTypeReRead;
     //private static PreparedStatement stmtMsgDirectionReRead;
     //private static PreparedStatement stmtMsgTemplateReRead;
@@ -421,7 +443,7 @@ public class InitMessageRepository {
                         "t.max_retry_count, " +
                         "t.max_retry_time, t.Last_Update_Dt " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_typeS t " +
-                        "where (1=1) and t.msg_direction like '%OUT%' " + //" and t.interface_id=79 " +
+                        "where (1=1) and t.msg_direction like '%OUT%' " + " and t.interface_id=69 " +
                         "and t.operation_id !=0 order by t.interface_id, t.operation_id");
 
             } catch (Exception e) {
@@ -502,7 +524,7 @@ public class InitMessageRepository {
                                 "t.lastmaker, " +
                                 "t.lastdate " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_TemplateS t " +
-                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + //" and t.interface_id=79 " +
+                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + " and t.interface_id=69 " +
                         "order by t.interface_id, t.operation_id, t.destin_id, t.dst_subcod");
 
             } catch (Exception e) {
@@ -543,8 +565,11 @@ public class InitMessageRepository {
                 parseResult = ConfigMsgTemplates.performConfig(messageTemplateVO, AppThead_log);
                 MessageTemplate.AllMessageTemplate.put(MessageTemplate.RowNum, messageTemplateVO);
 
-                AppThead_log.info(" AllMessageTemplate.size :" + MessageTemplate.AllMessageTemplate.size() + " MessageRowNum =" + MessageTemplate.RowNum +
-                        " Template_name:" + MessageTemplate.AllMessageTemplate.get(MessageTemplate.RowNum).getTemplate_name() +" parseConfigResult=" + parseResult);
+                AppThead_log.info(" AllMessageTemplate.size :{} MessageRowNum ={} Msg_Type:{} Template_name:{} parseConfigResult={}",
+                        MessageTemplate.AllMessageTemplate.size(), MessageTemplate.RowNum,
+                        MessageTemplate.AllMessageTemplate.get(MessageTemplate.RowNum).getMsg_Type(),
+                        MessageTemplate.AllMessageTemplate.get(MessageTemplate.RowNum).getTemplate_name(),
+                        parseResult);
 
                 MessageTemplate.RowNum += 1;
             }

@@ -9,6 +9,8 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
+import static net.plumbing.msgbus.init.InitMessageRepository.SaxonExtensionConfig;
+
 public class MessageTemplateVO {
 
 
@@ -109,7 +111,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                HeaderXSLT_processor = new Processor(false);
+                HeaderXSLT_processor = new Processor( SaxonExtensionConfig ); //new  Processor(false);
                 HeaderXSLT_xsltCompiler = HeaderXSLT_processor.newXsltCompiler();
                 HeaderXSLT_xsltStylesheet = HeaderXSLT_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
@@ -147,7 +149,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                MsgAnswXSLT_processor = new Processor(false);
+                MsgAnswXSLT_processor = new Processor( SaxonExtensionConfig );
                 MsgAnswXSLT_xsltCompiler = MsgAnswXSLT_processor.newXsltCompiler();
                 MsgAnswXSLT_xsltStylesheet = MsgAnswXSLT_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
@@ -185,7 +187,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                MessageXSLT_processor = new Processor(false);
+                MessageXSLT_processor = new Processor( SaxonExtensionConfig ) ; //Processor(false);
                 MessageXSLT_xsltCompiler = MessageXSLT_processor.newXsltCompiler();
                 MessageXSLT_xsltStylesheet = MessageXSLT_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
@@ -223,7 +225,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                AckXSLT_processor = new Processor(false);
+                AckXSLT_processor = new Processor( SaxonExtensionConfig ); // new Processor(false);
                 AckXSLT_xsltCompiler = AckXSLT_processor.newXsltCompiler();
                 AckXSLT_xsltStylesheet = AckXSLT_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
@@ -261,7 +263,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                EnvelopeXSLTPost_processor = new Processor(false);
+                EnvelopeXSLTPost_processor = new Processor( SaxonExtensionConfig ); //new Processor(false);
                 EnvelopeXSLTPost_xsltCompiler = EnvelopeXSLTPost_processor.newXsltCompiler();
                 EnvelopeXSLTPost_xsltStylesheet = EnvelopeXSLTPost_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
@@ -299,7 +301,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                EnvelopeXSLTExt_processor = new Processor(false);
+                EnvelopeXSLTExt_processor = new Processor( SaxonExtensionConfig ); // new Processor(false);
                 EnvelopeXSLTExt_xsltCompiler = EnvelopeXSLTExt_processor.newXsltCompiler();
                 EnvelopeXSLTExt_xsltStylesheet = EnvelopeXSLTExt_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
@@ -338,7 +340,7 @@ public class MessageTemplateVO {
                 return;
             }
             try {
-                ErrTransXSLT_processor = new Processor(false);
+                ErrTransXSLT_processor = new Processor( SaxonExtensionConfig ); //new Processor(false);
                 ErrTransXSLT_xsltCompiler = ErrTransXSLT_processor.newXsltCompiler();
                 ErrTransXSLT_xsltStylesheet = ErrTransXSLT_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
