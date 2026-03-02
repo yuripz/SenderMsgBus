@@ -116,9 +116,9 @@ public class MessageTemplateVO {
                 HeaderXSLT_xsltStylesheet = HeaderXSLT_xsltCompiler.compile(srcXSLT);
             } catch (SaxonApiException exp) {
                 String ConvXMLuseXSLTerr = sStackTrace.strInterruptedException(exp);
-                System.err.println("makeHeaderXSLT_Transformer for Msg_Type `" + Msg_Type + "` (" + Interface_Id + "|" + Operation_Id + ") xsltCompiler Exception:");
+                System.err.println("makeHeaderXSLT_Transformer for Msg_Type `" + Msg_Type + "` (" + Interface_Id + "|" + Operation_Id + ") Src_SubCod=`" + Src_SubCod + "` xsltCompiler Exception:");
                 exp.printStackTrace();
-                AppThead_log.error("makeHeaderXSLT_Transformer for Msg_Type `{}` ({}|{}) xsltCompiler of `{}` Exception: {}", Msg_Type, Interface_Id, Operation_Id, HeaderXSLT, ConvXMLuseXSLTerr);
+                AppThead_log.error("makeHeaderXSLT_Transformer for Msg_Type `{}` ({}|{}) Src_SubCod=`{}`xsltCompiler of `{}` Exception: {}", Msg_Type, Interface_Id, Operation_Id, Src_SubCod, HeaderXSLT, ConvXMLuseXSLTerr);
                 return;
             }
             HeaderXSLT_xslt30Transformer = HeaderXSLT_xsltStylesheet.load30();

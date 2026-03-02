@@ -114,11 +114,9 @@ public class TheadDataAccess {
             e.printStackTrace();
         }
     }
-
-    public Connection make_Hermes_Connection(String dst_point, String db_userid, String db_password, String InternalDbPgSetSetupConnection , int theadNum, Logger dataAccess_log) {
+    public Connection make_Hermes_Connection_Only(String dst_point, String db_userid, String db_password, String InternalDbPgSetSetupConnection, int theadNum, Logger dataAccess_log) {
         Connection Target_Connection = null;
         String connectionUrl;
-
         if (dst_point == null) {
             connectionUrl = "jdbc:oracle:thin:@//5.6.7.8:1521/hermesXX";
         } else {
@@ -185,10 +183,18 @@ public class TheadDataAccess {
             e.printStackTrace();
             return ((Connection) null);
         }
-
-        Hermes_Connection = Target_Connection;
-
         dataAccess_log.info("MsgBus(thead) getConnection: {} as {} done", connectionUrl, db_userid);
+        this.Hermes_Connection = Target_Connection;
+        return Target_Connection;
+    }
+
+    public Connection make_Hermes_Connection(String dst_point, String db_userid, String db_password, String InternalDbPgSetSetupConnection , int theadNum, Logger dataAccess_log) {
+        Connection Target_Connection = null;
+        String connectionUrl;
+
+        Target_Connection = make_Hermes_Connection_Only(dst_point, db_userid, db_password, InternalDbPgSetSetupConnection, theadNum, dataAccess_log);
+        if (Target_Connection == null) { return ((Connection) null); }
+
 
         if (make_SelectNew_Queue(  dataAccess_log) == null ) {
             dataAccess_log.error( "make_SelectNew_Queue() fault");

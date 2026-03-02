@@ -399,7 +399,7 @@ public class MessageSendTask  implements Runnable
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
-                                rs.getString("OutQueue_Id"),  //
+                                rs.getString("OutQueue_Id").trim(),  //
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),
@@ -836,7 +836,7 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
-                                rs.getString("OutQueue_Id"), // get OutQueue_Id as to_Char(Q.outQueue_id)
+                                rs.getString("OutQueue_Id").trim(), // get OutQueue_Id as to_Char(Q.outQueue_id)
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),

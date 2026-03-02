@@ -60,7 +60,7 @@ public class MessageUtils {
                 messageQueueVO.setMessageQueue(
                         rs.getLong("Queue_Id"),
                         rs.getTimestamp("Queue_Date"),
-                        rs.getString("OutQueue_Id"),
+                        rs.getString("OutQueue_Id").trim(),
                         rs.getTimestamp("Msg_Date"),
                         rs.getInt("Msg_Status"),
                         rs.getInt("MsgDirection_Id"),
@@ -731,7 +731,7 @@ public class MessageUtils {
 
         MessegeSend_Log.info("[{}] получили из БД тело XML, {} символов", Queue_Id, messageDetails.XML_MsgOUT.length());
         if (IsDebugged ) {
-            MessegeSend_Log.info(messageDetails.XML_MsgOUT.toString());
+            MessegeSend_Log.info("[{}] `{}`", Queue_Id, messageDetails.XML_MsgOUT.toString());
         }
         return messageDetails.MessageRowNum;
     }

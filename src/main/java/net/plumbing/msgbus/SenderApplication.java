@@ -7,6 +7,8 @@ import net.plumbing.msgbus.common.ExtSystemDataAccess;
 import net.plumbing.msgbus.config.*;
 import net.plumbing.msgbus.init.InitMessageRepository;
 import net.plumbing.msgbus.telegramm.NotifyByChannel;
+import net.plumbing.msgbus.threads.hzcache.Cachierer;
+import net.plumbing.msgbus.threads.hzcache.HzQueueVO;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -33,6 +35,7 @@ import java.util.Properties;
 import org.apache.activemq.broker.BrokerService;
 
 import jakarta.jms.Connection;
+import com.hazelcast.map.IMap;
 
 @EnableScheduling
 @SpringBootApplication (scanBasePackages = "net.plumbing.msgbus.*")
@@ -55,7 +58,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.02.04SaX";
+	public static final String ApplicationName="*Sender_BUS* v.6.02.17SaX";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
@@ -206,6 +209,9 @@ public class SenderApplication implements CommandLineRunner {
 			System.exit(-20);
 		}
 
+        // Start HZ
+        // IMap hzMsgSenderMap = Cachierer.init(, connectionProperties);
+
         // Create a Saxon configuration 4  Register the extension functions.
         InitMessageRepository.SaxonExtensionConfiguration( AppThead_log );
 
@@ -323,6 +329,7 @@ public class SenderApplication implements CommandLineRunner {
 		for (;;) {
 			count = taskExecutor.getActiveCount();
 			AppThead_log.info("Active Threads : " + count);
+            //AppThead_log.info("HZcachirer: Фоновое инкрементальное наполнение `hzMsgSenderMap` выполнено. Записей в карте: {}", hzMsgSenderMap.size());
 			try {
 
 				// Thread.sleep(25000);
@@ -392,8 +399,10 @@ public class SenderApplication implements CommandLineRunner {
 				break;
 			}
 			if (count == 0) {
-				/// taskExecutor.shutdown();
-				break;
+                if ( (TotalNumTasks != 0 ) ) {
+                    /// taskExecutor.shutdown();
+                    break;
+                }
 			}
 		}
 		taskExecutor.shutdown();

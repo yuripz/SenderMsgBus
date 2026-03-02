@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-        <version>0.3.26.02.04-SaX</version>
+        <version>0.3.26.02.17-SaX</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -242,6 +242,20 @@
 			<artifactId>json-path</artifactId>
 			<version>2.9.0</version>
 		</dependency>
+
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>5.6.0</version>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.hazelcast/hazelcast-sql not in use yet
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql</artifactId>
+            <version>5.6.0</version>-->
+            <!--  <scope>runtime</scope> -->
+        <!--</dependency> -->
 
 	</dependencies>
 

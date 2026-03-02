@@ -1,9 +1,18 @@
 package net.plumbing.msgbus.model;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Objects;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class MessageQueueVO {
+import javax.validation.constraints.NotNull;
+
+public class MessageQueueVO
+{
     protected long    Queue_Id;          // собственный идентификатор сообщения
-    protected java.sql.Timestamp    Queue_Date;  //  время создания  сообщения
+    protected java.sql.Timestamp    Queue_Date;  //  время создания сообщения
     // java.math.BigDecimal
     protected String OutQueue_Id;
     protected java.sql.Timestamp    Msg_Date;             //   время установки последнего  статуса
@@ -22,6 +31,13 @@ public class MessageQueueVO {
     protected java.sql.Timestamp    Prev_Msg_Date;
     protected java.sql.Timestamp    Queue_Create_Date;
     protected long    Perform_Object_Id;
+    protected int Priority_Level;
+    protected String  rowId;
+
+    public MessageQueueVO() { // Default constructor
+        // super();
+    }
+
 
     public void setMessageQueue(
             long    Queue_Id,
@@ -66,24 +82,35 @@ public class MessageQueueVO {
         this.Perform_Object_Id = Perform_Object_Id;
     }
     public String toSring () {
-        return ( "Queue_Id=" +   Queue_Id +
-        "; Queue_Date=" +   Queue_Date +
-        "; OutQueue_Id=" +   OutQueue_Id +
-        "; Msg_Date=" +     Msg_Date +
-        "; Msg_Status=" +    Msg_Status +
-        "; MsgDirection_Id=" +    MsgDirection_Id +
-        "; Msg_InfoStreamId=" +     Msg_InfoStreamId +
-        "; Operation_Id=" +     Operation_Id +
-        "; Queue_Direction=" +  Queue_Direction +
-        "; Msg_Type=" +  Msg_Type +
-        "; Msg_Reason=" +  Msg_Reason +
-        "; Msg_Type_own=" +  Msg_Type_own+
-        "; Msg_Result=" +   Msg_Result +
-        "; SubSys_Cod=" +   SubSys_Cod );
+        return ( "{\"MessageQueue\":{" +
+        "\"rowId\"=\""+ (rowId) + "\"," +
+        "\"Queue_Id\"=" + (Queue_Id) + ","+
+        "\"Queue_Direction\"=\"" +  Queue_Direction +
+        "\"Queue_Date\"=\"" +  (Queue_Date) + // Используем writeObject/readObject для Timestamp
+        "\"Msg_Status\"=" +  (Msg_Status)+ ","+
+                "\"Msg_Date\"=\"" + (Msg_Date) +
+        "\"Operation_Id\"="  + (Operation_Id ) + //  != null ? Operation_Id : -1); // Пишем -1 для null
+        "\"OutQueue_Id\"=" +  (OutQueue_Id) +
+                "\"Msg_Type\"=\"" +  (Msg_Type) + "\"," +
+                "\"Msg_Reason\"=\"" +  (Msg_Reason) + "\"," +
+        "\"MsgDirection_Id\"=" + (MsgDirection_Id)  + "," + // != null ? MsgDirection_Id : -1);
+        "\"Msg_InfoStreamId\"=" + (Msg_InfoStreamId)  + "," + // != null ? msgInfoStreamId : -1);
+        "\"Msg_Type_own\"=\"" + (Msg_Type_own)  + "\"," +
+        "\"Msg_Result\"=\"" + (Msg_Result) + "\"," +
+        "\"SubSys_Cod\"=\"" + (SubSys_Cod) + "\"," +
+        "\"Retry_Count\"=\"" + (Retry_Count) + "," +
+        "\"Prev_Queue_Direction\"=\"" + (Prev_Queue_Direction) + "\"," +
+        "\"Prev_Msg_Date\"=\"" + (Prev_Msg_Date) + "\"," +
+        "\"Queue_Create_Date\"=\"" +(Queue_Create_Date) + "\"," +
+        "\"Perform_Object_Id\"=" + (Perform_Object_Id) + "," + // != null ? performObjectId : -1);
+        "\"Priority_Level\"=" +(Priority_Level) + "} }"  //' != null ? Priority_Level : -1)
+        );
     }
-    public void  setEventInitiator( int pMsgDirection_Id, String pSubSys_Cod) {
-        this.MsgDirection_Id = pMsgDirection_Id; this.SubSys_Cod = pSubSys_Cod;
-    }
+
+    public String getRowId() { return rowId; }
+    public void setRowId(String rowId) { this.rowId = rowId; }
+    public Integer getPriorityLevel() { return Priority_Level; }
+    public void setPriorityLevel(Integer priorityLevel) { this.Priority_Level = priorityLevel; }
     public void  setOperation_Id( int pOperation_Id) { this.Operation_Id = pOperation_Id; }
     public void  setMsg_Type( String pMsg_Type) { this.Msg_Type = pMsg_Type; }
     public void  setMsg_Type_own( String pMsg_Type_own) { this.Msg_Type_own = pMsg_Type_own; }
@@ -123,4 +150,34 @@ public class MessageQueueVO {
     public  java.sql.Timestamp  getPrev_Msg_Date() { return ( this.Prev_Msg_Date);} // Дата предыдыдущего изменения статуса
     public  java.sql.Timestamp  getQueue_Create_Date() { return ( this.Queue_Create_Date);} // Дата создания ( неизменяемая )
     public  java.sql.Timestamp  getQueue_Date() { return this.Queue_Date ;} // Дата постановки в очередь ( неизменяемая )
+
+/*    @Override
+    public int compareTo(@NotNull MessageQueueVO o) {
+        if (this == o) return 0;
+        if (o == null || getClass() != o.getClass()) return -1;
+        MessageQueueVO that = (MessageQueueVO) o;
+        boolean returns = (Queue_Id == that.Queue_Id &&
+                Retry_Count == that.Retry_Count &&
+                Objects.equals(rowId, that.rowId) &&
+                Objects.equals(Queue_Direction, that.Queue_Direction) &&
+                Objects.equals(Queue_Date, that.Queue_Date) &&
+                Msg_Status==that.Msg_Status &&
+                Objects.equals(Msg_Date, that.Msg_Date) &&
+                Operation_Id == that.Operation_Id &&
+                Objects.equals(OutQueue_Id, that.OutQueue_Id) &&
+                Objects.equals(Msg_Type, that.Msg_Type) &&
+                Objects.equals(Msg_Reason, that.Msg_Reason) &&
+                Objects.equals(MsgDirection_Id, that.MsgDirection_Id) &&
+                Msg_InfoStreamId == that.Msg_InfoStreamId &&
+                Objects.equals(Msg_Type_own, that.Msg_Type_own) &&
+                Objects.equals(Msg_Result, that.Msg_Result) &&
+                Objects.equals(SubSys_Cod, that.SubSys_Cod) &&
+                Objects.equals(Prev_Queue_Direction, that.Prev_Queue_Direction) &&
+                Objects.equals(Prev_Msg_Date, that.Prev_Msg_Date) &&
+                Objects.equals(Queue_Create_Date, that.Queue_Create_Date) &&
+                Perform_Object_Id == that.Perform_Object_Id &&
+                Priority_Level ==  that.Priority_Level);
+        if (returns) { return 0; }
+        else return 1;
+    }*/
 }
