@@ -1,5 +1,4 @@
 package net.plumbing.msgbus.init;
-import net.sf.saxon.s9api.Processor;
 import org.slf4j.Logger;
 import net.plumbing.msgbus.model.MessageTemplateVO;
 
@@ -14,7 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
-/*import javax.xml.parsers.DocumentBuilder;
+/*
+import net.sf.saxon.s9api.Processor;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
@@ -130,7 +131,7 @@ public class ConfigMsgTemplates {
 
         return sucess;
     }
-/***
+/*
     private static String getConfigExecute(Document document) throws DOMException, XPathExpressionException {
         //System.out.println("Example 1 - Печать всех элементов Cost");
         XPathFactory pathFactory = XPathFactory.newInstance();
@@ -148,5 +149,5 @@ public class ConfigMsgTemplates {
         }
         return null;
     }
-**/
+*/
 }

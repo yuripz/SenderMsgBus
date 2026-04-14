@@ -376,7 +376,7 @@ public class MessageSendTask  implements Runnable
             MessegeSend_Log.warn("MessageSendTask[" + theadNum + "]: localDate.toString=" + localDate.toString() + " localDate.format( DTformatter )=" + localDate.format( DTformatter ));
 */
 
-        MessegeSend_Log.info("MessageSendTask[" + theadNum + "]: main stream scanning on " + HrmsSchema + ".MESSAGE_QUEUE is starting, InfoStreamId=" +  (this.FirstInfoStreamId + theadNum ) );
+        MessegeSend_Log.info("MessageSendTask[{}]: main stream scanning on {}.MESSAGE_QUEUE is starting, InfoStreamId={}", theadNum, HrmsSchema, this.FirstInfoStreamId + theadNum);
         for ( theadRunCount = 0L; theadRunCount < theadRunTotalCount; theadRunCount += 1L ) {
             long secondsFromEpoch = Instant.ofEpochSecond(0L).until(Instant.now(), ChronoUnit.SECONDS);
             if ( secondsFromEpoch - startTimestamp > Long.valueOf(60L * TotalTimeTasks) )
@@ -388,6 +388,7 @@ public class MessageSendTask  implements Runnable
                 int num_HelpedMessage4Perform = 0; // Если поток обработал что-либо, помогая, то спать на чтении из очереди уже не нужно
                 try {
                     ResultSet rLock = null;
+                    String s_OutQueue_Id;
                     stmtMsgQueue.setInt(1, (theadNum + this.FirstInfoStreamId) );
                     stmtMsgQueue.setInt(2, (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) );
                     CurrentTaskStatus = "running for msg_InfoStreamId in (`" + (theadNum + this.FirstInfoStreamId) + "`, `" + (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000 ) + "`)";
@@ -399,7 +400,8 @@ public class MessageSendTask  implements Runnable
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
-                                rs.getString("OutQueue_Id").trim(),  //
+                                (s_OutQueue_Id = rs.getString("OutQueue_Id")) == null ? null : s_OutQueue_Id.trim(),
+                                //rs.getString("OutQueue_Id").trim(),  // NullPointerException: Cannot invoke "String.trim()" because the return value of "java.sql.ResultSet.getString(String)" is null
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),
@@ -418,10 +420,9 @@ public class MessageSendTask  implements Runnable
                                 rs.getLong("Perform_Object_Id")
                         );
                         if ( (theadRunCount % 10L) == 0L )
-                        MessegeSend_Log.info( "messageQueueVO.Queue_Id:" + rs.getLong("Queue_Id") + " [Msg_InfoStreamId=" + rs.getInt("Msg_InfoStreamId") + "]" +
-                                " [ " + rs.getString("Msg_Type") + "] SubSys_Cod=" + rs.getString("SubSys_Cod") +
-                                "Curr_Server_Time=`" + (rs.getTimestamp("Curr_Server_Time").toString() ) +
-                                "`,  ROWID=" + rs.getString("ROWID"));
+                            MessegeSend_Log.info("messageQueueVO.Queue_Id:{} [Msg_InfoStreamId={}] [ {}] SubSys_Cod={}Curr_Server_Time=`{}`,  ROWID={}",
+                                    rs.getLong("Queue_Id"), rs.getInt("Msg_InfoStreamId"), rs.getString("Msg_Type"),
+                                    rs.getString("SubSys_Cod"), rs.getTimestamp("Curr_Server_Time").toString(), rs.getString("ROWID"));
                         // вместо java.sql.Timestamp.valueOf(LocalDateTime.now(ZoneId.of( "Europe/Moscow"))) локального компьютера берём время от сервера БД
                         // messageQueueVO.setMsg_Date( java.sql.Timestamp.valueOf( LocalDateTime.now( ZoneId.of( "Europe/Moscow" ) ) ) );
                         messageQueueVO.setMsg_Date( rs.getTimestamp("Curr_Server_Time") );
@@ -438,14 +439,13 @@ public class MessageSendTask  implements Runnable
                                 LockedMsg_InfoStreamId = rLock.getInt("Msg_InfoStreamId");
                                 LockedQueue_Id = rLock.getLong("Queue_Id");
                                 LockedQueue_Direction = rLock.getString("Queue_Direction");
-                                MessegeSend_Log.info( "Main Thread: stmtQueueLock.Queue_Id:" + LockedQueue_Id +
-                                        " [Msg_InfoStreamId=" + LockedMsg_InfoStreamId + "]" +
-                                        " [LockedQueue_Direction=" + LockedQueue_Direction + "]" +
-                                        " do record locked" );
+                                MessegeSend_Log.info("Main Thread: stmtQueueLock.Queue_Id:{} [Msg_InfoStreamId={}] [LockedQueue_Direction={}] do record locked",
+                                        LockedQueue_Id, LockedMsg_InfoStreamId, LockedQueue_Direction);
                             }
                             if ( LockedMsg_InfoStreamId != messageQueueVO.getMsg_InfoStreamId() ) // может быть 103 , а может быть и 2000 + 103, перечитываем как есть
                             { // пока читали, кто-то уже забрал на себя
-                                MessegeSend_Log.warn( "Main Thread: stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record can't be locked, " + LockedMsg_InfoStreamId + "!=" + messageQueueVO.getMsg_InfoStreamId()  + " (пока читали, кто-то уже забрал на себя)" );
+                                MessegeSend_Log.warn("Main Thread: stmtQueueLock.Queue_Id:{} record can't be locked, {}!={} (пока читали, кто-то уже забрал на себя)",
+                                        messageQueueVO.getQueue_Id(), LockedMsg_InfoStreamId, messageQueueVO.getMsg_InfoStreamId());
                                 isNoLock = false;
                             }
                             else { // запись захвачена, Ok
@@ -461,13 +461,15 @@ public class MessageSendTask  implements Runnable
                         }
                         catch (SQLException e) {
                             // Запись захвачена другим потоком
-                            MessegeSend_Log.warn( "Main Thread: stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record can't be locked, " +e.getSQLState() + " :" + e.getMessage() );
+                            MessegeSend_Log.warn("Main Thread: stmtQueueLock.Queue_Id:{} record can't be locked, {} :{}",
+                                                messageQueueVO.getQueue_Id(), e.getSQLState(), e.getMessage());
                             isNoLock = false;
                             try {
                                 theadDataAccess.Hermes_Connection.rollback();
                             }
                             catch (SQLException rollback_e) {
-                                MessegeSend_Log.info( "Main Thread: stmtQueueLock4JMSconsumer.Queue_Id:" + messageQueueVO.getQueue_Id() + " Hermes_Connection.rollback() fault, " +e.getSQLState() + " :" + e.getMessage() );
+                                MessegeSend_Log.info("Main Thread: stmtQueueLock4JMSconsumer.Queue_Id:{} Hermes_Connection.rollback() fault, {} :{}",
+                                                        messageQueueVO.getQueue_Id(), e.getSQLState(), e.getMessage());
                             }
                         }
 
@@ -477,7 +479,8 @@ public class MessageSendTask  implements Runnable
                             // Очистили Message от всего, что там было
                             Message.ReInitMessageDetails( ApiRestWaitTime );
                             try {
-                                MessegeSend_Log.warn( "Main Thread: (530:)stmtQueueLock.Queue_Id:" + messageQueueVO.getQueue_Id() + " record  locked, Msg_InfoStreamId=" + messageQueueVO.getMsg_InfoStreamId()  );
+                                MessegeSend_Log.warn("Main Thread: (l480:)stmtQueueLock.Queue_Id:{} record  locked, Msg_InfoStreamId={}",
+                                            messageQueueVO.getQueue_Id(), messageQueueVO.getMsg_InfoStreamId());
                                 PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                             } catch (Exception   e) {
                                 CurrentTaskStatus ="performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage();
@@ -562,7 +565,7 @@ public class MessageSendTask  implements Runnable
 
                                     }
                                     if (( LockedMsg_InfoStreamId != messageQueueVO.getMsg_InfoStreamId() ) || (! LockedQueue_Direction.equals(messageQueueVO.getQueue_Direction() ) ))
-                                    { // пока читали, кто то уже забрал на себя
+                                    { // пока читали, кто-то уже забрал на себя
                                         MessegeSend_Log.warn("Helper: stmtQueueLock.Queue_Id:{} record can't be locked, {}!={} или {}!={}",
                                                 messageQueueVO.getQueue_Id(), LockedMsg_InfoStreamId, messageQueueVO.getMsg_InfoStreamId(), LockedQueue_Direction, messageQueueVO.getQueue_Direction());
                                         isNoLock = false;
@@ -831,12 +834,14 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                     stmtGetMessage4QueueId.setLong(1, Queue_Id ); //setString(1, QueueRowId ); // TODO : for Ora .setRowId( QueueRowId );
                     ResultSet rs = stmtGetMessage4QueueId.executeQuery();
                     boolean isRecordFoud = false;
+                    String s_OutQueue_Id;
                     while (rs.next()) {
                         isRecordFoud = true;
                         messageQueueVO.setMessageQueue(
                                 rs.getLong("Queue_Id"),
                                 rs.getTimestamp("Queue_Date"),
-                                rs.getString("OutQueue_Id").trim(), // get OutQueue_Id as to_Char(Q.outQueue_id)
+                                (s_OutQueue_Id = rs.getString("OutQueue_Id")) == null ? null : s_OutQueue_Id.trim(),
+                                //rs.getString("OutQueue_Id"), // get OutQueue_Id as to_Char(Q.outQueue_id) // .trim() NullPointerException: Cannot invoke "String.trim()" because the return value of "java.sql.ResultSet.getString(String)" is null
                                 rs.getTimestamp("Msg_Date"),
                                 rs.getInt("Msg_Status"),
                                 rs.getInt("MsgDirection_Id"),

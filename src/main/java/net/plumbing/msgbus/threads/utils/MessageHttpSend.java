@@ -24,10 +24,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLEncoder;
+//import java.net.URLEncoder;
 import java.net.http.HttpHeaders;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -166,8 +166,12 @@ public class MessageHttpSend {
             } catch (UnsupportedEncodingException encodingExc) {
                 System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendSoapMessage.POST UnsupportedEncodingException");
                 encodingExc.printStackTrace();
-                MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(), messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), encodingExc);
-                messageDetails.MsgReason.append(" sendSoapMessage.POST" + messageDetails.MessageTemplate4Perform.getPropEncoding_Out() +  " fault: " + sStackTrace.strInterruptedException(encodingExc));
+                MessageSend_Log.error("[{}] from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(),
+                                      messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), encodingExc.getMessage());
+                messageDetails.MsgReason.append(" sendSoapMessage.POST")
+                                        .append(messageDetails.MessageTemplate4Perform.getPropEncoding_Out())
+                                        .append(" fault: ")
+                                        .append(sStackTrace.strInterruptedException(encodingExc));
                 MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                         "sendSoapMessage.POST", true, encodingExc, MessageSend_Log);
                 // ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null, monitoringQueueVO, MessageSend_Log);
@@ -241,7 +245,7 @@ public class MessageHttpSend {
                 System.err.println( "["+ messageQueueVO.getQueue_Id()  + "] IOUtils.toString.UnsupportedEncodingException" );
                 ioExc.printStackTrace();
                 MessageSend_Log.error("[{}] IOUtils.toString from {} to_UTF_8 fault:{}", messageQueueVO.getQueue_Id(),
-                        messageDetails.MessageTemplate4Perform.getPropEncoding_Out() == null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), ioExc);
+                        messageDetails.MessageTemplate4Perform.getPropEncoding_Out() == null ? "UTF_8" : messageDetails.MessageTemplate4Perform.getPropEncoding_Out(), ioExc.getMessage());
                 messageDetails.MsgReason.append(" sendSoapMessage.POST.to_UTF_8 fault: ").append ( sStackTrace.strInterruptedException(ioExc));
                 MessageUtils.ProcessingSendError(  messageQueueVO,   messageDetails,  theadDataAccess,
                         "sendSoapMessage.POST", true,  ioExc ,  MessageSend_Log);
@@ -573,7 +577,8 @@ public class MessageHttpSend {
             // возмущаемся, но оставляем сообщение в ResOUT что бы обработчик в кроне мог доработать
             MessageSend_Log.error("[{}] Ошибка получения файла HttpGet `{}`, вызов от имени пользователя(`{}/{}`):{}",
                     messageQueueVO.getQueue_Id(), EndPointUrl,  PropUser, PropPswd, e.toString());
-            ApiRestHttpClient.close();
+            if ( ApiRestHttpClient != null )
+            { ApiRestHttpClient.close(); }
             return null;
         }
 
@@ -587,12 +592,12 @@ public class MessageHttpSend {
         //
         MessageTemplate4Perform messageTemplate4Perform = messageDetails.MessageTemplate4Perform;
 
-        String EndPointUrl;
+        StringBuilder EndPointUrl;
         String ROWID_QUEUElog=null;
         if ( StringUtils.substring(messageTemplate4Perform.getEndPointUrl(),0,"http".length()).equalsIgnoreCase("http") )
-            EndPointUrl = messageTemplate4Perform.getEndPointUrl();
+            EndPointUrl = new StringBuilder(messageTemplate4Perform.getEndPointUrl());
         else
-            EndPointUrl = "http://" + messageTemplate4Perform.getEndPointUrl();
+            EndPointUrl = new StringBuilder("http://" + messageTemplate4Perform.getEndPointUrl());
 
         String formDataFieldName = ""; // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
         List<ElementInfo> elements = processXml(xPathProcessor, xPathSelector,
@@ -609,7 +614,7 @@ public class MessageHttpSend {
             }
             if ( info.elementName().equalsIgnoreCase("Query_KEY_Value"))
             {
-                EndPointUrl = EndPointUrl + info.element().getStringValue();
+                EndPointUrl.append(info.element().getStringValue());
             }
             if ((info.formDataFieldName() != null) && ( !info.formDataFieldName().equalsIgnoreCase("null")) )
             {
@@ -690,7 +695,7 @@ public class MessageHttpSend {
                 } catch (JSONException jsonEx) {
                     MessageSend_Log.error("[{}] sendWebFormMessageJSONObject Ошибка при получении объекта как JSONObject, проверьте AckXSLT! - (`{}` , ...) return: {}",
                             messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND, jsonEx.getMessage());
-                    return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl,
+                    return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl.toString(),
                             "sendWebFormMessage.POST, Ошибка при получении объекта как JSONObject", jsonEx,
                             ROWID_QUEUElog, IsDebugged, MessageSend_Log);
                 }
@@ -703,7 +708,7 @@ public class MessageHttpSend {
 
                 Exception e = new Exception("[" + messageQueueVO.getQueue_Id() + "] sendWebFormMessage.POST NOT JSON! ```\n" + messageDetails.XML_MsgSEND + "\n'```");
                 MessageSend_Log.error("[{}] sendWebFormMessage: XML с помощью .MessageXSLT. не метили тегами formDataFieldName: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
-                return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendWebFormMessage.POST", e,
+                return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl.toString(), "sendWebFormMessage.POST", e,
                         ROWID_QUEUElog, IsDebugged, MessageSend_Log);
             }
         } // проверяем на JSon если одиночная форма и не метили тегами formDataFieldName, то преобразование к JSON должно быть в .AckXSLT.
@@ -736,12 +741,12 @@ public class MessageHttpSend {
                 {     // messageQueueVO.getMsg_Type_own(); // по-умолчанию используем собственный тип
                     MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.formDataFieldName: {} для {}, BO={} " , messageQueueVO.getQueue_Id() ,
                                         messageQueueVO.getMsg_Type_own(), messageQueueVO.getMsg_Type(), messageQueueVO.getOperation_Id());
-                        RequestBody.append("--").append(boundary).append("\r\n")
-                                .append("Content-Disposition: form-data; name=\"")
-                                .append( messageQueueVO.getMsg_Type_own() )
-                                .append("\"\r\n")
-                                .append("Content-Type: application/json\r\n\r\n")
-                                ;
+                         RequestBody.append("--").append(boundary).append("\r\n")
+                                    .append("Content-Disposition: form-data; name=\"")
+                                    .append( messageQueueVO.getMsg_Type_own() )
+                                    .append("\"\r\n")
+                                    .append("Content-Type: application/json\r\n\r\n")
+                                    ;
                         if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 )
                             RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder,
                                                 messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log),
@@ -749,15 +754,15 @@ public class MessageHttpSend {
                         else
                             RequestBody.append(messageDetails.XML_MsgSEND);
 
-                            RequestBody.append("\r\n")
-                                .append("--").append(boundary)
-                                .append("--").append("\r\n")
-                        ;
+                         RequestBody.append("\r\n")
+                                    .append("--").append(boundary)
+                                    .append("--").append("\r\n")
+                            ;
                 }
             else { // для каждой секции с formDataFieldName формируем multipart
-                        for (ElementInfo info : elements) {
-                            if ((info.formDataFieldName() != null) && ( !info.formDataFieldName().equalsIgnoreCase("null")) )
-                            {
+                for (ElementInfo info : elements) {
+                    if ((info.formDataFieldName() != null) && ( !info.formDataFieldName().equalsIgnoreCase("null")) )
+                    {
                                 MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.Элемент: {}", messageQueueVO.getQueue_Id(), info.elementName() );
                                 MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.formDataFieldName: {} " , messageQueueVO.getQueue_Id() , info.formDataFieldName());
                                 MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.ContentType: {}", messageQueueVO.getQueue_Id() , info.contentType());
@@ -834,7 +839,7 @@ public class MessageHttpSend {
              */
                                             System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendWebFormMessage.POST ApiRestHttpClient.send IOException: `" + sendIoExc.getMessage() + "`");
                                             sendIoExc.printStackTrace();
-                                            return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendWebFormMessage.POST", sendIoExc,
+                                            return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails, EndPointUrl.toString(),  "sendWebFormMessage.POST", sendIoExc,
                                                     ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
                                         }
                                         // записываем байты
@@ -845,18 +850,18 @@ public class MessageHttpSend {
                                     }
                                 }
 
-                            }
-                        }
-                        RequestBody.append("--").append(boundary).append("--").append("\r\n");
+                    }
+                }// for elements
+                   RequestBody.append("--").append(boundary).append("--").append("\r\n");
             }
                     // = ( formDataFieldName + "=" + URLEncoder.encode( messageDetails.XML_MsgSEND, StandardCharsets.UTF_8) );
 
             try {
                 if ( IsDebugged ) {
                     MessageSend_Log.info("[{}] sendWebFormMessage.formDataFieldName '{}' as `{}` to (`{}`)",
-                            messageQueueVO.getQueue_Id(), formDataFieldName, RequestBody, EndPointUrl);
+                            messageQueueVO.getQueue_Id(), formDataFieldName, RequestBody, EndPointUrl.toString());
                     MessageSend_Log.info("[{}] sendWebFormMessage UTL to (`{}`).connectTimeoutInMillis={};.readTimeoutInMillis=ReadTimeoutInMillis= {} PropUser:{}",
-                            messageQueueVO.getQueue_Id(),  EndPointUrl, messageTemplate4Perform.getPropTimeout_Conn(), messageTemplate4Perform.getPropTimeout_Read(), PropUser);
+                            messageQueueVO.getQueue_Id(), EndPointUrl.toString(), messageTemplate4Perform.getPropTimeout_Conn(), messageTemplate4Perform.getPropTimeout_Read(), PropUser);
                 }
                 messageDetails.Confirmation.clear();
                 messageDetails.XML_MsgResponse.setLength(0);
@@ -877,7 +882,7 @@ public class MessageHttpSend {
                 }
                 java.net.http.HttpRequest request = requestBuilder
                         .POST( HttpRequest.BodyPublishers.ofString(RequestBody.toString()) )
-                        .uri(URI.create(EndPointUrl))
+                        .uri(URI.create(EndPointUrl.toString()))
                         .timeout( Duration.ofSeconds( messageTemplate4Perform.getPropTimeout_Read()) )
                         .build();
                 HttpResponse<String> Response= null;
@@ -899,7 +904,7 @@ public class MessageHttpSend {
              */
                     System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendWebFormMessage.POST ApiRestHttpClient.send IOException: `" + sendIoExc.getMessage() + "`");
                     sendIoExc.printStackTrace();
-                    return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendWebFormMessage.POST", sendIoExc,
+                    return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails, EndPointUrl.toString(),  "sendWebFormMessage.POST", sendIoExc,
                             ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
                 }
 
@@ -923,7 +928,7 @@ public class MessageHttpSend {
                             Exception e = new Exception(" sendWebFormMessage.Response lines.length=" + Integer.toString( payloadResponsePartLines.length  ) + "\n" + Response.body() );
                             if (IsDebugged)
                                 MessageSend_Log.error("[{}] sendWebFormMessage call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
-                            return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendWebFormMessage.POST", e,
+                            return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl.toString(), "sendWebFormMessage.POST", e,
                                     ROWID_QUEUElog, IsDebugged, MessageSend_Log);
                     }
                     // String firstLine = lines[0]; // например, "33"
@@ -952,7 +957,7 @@ public class MessageHttpSend {
                     Exception e = new Exception(" sendWebFormMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
                     if (IsDebugged)
                         MessageSend_Log.error("[{}] sendWebFormMessage call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
-                      return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendWebFormMessage.POST", e,
+                      return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl.toString(), "sendWebFormMessage.POST", e,
                             ROWID_QUEUElog, IsDebugged, MessageSend_Log);
                 }
 
@@ -1023,7 +1028,7 @@ public class MessageHttpSend {
                 // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
 
             } catch (Exception e) {
-                return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendPostMessage.POST", e,
+                return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails, EndPointUrl.toString(),  "sendPostMessage.POST", e,
                         ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
 
             }
@@ -1538,8 +1543,8 @@ public class MessageHttpSend {
     }
 
     private static int  handle_Transport_Errors ( TheadDataAccess theadDataAccess, MessageQueueVO messageQueueVO, MessageDetails messageDetails, String EndPointUrl, String colledHttpMethodName,
-            Exception e,
-                                 String ROWID_QUEUElog , boolean IsDebugged, Logger  MessageSend_Log)
+                                                  Exception e,
+                                                  String ROWID_QUEUElog , boolean IsDebugged, Logger  MessageSend_Log)
     {
         System.err.println("[" + messageQueueVO.getQueue_Id() + "]  Exception"); if (e != null ) e.printStackTrace();
 
@@ -2404,7 +2409,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                 //MessageSend_Log.info(messageDetails.XML_ClearBodyResponse.toString());
             }
             // TODO - что то надо делать когда корневой элемент без дочерних элементов
-            if ( list.size() == 0 ) // корневой элемент без дочерних элементов
+            if (list.isEmpty()) // корневой элемент без дочерних элементов
             {
                 messageDetails.XML_ClearBodyResponse.append(OpenTag).append( SoapBody.getName() ).append( XMLchars.CloseTag);
                 messageDetails.XML_ClearBodyResponse.append(SoapBody.getText());

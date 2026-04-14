@@ -229,9 +229,9 @@ public class MessageSoapSend {
 				Element SoapElmnt = (Element) list.get(i);
 				//MessegeSend_Log.info("client.post:SoapBody2XML_String=(\n" + SoapElmnt.getName() + " =" + SoapElmnt.getText() + "\n");
 				// надо подготовить очищенный от ns: содержимое Body.
-				messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + SoapElmnt.getName() + XMLchars.CloseTag);
+				messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag).append(SoapElmnt.getName()).append(XMLchars.CloseTag);
 				MessageSoapSend.XML_BodyElemets2StringB(messageDetails, SoapElmnt, MessegeSend_Log);
-				messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag + SoapElmnt.getName() + XMLchars.CloseTag);
+				messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag).append(SoapElmnt.getName()).append(XMLchars.CloseTag);
 				// MessegeSend_Log.info("SoapBody2XML_String(XML_ClearBodyResponse):" + messageDetails.XML_ClearBodyResponse.toString());
 			}
 		}
@@ -264,7 +264,10 @@ public class MessageSoapSend {
 				String AttributeEntry = XMLattribute.getName();
 				String AttributeValue = XmlEscapers.xmlAttributeEscaper().escape( XMLattribute.getValue());
 
-				messageDetails.XML_ClearBodyResponse.append(XMLchars.Space + AttributeEntry + XMLchars.Equal + XMLchars.Quote + AttributeValue + XMLchars.Quote);
+				messageDetails.XML_ClearBodyResponse.append(XMLchars.Space)
+													.append(AttributeEntry).append(XMLchars.Equal)
+													.append(XMLchars.Quote).append(AttributeValue)
+													.append(XMLchars.Quote);
 				//MessegeSend_Log.info("XML_BodyElemets2StringB{" + XMLchars.Space + AttributeEntry + XMLchars.Equal + XMLchars.Quote + AttributeValue + XMLchars.Quote + "}");
 			}
 			messageDetails.XML_ClearBodyResponse.append(XMLchars.CloseTag);
@@ -276,7 +279,9 @@ public class MessageSoapSend {
 
 			XML_BodyElemets2StringB(messageDetails, XMLelement,
 					MessegeSend_Log);
-			messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag + ElementEntry + XMLchars.CloseTag);
+			messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + XMLchars.EndTag)
+												.append(ElementEntry)
+												.append(XMLchars.CloseTag);
 			//MessegeSend_Log.info("XML_BodyElemets2StringB{" + XMLchars.OpenTag + XMLchars.EndTag + ElementEntry + XMLchars.CloseTag + "}");
 
 		}

@@ -446,7 +446,7 @@ public class PerformQueueMessages {
                                                         Message.MessageTemplate4Perform.getAckXSLT_processor(),
                                                         Message.MessageTemplate4Perform.getAckXSLT_xsltCompiler(),
                                                         Message.MessageTemplate4Perform.getAckXSLT_xslt30Transformer(),
-                                                        AckXSLT_4_make_JSON,  // через HeaderXSLT
+                                                        AckXSLT_4_make_JSON,  // через AckXSLT
                                                         Message.MsgReason, MessageSend_Log,
                                                         Message.MessageTemplate4Perform.getIsDebugged()
                                                 );
