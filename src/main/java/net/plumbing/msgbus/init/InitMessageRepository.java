@@ -524,7 +524,7 @@ public static void SaxonExtensionConfiguration( Logger AppThead_log  ) {
                                 "t.lastmaker, " +
                                 "t.lastdate " +
                         "from " + DataAccess.HrmsSchema + ".MESSAGE_TemplateS t " +
-                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + // " and t.operation_id=213 " +
+                        "where (1=1) and t.template_dir like '%OUT%' and t.operation_id !=0 " + // " and t.interface_id=79 " +
                         "order by t.interface_id, t.operation_id, t.destin_id, t.dst_subcod");
 
             } catch (Exception e) {

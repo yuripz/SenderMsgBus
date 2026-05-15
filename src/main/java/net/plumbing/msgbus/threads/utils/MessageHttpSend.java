@@ -770,7 +770,7 @@ public class MessageHttpSend {
                                 formDataFieldName = info.formDataFieldName();
                                 RequestBody.append("--").append(boundary).append("\r\n")
                                         .append("Content-Disposition: form-data; name=\"")
-                                        .append( info.formDataFieldName() );
+                                        .append( info.formDataFieldName() ).append("\"");
                                 if (info.fileName() != null) {
                                     RequestBody.append("; filename=\"").append( info.fileName() );
                                 }
