@@ -28,6 +28,8 @@ import java.net.URL;
 import java.net.http.HttpHeaders;
 //import java.nio.file.Files;
 //import java.nio.file.Paths;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -47,7 +49,7 @@ import javax.validation.constraints.NotNull;
 //import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
-import java.nio.charset.StandardCharsets;
+
 //import java.sql.RowId;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -749,7 +751,7 @@ public class MessageHttpSend {
                                     ;
                         if ( messageDetails.XML_MsgSEND.indexOf( XMLchars.URL_File_Path_Begin) > 0 )
                             RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(messageDetails.XML_MsgSEND, isReplaceContent4UrlPlaceholder,
-                                                messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log),
+                                                messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform,  MessageSend_Log),
                                     "UTF-8" ));
                         else
                             RequestBody.append(messageDetails.XML_MsgSEND);
@@ -772,11 +774,15 @@ public class MessageHttpSend {
                                         .append("Content-Disposition: form-data; name=\"")
                                         .append( info.formDataFieldName() ).append("\"");
                                 if (info.fileName() != null) {
-                                    RequestBody.append("; filename=\"").append( info.fileName() );
+                                    RequestBody.append("; filename=\"").append( info.fileName() ).append("\"")
+                                               .append("\r\n")
+                                               .append("Content-Type: application/octet-stream\r\n")
+                                               .append("\r\n"); //Важно! Content-Transfer-Encoding: binary или base64; -- убрали Content-Transfer-Encoding: binary
                                 }
-                                RequestBody.append("\"\r\n")
-                                        .append("Content-Type: ").append(info.contentType()).append("\r\n\r\n")
-                                        ;
+                                else {
+                                    RequestBody.append("\r\n")
+                                            .append("Content-Type: ").append(info.contentType()).append("\r\n\r\n");
+                                }
                                 if ( info.contentType().contains("json") ) {
                                     if ((info.isJsonMadeManually() !=null) && ( info.isJsonMadeManually().contains("true") )) {
                                         MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.Тело элемента: {}", messageQueueVO.getQueue_Id(),
@@ -818,13 +824,22 @@ public class MessageHttpSend {
                                                     .append("\r\n")
                                                     ;
                                     }
-                                    else {
+                                    else { // тут передаём именно содержимое файла, причём в Content-Transfer-Encoding: binary, Content-Type: application/octet-stream
                                         MessageSend_Log.warn("[{}] RequestBody sendWebFormMessage.путь к файлу: {}", messageQueueVO.getQueue_Id(),
                                                 info.element().getStringValue());
                                         try {
+                                            String fileContentBase64= IOUtils.toString(replaceUrlPlaceholders(info.element().getStringValue(), isReplaceContent4UrlPlaceholder,
+                                                    messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log), "UTF-8");
+                                            byte[] decodedBytes =  Base64.getDecoder().decode(fileContentBase64);;
+
+                                        String fileContentISO_8859_1= IOUtils.toString(decodedBytes, "ISO_8859_1");
+                                            RequestBody.append(fileContentISO_8859_1)
+                                                       .append("\r\n");
+                                        /*
                                         RequestBody.append(IOUtils.toString(replaceUrlPlaceholders(info.element().getStringValue(), isReplaceContent4UrlPlaceholder,
                                                         messageQueueVO.getQueue_Id(), ApiRestWaitTime, messageTemplate4Perform, MessageSend_Log), "UTF-8"))
                                                   .append("\r\n");
+                                        */
                                         } catch (Exception  sendIoExc) {
                                             MessageSend_Log.error("[{}] sendWebFormMessage.replaceUrlPlaceholders fault={}", messageQueueVO.getQueue_Id(),
                                                                      sStackTrace.strInterruptedException (sendIoExc));
@@ -1542,7 +1557,7 @@ public class MessageHttpSend {
         return 0;
     }
 
-    private static int  handle_Transport_Errors ( TheadDataAccess theadDataAccess, MessageQueueVO messageQueueVO, MessageDetails messageDetails, String EndPointUrl, String colledHttpMethodName,
+    protected static int  handle_Transport_Errors ( TheadDataAccess theadDataAccess, MessageQueueVO messageQueueVO, MessageDetails messageDetails, String EndPointUrl, String colledHttpMethodName,
                                                   Exception e,
                                                   String ROWID_QUEUElog , boolean IsDebugged, Logger  MessageSend_Log)
     {
@@ -1583,7 +1598,7 @@ public class MessageHttpSend {
         return -1;
     }
 
-    private static void do_Append_responseHttpHeaders_2_jSon(@NotNull StringBuilder JSON_MsgResponse, HttpHeaders responseHttpHeaders ) {
+    protected static void do_Append_responseHttpHeaders_2_jSon(@NotNull StringBuilder JSON_MsgResponse, HttpHeaders responseHttpHeaders ) {
         // JSON_MsgResponse.append("{");
         if (responseHttpHeaders != null) {
             Map<String, List<String>> allHeaders = responseHttpHeaders.map();
@@ -1647,7 +1662,7 @@ public class MessageHttpSend {
         //JSON_MsgResponse.append("},");
     }
 
-    private static StringBuilder append_Http_ResponseStatus_and_PlaneResponse ( @NotNull StringBuilder XML_MsgResponse, @NotNull Integer restResponseStatus,
+    protected static StringBuilder append_Http_ResponseStatus_and_PlaneResponse ( @NotNull StringBuilder XML_MsgResponse, @NotNull Integer restResponseStatus,
                                                                                 String restResponse, HttpHeaders responseHttpHeaders )
     {
         XML_MsgResponse.setLength(0);

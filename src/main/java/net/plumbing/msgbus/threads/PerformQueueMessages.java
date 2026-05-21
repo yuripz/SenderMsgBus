@@ -431,7 +431,8 @@ public class PerformQueueMessages {
                             }
                             //
                             if ( (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) ||
-                                 (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM"))
+                                 (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM")) ||
+                                 (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-MULTIPART"))
                                )
                             {
                                 String AckXSLT_4_make_JSON = Message.MessageTemplate4Perform.getAckXSLT() ; // получили XSLT-для
@@ -485,14 +486,27 @@ public class PerformQueueMessages {
                                             messageQueueVO, Message, theadDataAccess, Message.ApiRestWaitTime, MessageSend_Log);
                                 }
 
+                                if  (Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-MultiPart")) {
+                                    // для передачи формы используем поле messageTypes.Msg_Type_Own
+                                    // если нет специальной разметки типа formDataFieldName="cancelActionDto" в шаблоне
+                                    if (Message.MessageTemplate4Perform.getIsDebugged())
+                                        MessageSend_Log.info("[{}] WEB-MultiPart is `{}`fo messageTypeVO_Key = ({})", Queue_Id, messageQueueVO.getMsg_Type_own(), messageTypeVO_Key);
+
+                                    Function_Result = WebFormHttpSend.sendWebFormMultiPart(saved_XML_MsgSEND,
+                                            Message.MessageTemplate4Perform.getXPathProcessor(),
+                                            Message.MessageTemplate4Perform.getXPathSelector(),
+                                            messageQueueVO, Message, theadDataAccess, Message.ApiRestWaitTime, MessageSend_Log);
+                                }
+
                             }
                             if ( (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("GET")) &&
                                  (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("POST")) &&
                                  (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("DELETE")) &&
+                                 (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-MULTIPART")) &&
                                  (!Message.MessageTemplate4Perform.getPropWebMetod().equalsIgnoreCase("WEB-FORM"))
                                ) {
                                 MessageUtils.ProcessingSendError(messageQueueVO, Message, theadDataAccess,
-                                        "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указанное в шаблоне, не 'get', не 'post', не 'delete' и не `web-form`", true,
+                                        "Свойство WebMetod[" + Message.MessageTemplate4Perform.getPropWebMetod() + "], указанное в шаблоне, не `get`, не `post`, не `delete`, не `web-MultiPart` и не `web-form` ", true,
                                         null, MessageSend_Log);
                                 //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, Message.XML_MsgSEND, "Свойство WebMetod["+ Message.MessageTemplate4Perform.getPropWebMetod() + "], указаное в шаблоне не 'get' и не 'post'",  monitoringQueueVO, MessageSend_Log);
                                 //ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, null, null, monitoringQueueVO, MessageSend_Log);
@@ -580,7 +594,7 @@ public class PerformQueueMessages {
                     break;
                 }
                 if ( Message.MessageTemplate4Perform.getIsDebugged() )
-                    MessageSend_Log.info("{} [{}] 514 Message.MessageRowNum:{{}}, Message.size:{{}}", Queue_Direction, Queue_Id, Message.MessageRowNum, Message.Message.size());
+                    MessageSend_Log.info("{} [{}] line no.506 Message.MessageRowNum:{{}}, Message.size:{{}}", Queue_Direction, Queue_Id, Message.MessageRowNum, Message.Message.size());
 
 
                 // шаблон MsgAnswXSLT заполнен

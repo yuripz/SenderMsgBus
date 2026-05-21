@@ -58,7 +58,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.05.15SaX";
+	public static final String ApplicationName="*Sender_BUS* v.6.05.21SaX";
 	public static void main(String[] args) {
 		SpringApplication.run(SenderApplication.class, args);
 	}
