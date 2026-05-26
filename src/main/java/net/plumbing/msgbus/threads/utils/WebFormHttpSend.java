@@ -43,7 +43,7 @@ public class WebFormHttpSend {
                                                             Logger MessageSend_Log  ) throws IOException {
         URL url = new URL(EndPointUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        String PropUser = messageTemplate4Perform.getPropUserPostExec();
+        String PropUser = messageTemplate4Perform.getPropUser(); //.getPropUserPostExec();
         String PropPswd = messageTemplate4Perform.getPropPswdPostExec();
         connection.setRequestMethod("GET");
         connection.setConnectTimeout(5000);
@@ -446,8 +446,13 @@ public class WebFormHttpSend {
                         RequestStringBody.trimToSize();
                         for (byte[] byteArray : RequestByteBody) {
                             if (byteArray != null) {  // Обработка случая, если byteArray может быть null
-                                String chunk = new String(byteArray, StandardCharsets.UTF_8);
-                                RequestStringBody.append(chunk);
+                                if (byteArray.length > 0) {
+                                    if (byteArray.length <= 10000) {
+                                        String chunk = new String(byteArray, StandardCharsets.UTF_8);
+                                        RequestStringBody.append(chunk);
+                                    }
+                                    else RequestStringBody.append("<large byteArray.length=`").append(byteArray.length).append("`>");
+                            }
                             }
                             MessageSend_Log.info("[{}] sendWebFormMultiPart.formDataFieldName as  List<byte[]> `{}` to (`{}`)",
                                     messageQueueVO.getQueue_Id(), RequestStringBody, EndPointUrl.toString());
