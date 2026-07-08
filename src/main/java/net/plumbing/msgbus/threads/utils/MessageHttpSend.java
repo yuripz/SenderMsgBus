@@ -282,8 +282,8 @@ public class MessageHttpSend {
                                             messageDetails.MessageTemplate4Perform.getLongRetryCount());
             if ( messageQueueVO.getRetry_Count() +1  >= messageDetails.MessageTemplate4Perform.getShortRetryCount() + messageDetails.MessageTemplate4Perform.getLongRetryCount() )
             {
-                // количество порыток исчерпано, формируем результат для выхода из повторов
-                MessageSend_Log.error("[{}]sendSoapMessage.POST ({}) fault:{}", messageQueueVO.getQueue_Id(), EndPointUrl, e);
+                // количество попыток исчерпано, формируем результат для выхода из повторов
+                MessageSend_Log.error("[{}]sendSoapMessage.POST ({}) fault:{}", messageQueueVO.getQueue_Id(), EndPointUrl, sStackTrace.strInterruptedException(e));
                 messageDetails.XML_MsgResponse.setLength(0);
                 messageDetails.XML_MsgResponse.append(XMLchars.Envelope_Begin);
                 messageDetails.XML_MsgResponse.append(XMLchars.Body_Begin);
@@ -1170,6 +1170,14 @@ public class MessageHttpSend {
                     .followRedirects(HttpClient.Redirect.ALWAYS)
                     .connectTimeout(Duration.ofSeconds(messageTemplate4Perform.getPropTimeout_Conn()))
                     .build();
+        }
+        if (ApiRestHttpClient == null)  {
+            MessageSend_Log.error("[{}] endPostMessage.POST: ApiRestHttpClient is null", messageQueueVO.getQueue_Id());
+            System.err.println("[" + messageQueueVO.getQueue_Id() + "] sendPostMessage.POST: ApiRestHttpClient is null");
+
+            MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
+                    "sendPostMessage.POST", true, null, MessageSend_Log);
+            return -1;
         }
         byte[] RequestBody;
 
@@ -2506,7 +2514,7 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
 
             restResponseStatus = RestResponseGet.statusCode(); //500; //RestResponseGet.statusCode();
 
-            if ( messageTemplate4Perform.getIsDebugged() )
+            if ( IsDebugged )
                 MessageSend_Log.info("[{}] WebRestExePostExec.GET({}?queue_id={}) httpStatus=[{}] RestResponse=(`{}`)",
                                      messageQueueVO.getQueue_Id(), EndPointUrl, String.valueOf(Queue_Id), restResponseStatus, RestResponse);
 
