@@ -2539,18 +2539,25 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
             Integer iMsg_Status = messageQueueVO.getMsg_Status() ;
 
             try {
+                if ( IsDebugged )
+                    MessageSend_Log.info("[{}] WebRestExePostExec: getPropQueueDirection=`{}`; getPropMsgStatus=`{}`; getPropMsgResult=`{}`;",
+                            messageQueueVO.getQueue_Id(), messageTemplate4Perform.getPropQueueDirection(), messageTemplate4Perform.getPropMsgStatus(), messageTemplate4Perform.getPropMsgResult() );
 
                 msgStatus = jsonContext.read("$." + messageTemplate4Perform.getPropMsgStatus() );
                 queueDirection = jsonContext.read("$." + messageTemplate4Perform.getPropQueueDirection() );
                 if (queueDirection.toString().equalsIgnoreCase(XMLchars.DirectDELOUT))
                     sQueueDirection = XMLchars.DirectDELOUT;
+                if (queueDirection.toString().equalsIgnoreCase(XMLchars.DirectATTNOUT))
+                    sQueueDirection = XMLchars.DirectATTNOUT;
+                if (queueDirection.toString().equalsIgnoreCase(XMLchars.DirectERROUT))
+                    sQueueDirection = XMLchars.DirectERROUT;
 
                 msgResult = jsonContext.read("$." + messageTemplate4Perform.getPropMsgResult() );
             }
             catch ( ClassCastException | InvalidPathException exc) {
                 //resultMessage = "-x-x-";
                 //resultCode = "-x-";
-                theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, sQueueDirection, 0 + iMsg_Status,
+                theadDataAccess.doUPDATE_MessageQueue_SetMsg_Result(messageQueueVO, sQueueDirection, iMsg_Status,
                         "Пост-обработчик HttpGet (http="+restResponseStatus + ") вернул по url(" + EndPointUrl + "): JSon `" + RestResponse + "` в котором нет $.msgStatus или $.msgResult" ,
                         MessageSend_Log);
                 ApiRestHttpClient.close();
