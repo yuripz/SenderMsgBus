@@ -739,9 +739,10 @@ public class MessageUtils {
     public static String stripNonValidXMLCharacters(String in) {
         StringBuffer out = new StringBuffer(); // Used to hold the output.
         char current; // Used to reference the current character.
+        int currentCodePoint;
 
         if (in == null || ("".equals(in))) return ""; // vacancy test.
-        for (int i = 0; i < in.length(); i++) {
+  /*      for (int i = 0; i < in.length(); i++) {
             current = in.charAt(i); // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
             if (    (current == 0x9) ||
                     (current == 0xA) ||
@@ -751,6 +752,28 @@ public class MessageUtils {
                     ((current >= 0x10000) && (current <= 0x10FFFF))
                )
                 out.append(current);
+        }
+   */ // Back port from Receiver MessageUtils
+        for (int i = 0; i < in.length(); i++) {
+            currentCodePoint = in.codePointAt(i);
+            if (Character.isHighSurrogate((char)currentCodePoint) || Character.isLowSurrogate((char)currentCodePoint)) { // Check for surrogate pairs
+                // Skip (ignore) surrogate pair character
+                if (Character.charCount(currentCodePoint) > 1) {
+                    i++; // Skip the second char of the surrogate pair.
+                }
+                continue; // Skip to the next character
+            }
+            else {
+                current = in.charAt(i); // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
+                if ((current == 0x9) ||
+                        (current == 0xA) ||
+                        (current == 0xD) ||
+                        ((current >= 0x20) && (current <= 0xD7FF)) ||
+                        ((current >= 0xE000) && (current <= 0xFFFD)) ||
+                        ((current >= 0x10000) && (current <= 0x10FFFF)) // 0x7fffffff
+                )
+                    out.append(current);
+            }
         }
         return out.toString();
     }
