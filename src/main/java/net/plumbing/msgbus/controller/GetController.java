@@ -23,11 +23,9 @@ import static net.plumbing.msgbus.common.XMLchars.*;
 public class GetController {
     private static final Logger Controller_log = LoggerFactory.getLogger(GetController.class);
 
-    @GetMapping(path ={ "/**" }, produces = MediaType.ALL_VALUE,  consumes = MediaType.ALL_VALUE)
+    @GetMapping(path ={"/HermesService/InternalRestApi/**", "/MsgBusService/InternalRestApi/**"}, produces = MediaType.ALL_VALUE)
     @CrossOrigin(origins = "*")
-//    @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-
     public String GetHttpRequest( ServletRequest getServletRequest, HttpServletResponse getResponse) {
         //@PathVariable
         HttpServletRequest httpRequest = (HttpServletRequest) getServletRequest;

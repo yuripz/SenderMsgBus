@@ -12,7 +12,7 @@
 	</parent>
 	<groupId>net.msgbus</groupId>
 	<artifactId>Sender</artifactId>
-        <version>0.3.26.07.27-SaX</version>
+        <version>0.3.26.07.27d-SaX</version>
 	<name>Sender_v04</name>
 	<description>MSG sender project for Spring Boot</description>
 	<properties>
@@ -20,18 +20,7 @@
 	</properties>
 	<dependencies>
 
-		<dependency>
-		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jdbc</artifactId>
-			<version>3.4.13</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-    		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -41,32 +30,47 @@
 					<groupId>org.springframework.boot</groupId>
 					<artifactId>spring-boot-starter-tomcat</artifactId>
 				</exclusion>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-json</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jetty</artifactId>
-			<version>3.4.13</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.eclipse.jetty.ee10.websocket</groupId>
-					<artifactId>jetty-ee10-websocket-jakarta-server</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.eclipse.jetty.ee10.websocket</groupId>
-					<artifactId>jetty-ee10-websocket-jetty-server</artifactId>
-				</exclusion>
-			</exclusions>
-    	</dependency>
-
+            <!--<exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-json</artifactId>
+            </exclusion>-->
+            <exclusion>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jetty</artifactId>
+        <version>3.4.13</version>
+        <exclusions>
+            <exclusion>
+                <groupId>org.eclipse.jetty.ee10.websocket</groupId>
+                <artifactId>jetty-ee10-websocket-jakarta-server</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.eclipse.jetty.ee10.websocket</groupId>
+                <artifactId>jetty-ee10-websocket-jetty-server</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+    <dependency>
+        <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <version>3.4.13</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>

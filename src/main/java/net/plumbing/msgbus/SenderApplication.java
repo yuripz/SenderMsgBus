@@ -7,10 +7,11 @@ import net.plumbing.msgbus.common.ExtSystemDataAccess;
 import net.plumbing.msgbus.config.*;
 import net.plumbing.msgbus.init.InitMessageRepository;
 import net.plumbing.msgbus.telegramm.NotifyByChannel;
-import net.plumbing.msgbus.threads.hzcache.Cachierer;
-import net.plumbing.msgbus.threads.hzcache.HzQueueVO;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.core.env.Environment;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -35,10 +36,11 @@ import java.util.Properties;
 import org.apache.activemq.broker.BrokerService;
 
 import jakarta.jms.Connection;
-import com.hazelcast.map.IMap;
 
-@EnableScheduling
-@SpringBootApplication (scanBasePackages = "net.plumbing.msgbus.*")
+//@EnableScheduling
+@SpringBootApplication
+        //(scanBasePackages = "net.plumbing.msgbus")
+//@EnableWebMvc
 
 public class SenderApplication implements CommandLineRunner {
 
@@ -46,7 +48,10 @@ public class SenderApplication implements CommandLineRunner {
 	// static ThreadPoolTaskExecutor monitorWriterPool; // -- не используется
 	static ThreadPoolTaskExecutor externSystemCallPool;
 
-	@Autowired
+    @Autowired
+    private ApplicationContext context; // Внедряем реальный, уже работающий контекст Spring Boot
+
+    @Autowired
 	public ConnectionProperties connectionProperties;
 	@Autowired
 	public DBLoggingProperties dbLoggingProperties;
@@ -54,21 +59,63 @@ public class SenderApplication implements CommandLineRunner {
 	public TaskPollProperties taskPollProperties ;
 	@Autowired
 	public TelegramProperties telegramProperties;
+    @Autowired
+    private org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory jettyFactory;
+    @Autowired
+    private org.springframework.boot.web.servlet.ServletRegistrationBean<?> dispatcherServletRegistration;
+    @Autowired
+    private org.springframework.web.servlet.DispatcherServlet dispatcherServlet;
 
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.07.27SaX";
+	public static final String ApplicationName="*Sender_BUS* v.6.07.27fSaX";
+    private final Environment ApplicationEnv;
+    // Spring автоматически внедрит Environment через этот единственный конструктор без @Autowired
+
+    public SenderApplication(Environment applicationEnv) {
+        ApplicationEnv = applicationEnv;
+    }
+
 	public static void main(String[] args) {
-		SpringApplication.run(SenderApplication.class, args);
+        new SpringApplicationBuilder(SenderApplication.class)
+                .web(WebApplicationType.SERVLET)
+                .run(args);
+        /*SpringApplication springApplication = new SpringApplication(SenderApplication.class);
+        springApplication.setWebApplicationType(WebApplicationType.SERVLET);
+        springApplication.run( args);
+        */
 	}
 
 	public void run(String... strings) throws Exception {
 		int i;
-		ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
+        //ApplicationContext context = new AnnotationConfigApplicationContext(Sender_AppConfig.class);
 
-		AppThead_log.info("Hello for SenderApplication: {}", ApplicationName);
-		// NotifyByChannel.test_Post(AppThead_log ); - для проверки
+        ApplicationProperties.loggingFileName = ApplicationEnv.getProperty("logging.file.name");
+        AppThead_log.info("Hello for {}, logging file is `{}` ", ApplicationName, ApplicationProperties.loggingFileName);
+
+        AppThead_log.info("Инициализация принудительного старта Jetty...");
+
+        // 1. Создаем веб-сервер и связываем его с DispatcherServlet
+        org.springframework.boot.web.server.WebServer webServer = jettyFactory.getWebServer(
+                servletContext -> {
+                    try {
+                        // Включаем принудительный поиск контроллеров в родительском контексте
+                        // ДО инициализации сервлет-контекста Jetty
+                        dispatcherServlet.setDetectAllHandlerMappings(true);
+                        dispatcherServletRegistration.onStartup(servletContext);
+                    } catch (jakarta.servlet.ServletException e) {
+                        AppThead_log.error("Ошибка привязки DispatcherServlet к Jetty", e);
+                    }
+                }
+        );
+        AppThead_log.info("1й этап старта Jetty jettyFactory.getWebServer.getPort = `{}` ещё не открыт", webServer.getPort() );
+
+        // 2. Физически запускаем сервер
+        webServer.start();
+        AppThead_log.info("2й этап старта Jetty webServer.start() на порту: `{}`", webServer.getPort());
+
+        // NotifyByChannel.test_Post(AppThead_log ); - для проверки
 		//		System.exit(11);
 		NotifyByChannel.Telegram_setHttpProxyHost( telegramProperties.gethttpProxyHost() , AppThead_log );
 		NotifyByChannel.Telegram_setHttpProxyPort( telegramProperties.gethttpProxyPort() , AppThead_log );
@@ -114,6 +161,8 @@ public class SenderApplication implements CommandLineRunner {
 		AppThead_log.info("ActiveMQbroker " + MQbroker.getBrokerName() + " started" );
 		Properties props = System.getProperties();
 		props.setProperty("com.sun.net.ssl.checkRevocation","false");
+
+
 
 		ThreadPoolTaskExecutor taskExecutor = (ThreadPoolTaskExecutor) context.getBean("taskExecutor");
 
