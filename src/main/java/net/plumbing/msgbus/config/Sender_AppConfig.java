@@ -10,8 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
-import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+//import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
+import org.springframework.boot.jetty.servlet.JettyServletWebServerFactory;
+//import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+// ПРАВИЛЬНО для Spring Boot 4.1.1
+import org.springframework.boot.web.server.servlet.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -24,6 +27,8 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 public class Sender_AppConfig {
 
     private static final Logger AppConfig_log = LoggerFactory.getLogger(Sender_AppConfig.class);
+
+/*
     @Bean
     public DispatcherServlet dispatcherServlet(ApplicationContext applicationContext ) {
         DispatcherServlet servlet = new DispatcherServlet();
@@ -46,23 +51,6 @@ public class Sender_AppConfig {
         return servletRegistrationBean;
 
     }
-//    @Autowired
-//    private  TaskPollProperties taskPollProperties ;
-    @Bean(name = "taskExecutor")
-    public ThreadPoolTaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
-//        pool.setCorePoolSize(taskPollProperties.getcorePoolSize());
-//        pool.setMaxPoolSize(taskPollProperties.getmaxPoolSize());
-        pool.setCorePoolSize(500);
-        pool.setMaxPoolSize(503);
-        pool.setWaitForTasksToCompleteOnShutdown(true);
-        pool.setThreadNamePrefix("Sender-");
-        AppConfig_log.info( "taskExecutor: getThreadNamePrefix:" + pool.getThreadNamePrefix() );
-
-        AppConfig_log.info("ThreadPoolTaskExecutor for taskExecutor prepared: CorePoolSize(500), MaxPoolSize(503); ");
-        return pool;
-    }
-
     @Bean
     public JettyServletWebServerFactory  servletWebServerFactory( Environment applicationEnv ) {
         JettyServletWebServerFactory jettyServletFactory = new JettyServletWebServerFactory();
@@ -86,6 +74,23 @@ public class Sender_AppConfig {
         AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory setPort 8118");
         return jettyServletFactory;
     }
+*/
 
+//    @Autowired
+//    private  TaskPollProperties taskPollProperties ;
+    @Bean(name = "taskExecutor")
+    public ThreadPoolTaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
+//        pool.setCorePoolSize(taskPollProperties.getcorePoolSize());
+//        pool.setMaxPoolSize(taskPollProperties.getmaxPoolSize());
+        pool.setCorePoolSize(500);
+        pool.setMaxPoolSize(503);
+        pool.setWaitForTasksToCompleteOnShutdown(true);
+        pool.setThreadNamePrefix("Sender-");
+        AppConfig_log.info( "taskExecutor: getThreadNamePrefix:" + pool.getThreadNamePrefix() );
+
+        AppConfig_log.info("ThreadPoolTaskExecutor for taskExecutor prepared: CorePoolSize(500), MaxPoolSize(503); ");
+        return pool;
+    }
 
 }
