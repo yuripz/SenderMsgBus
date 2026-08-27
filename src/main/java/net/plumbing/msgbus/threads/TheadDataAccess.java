@@ -534,6 +534,13 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error("doUPDATE_QUEUElog for [{}]: {}) fault: {}", Queue_Id, UPDATE_QUEUElog_Response, e.getMessage());
             System.err.println("doUPDATE_QUEUElog for [" + Queue_Id + "]: " + UPDATE_QUEUElog_Response + ") fault: " + e.getMessage());
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                    Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                    dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_QUEUElog_Response, SQLe.getMessage());
+                    System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_QUEUElog_Response + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             e.printStackTrace();
             return -1;
         }
@@ -559,6 +566,13 @@ public class TheadDataAccess {
         } catch (Exception e) {
             dataAccess_log.error("[{}]: {}) fault: {}", Queue_Id, UPDATE_QUEUE_InfoStreamId, e.getMessage());
             System.err.println("[" + Queue_Id + "]: " + UPDATE_QUEUE_InfoStreamId + ") fault: " + e.getMessage());
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_QUEUE_InfoStreamId, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_QUEUE_InfoStreamId + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             e.printStackTrace();
             return -1;
         }
@@ -703,9 +717,15 @@ public class TheadDataAccess {
             dataAccess_log.info("[{}] commit: doUPDATE_MessageQueue_Send2finishedOUT: {}; Retry_Count={}", Queue_Id, UPDATE_MessageQueue_Send2finishedOUT, Retry_Count);
 
         } catch (Exception e) {
-
             dataAccess_log.error( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: " + UPDATE_MessageQueue_Send2finishedOUT + ") fault: " + e.getMessage() );
             System.err.println( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: " + UPDATE_MessageQueue_Send2finishedOUT + ") fault: ");
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2finishedOUT, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_Send2finishedOUT + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             e.printStackTrace();
             return -1;
         }
@@ -749,9 +769,15 @@ public class TheadDataAccess {
            // dataAccess_log.info("[" + Queue_Id + "] doUPDATE_MessageQueue_DirectionAsIS commit:" + UPDATE_MessageQueue_DirectionAsIS + " = " + Queue_Id.toString() + " Retry_Count=" + Retry_Count );
 
         } catch (Exception e) {
-
             dataAccess_log.error("update {}.MESSAGE_QUEUE for [{}]: {}) fault: {}", dbSchema, Queue_Id, UPDATE_MessageQueue_DirectionAsIS, e.getMessage());
             System.err.println( "update " + dbSchema + ".MESSAGE_QUEUE for [" + Queue_Id+  "]: " + UPDATE_MessageQueue_DirectionAsIS + ") fault: ");
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_DirectionAsIS, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_DirectionAsIS + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             e.printStackTrace();
             return -1;
         }
@@ -796,6 +822,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] DELETE Confirmation for ({}) fault: {}", Queue_Id, DELETE_Message_Confirmation, e.getMessage());
             System.err.println( "DELETE Confirmation for [" + Queue_Id+  "]: " + DELETE_Message_Confirmation + ") fault: ");
             e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, DELETE_Message_Confirmation, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + DELETE_Message_Confirmation + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             return -1;
         }
         return 0;
@@ -815,8 +848,6 @@ public class TheadDataAccess {
         this.stmt_DELETE_Message_Details = StmtMsg_Queue;
         return  StmtMsg_Queue ;
     }
-
-
 
     public PreparedStatement  make_Message_Update_Queue_Queue_Date4Send( Logger dataAccess_log ) {
         PreparedStatement StmtMsg_Queue;
@@ -856,8 +887,7 @@ public class TheadDataAccess {
         return  StmtMsg_Queue ;
     }
 
-    public  int  doUPDATE_MessageQueue_Queue_Date4Send( MessageQueueVO  messageQueueVO,   Logger dataAccess_log ) {
-
+    public int doUPDATE_MessageQueue_Queue_Date4Send( MessageQueueVO  messageQueueVO,   Logger dataAccess_log ) {
         long Queue_Id = messageQueueVO.getQueue_Id();
 
         messageQueueVO.setPrev_Msg_Date( messageQueueVO.getMsg_Date() );
@@ -877,6 +907,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] UPDATE({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Queue_Date4Send, e.getMessage());
             System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Queue_Date4Send + ") fault: " );
             e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, stmtUPDATE_MessageQueue_Queue_Date4Send, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + stmtUPDATE_MessageQueue_Queue_Date4Send + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             return -1;
         }
         return 0;
@@ -892,8 +929,7 @@ public class TheadDataAccess {
 
         messageQueueVO.setQueue_Direction(XMLchars.DirectSEND);
         try {
-            dataAccess_log.info("[{}] doUPDATE_MessageQueue_Out2Send:{}", Queue_Id, pMsg_Reason);
-
+            //dataAccess_log.info("[{}] doUPDATE_MessageQueue_Out2Send:{}", Queue_Id, pMsg_Reason);
             stmtUPDATE_MessageQueue_Out2Send.setString( 1, pMsg_Reason.length() > maxReasonLen ? pMsg_Reason.substring(0, maxReasonLen) : pMsg_Reason );
             stmtUPDATE_MessageQueue_Out2Send.setLong( 2, Queue_Id );
             stmtUPDATE_MessageQueue_Out2Send.executeUpdate();
@@ -906,11 +942,18 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] UPDATE({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Out2Send, e.getMessage());
             System.err.println( "[" + Queue_Id + "] UPDATE(" + UPDATE_MessageQueue_Out2Send + ") fault: " );
                     e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Out2Send, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_Out2Send + ") fault: " + SQLe.getMessage()  );
+                }
+            }
             return -1;
         }
         return 0;
     }
-    public PreparedStatement  make_Message_Update_Send2ErrorOUT( Logger dataAccess_log ) {
+    public PreparedStatement make_Message_Update_Send2ErrorOUT( Logger dataAccess_log ) {
         PreparedStatement StmtMsg_Queue;
         UPDATE_MessageQueue_Send2ErrorOUT =
                 "update " + dbSchema + ".MESSAGE_QUEUE Q " +
@@ -955,6 +998,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] doUPDATE_MessageQueue_Send2ErrorOUT({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2ErrorOUT, e.getMessage());
             System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_Send2ErrorOUT(" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " );
             e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2ErrorOUT, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_Send2ErrorOUT + ") fault: " + SQLe.getMessage()  );
+            }
+            }
             return -1;
         }
         return 0;
@@ -1004,7 +1054,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] doUPDATE_MessageQueue_Send2AttOUT({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2AttOUT, e.getMessage());
             System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_Send2AttOUT(" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " );
             e.printStackTrace();
-            return -1;
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Send2AttOUT, SQLe.getMessage());
+                System.err.println( "[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_Send2AttOUT + ") fault: " + SQLe.getMessage()  );
+            }
+            }return -1;
         }
         return 0;
     }
@@ -1047,6 +1103,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] doUPDATE_MessageQueue_SetMsg_Result({}) fault: {}", Queue_Id, UPDATE_MessageQueue_SetMsg_Result, e.getMessage());
             System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Result(" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " );
             e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_SetMsg_Result, SQLe.getMessage());
+                System.err.println("[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_SetMsg_Result + ") fault: " + SQLe.getMessage());
+                }
+            }
             return -1;
         }
         return 0;
@@ -1095,6 +1158,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] doUPDATE_MessageQueue_SetMsg_Reason({}) fault: {}", Queue_Id, UPDATE_MessageQueue_SetMsg_Reason, e.getMessage());
             System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_SetMsg_Reason(" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " );
             e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_SetMsg_Reason, SQLe.getMessage());
+                System.err.println("[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_SetMsg_Reason + ") fault: " + SQLe.getMessage());
+            }
+            }
             return -1;
         }
         return 0;
@@ -1139,6 +1209,13 @@ public class TheadDataAccess {
             dataAccess_log.error("[{}] doUPDATE_MessageQueue_Out2ErrorOUT({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Out2ErrorOUT, e.getMessage());
             System.err.println( "[" + Queue_Id + "] doUPDATE_MessageQueue_Out2ErrorOUT(" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " );
             e.printStackTrace();
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) fault: {}", Queue_Id, UPDATE_MessageQueue_Out2ErrorOUT, SQLe.getMessage());
+                System.err.println("[" + Queue_Id + "] rollback (" + UPDATE_MessageQueue_Out2ErrorOUT + ") fault: " + SQLe.getMessage());
+            }
+            }
             return -1;
         }
         return 0;
@@ -1168,6 +1245,13 @@ public class TheadDataAccess {
             dataAccess_log.error(e.getMessage());
             e.printStackTrace();
             dataAccess_log.error("[{}] do_SelectMESSAGE_QUEUE: `{}` , что то пошло совсем не так...", Queue_Id, selectMESSAGE_QUEUE);
+            if (!rdbmsVendor.equals("oracle"))
+            {  try {
+                Hermes_Connection.rollback(); } catch (SQLException SQLe) {
+                dataAccess_log.error("[{}] rollback({}) do_SelectMESSAGE_QUEUE fault: {}", Queue_Id, selectMESSAGE_QUEUE, SQLe.getMessage());
+                System.err.println("[" + Queue_Id + "] rollback (" + selectMESSAGE_QUEUE + ") fault: " + SQLe.getMessage());
+            }
+            }
             return -1;
         }
         return  0;
