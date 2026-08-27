@@ -60,7 +60,8 @@ public class SenderApplication implements CommandLineRunner {
 	@Autowired
 	public TelegramProperties telegramProperties;
     @Autowired
-    private org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory jettyFactory;
+    //private org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory jettyFactory;
+    org.springframework.boot.jetty.servlet.JettyServletWebServerFactory jettyFactory;
     @Autowired
     private org.springframework.boot.web.servlet.ServletRegistrationBean<?> dispatcherServletRegistration;
     @Autowired
@@ -69,7 +70,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.07.27fSaX";
+	public static final String ApplicationName="*Sender_BUS* v.6.08.25aSaX";
     private final Environment ApplicationEnv;
     // Spring автоматически внедрит Environment через этот единственный конструктор без @Autowired
 
@@ -95,7 +96,7 @@ public class SenderApplication implements CommandLineRunner {
         AppThead_log.info("Hello for {}, logging file is `{}` ", ApplicationName, ApplicationProperties.loggingFileName);
 
         AppThead_log.info("Инициализация принудительного старта Jetty...");
-
+        /*
         // 1. Создаем веб-сервер и связываем его с DispatcherServlet
         org.springframework.boot.web.server.WebServer webServer = jettyFactory.getWebServer(
                 servletContext -> {
@@ -114,6 +115,7 @@ public class SenderApplication implements CommandLineRunner {
         // 2. Физически запускаем сервер
         webServer.start();
         AppThead_log.info("2й этап старта Jetty webServer.start() на порту: `{}`", webServer.getPort());
+        */
 
         // NotifyByChannel.test_Post(AppThead_log ); - для проверки
 		//		System.exit(11);

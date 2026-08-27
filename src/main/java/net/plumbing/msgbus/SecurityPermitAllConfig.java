@@ -17,7 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+//import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -49,8 +49,10 @@ public  class SecurityPermitAllConfig // extends WebSecurityConfigurerAdapter
     public WebSecurityCustomizer webSecurityCustomizer() {
         WebSecurityConfig_log.warn("webSecurityCustomizer: (web) -> web.ignoring().requestMatchers(new AntPathRequestMatcher(\"/**\")" +
                 "() DONE!");
+        // deprecated requestMatchers wos removed in 4.1.1
         return (web) -> web.ignoring()
-                .requestMatchers(new AntPathRequestMatcher("/**"));
+                .requestMatchers("/**"); // Передаем строку напрямую
+        // return (web) -> web.ignoring().requestMatchers(new AntPathRequestMatcher("/**"));
 
     }
     @Bean
@@ -80,8 +82,11 @@ public  class SecurityPermitAllConfig // extends WebSecurityConfigurerAdapter
     //@Override
     protected void configure(HttpSecurity http) throws Exception {
         //http.authorizeRequests().antMatchers("/HermesService/InternalRestApi/**").authenticated().and().httpBasic();
-       http.authorizeRequests().anyRequest().permitAll(); //.and().csrf().disable();
-
+       // dedicated :( шт 3.4 && removed 4,x
+        // http.authorizeRequests().anyRequest().permitAll(); //.and().csrf().disable();
+        http.authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
+        );
         //http.authorizeRequests().anyRequest().authenticated().and().httpBasic();
 
 
