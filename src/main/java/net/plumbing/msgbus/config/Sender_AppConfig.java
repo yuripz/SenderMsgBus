@@ -1,5 +1,7 @@
 package net.plumbing.msgbus.config;
 
+import org.eclipse.jetty.server.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -11,16 +13,17 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 //import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
-import org.springframework.boot.jetty.servlet.JettyServletWebServerFactory;
+//import org.springframework.boot.jetty.servlet.JettyServletWebServerFactory;
 //import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 // ПРАВИЛЬНО для Spring Boot 4.1.1
+/*
 import org.springframework.boot.web.server.servlet.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
-import org.springframework.web.context.support.GenericWebApplicationContext;
+import org.springframework.web.context.support.GenericWebApplicationContext;*/
 
 @Configuration
 //@ComponentScan(basePackages = "net.plumbing.msgbus.*")
@@ -63,15 +66,58 @@ public class Sender_AppConfig {
         // Читаем настройки потоков Jetty
         int maxThreads = applicationEnv.getProperty("server.jetty.threads.max", Integer.class, 30);
 
+
         jettyServletFactory.addServerCustomizers(server -> {
-            // Применяем настройки пула потоков к серверу Jetty
-            org.eclipse.jetty.util.thread.QueuedThreadPool threadPool =
-                    server.getBean(org.eclipse.jetty.util.thread.QueuedThreadPool.class);
+            // 1. Пул потоков
+            org.eclipse.jetty.util.thread.QueuedThreadPool threadPool = server.getBean(org.eclipse.jetty.util.thread.QueuedThreadPool.class);
             if (threadPool != null) {
+                // Применяем настройки пула потоков к серверу Jetty
                 threadPool.setMaxThreads(maxThreads);
+                AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory threadPool.setMaxThreads {}", maxThreads);
+            }
+            // 2. Размер заголовков
+            int requestHeaderSize = applicationEnv.getProperty("server.max-http-request-header-size", Integer.class, 81920);
+            int responseHeaderSize = applicationEnv.getProperty("server.jetty.max-http-response-header-size", Integer.class, 81920);
+
+            for (Connector connector : server.getConnectors()) {
+                if (connector instanceof ServerConnector) {
+                    HttpConnectionFactory connectionFactory = ((ServerConnector) connector)
+                            .getConnectionFactory(HttpConnectionFactory.class);
+                    if (connectionFactory != null) {
+                        HttpConfiguration config = connectionFactory.getHttpConfiguration();
+                        config.setRequestHeaderSize(requestHeaderSize);
+                        config.setResponseHeaderSize(responseHeaderSize);
+                        AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory setResponseHeaderSize {}, setResponseHeaderSize{}", requestHeaderSize, responseHeaderSize);
+                    }
+                }
+            }
+
+            // 3. Access Log для Jetty 12
+            if (applicationEnv.getProperty("server.jetty.accesslog.enabled", Boolean.class, true)) {
+                String filename = applicationEnv.getProperty("server.jetty.accesslog.filename", "./_Logz/access.log");
+
+                // В Jetty 12 используется CustomRequestLog
+                // Формат Extended NCSA
+                String format = CustomRequestLog.EXTENDED_NCSA_FORMAT;
+                boolean append = applicationEnv.getProperty("server.jetty.accesslog.append", Boolean.class, false);
+
+                // Используем AsyncRequestLogWriter, который умеет работать с файлами
+                AsyncRequestLogWriter writer = new AsyncRequestLogWriter();
+                writer.setFilename(filename);
+                writer.setAppend(append);
+
+                CustomRequestLog requestLog = new CustomRequestLog(writer, format);
+                server.setRequestLog(requestLog);
+                AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory setRequestLog to `{}`", filename );
             }
         });
-        AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory setPort 8118");
+        // 4. Forward Headers Strategy
+        String strategy = applicationEnv.getProperty("server.forward-headers-strategy", "native");
+        if ("native".equals(strategy)) {
+            jettyServletFactory.setUseForwardHeaders(true);
+            AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory setUseForwardHeaders {}", true );
+        }
+        AppConfig_log.info("servletWebServerFactory for ServletWebServerFactory done");
         return jettyServletFactory;
     }
 */

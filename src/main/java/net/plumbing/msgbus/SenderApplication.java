@@ -59,18 +59,19 @@ public class SenderApplication implements CommandLineRunner {
 	public TaskPollProperties taskPollProperties ;
 	@Autowired
 	public TelegramProperties telegramProperties;
+    /*
     @Autowired
     //private org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory jettyFactory;
     org.springframework.boot.jetty.servlet.JettyServletWebServerFactory jettyFactory;
     @Autowired
     private org.springframework.boot.web.servlet.ServletRegistrationBean<?> dispatcherServletRegistration;
     @Autowired
-    private org.springframework.web.servlet.DispatcherServlet dispatcherServlet;
+    private org.springframework.web.servlet.DispatcherServlet dispatcherServlet;*/
 
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.08.25aSaX";
+	public static final String ApplicationName="*Sender_BUS* v.6.08.28";
     private final Environment ApplicationEnv;
     // Spring автоматически внедрит Environment через этот единственный конструктор без @Autowired
 
