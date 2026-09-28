@@ -599,6 +599,7 @@ public class TheadDataAccess {
         }
         else
         { CallableStatement StmtMsg_Queue;
+            // language=GeneralSQL
             INSERT_QUEUElog_Request = "{call insert into " + dbSchema + ".MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values( ?, systimestamp, ?) returning ROWID into ? }";
             try {  StmtMsg_Queue = this.Hermes_Connection.prepareCall(INSERT_QUEUElog_Request);
             } catch (Exception e) {
@@ -638,7 +639,7 @@ public class TheadDataAccess {
                 else { // TODO RowId Postgree
                     Statement stmt = Hermes_Connection.createStatement();
 
-                    // get the postgresql serial field value with this query
+                    // get the PostgreSQL serial field value with this query
                     ResultSet rs = stmt.executeQuery("select cast(currval('"+ dbSchema + ".message_queuelog_seq')as varchar)");
                     if (rs.next()) {
                         ROWID_QUEUElog = rs.getString(1);

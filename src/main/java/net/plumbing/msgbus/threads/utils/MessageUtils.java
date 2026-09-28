@@ -270,7 +270,7 @@ public class MessageUtils {
         // рассчитываем размер SoapEnvelope
         String MsgId_Vaue = "<MsgId>" + messageQueueVO.getQueue_Id() + "</MsgId>";
         int SoapEnvelopeSize= (XMLchars.Envelope_noNS_Begin.length() + XMLchars.Header_noNS_Begin.length() + MsgId_Vaue.length()+ XMLchars.Header_noNS_End.length()  +
-                XMLchars.Body_noNS_Begin.length() + XMLchars.Body_noNS_End.length() + XMLchars.Envelope_noNS_End.length() +16); ;
+                XMLchars.Body_noNS_Begin.length() + XMLchars.Body_noNS_End.length() + XMLchars.Envelope_noNS_End.length() +16);
         StringBuilder SoapEnvelope = new StringBuilder(SoapEnvelopeSize);
         SoapEnvelope.append(XMLchars.Envelope_noNS_Begin);
         SoapEnvelope.append(XMLchars.Header_noNS_Begin);
@@ -294,13 +294,13 @@ public class MessageUtils {
         //AppThead_log.info( parsedConfig );
         if ( parsedMessageConfirmation == null ) {
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-                    "PrepareConfirmation: результат преобоазования MsgAnswXSLT ( или чистый Response) - пустая строка" + messageDetails.MessageTemplate4Perform.getMsgAnswXSLT(), 1232,
+                    "PrepareConfirmation: результат преобразования MsgAnswXSLT ( или чистый Response) - пустая строка" + messageDetails.MessageTemplate4Perform.getMsgAnswXSLT(), 1232,
                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
             return AnswXSLTQueue_Direction;
         }
         if (parsedMessageConfirmation.isEmpty()) {
             theadDataAccess.doUPDATE_MessageQueue_Send2ErrorOUT(messageQueueVO,
-                    "PrepareConfirmation: результат преобоазования MsgAnswXSLT ( или чистый Response) - строка 0-й длины" + messageDetails.MessageTemplate4Perform.getMsgAnswXSLT(), 1232,
+                    "PrepareConfirmation: результат преобразования MsgAnswXSLT ( или чистый Response) - строка 0-й длины" + messageDetails.MessageTemplate4Perform.getMsgAnswXSLT(), 1232,
                     messageQueueVO.getRetry_Count(), MessegeSend_Log);
             return AnswXSLTQueue_Direction;
         }

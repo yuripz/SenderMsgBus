@@ -840,7 +840,7 @@ public class PerformQueueMessages {
                         ( Message.MessageTemplate4Perform.getPropUrlPostExec()  == null ) )
                 {
                     // Нет параметров для Rest-HttpGet - надо орать!
-                    MessageSend_Log.error("["+ Queue_Id +"] В шаблоне для пост-обработки статуса " + XMLchars.DirectERROUT + " " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль");
+                    MessageSend_Log.error("[{}] В шаблоне для пост-обработки статуса " + XMLchars.DirectERROUT + " {} нет параметров для Rest-HttpGet вклюая логин/пароль", Queue_Id, Message.MessageTemplate4Perform.getPropExeMetodPostExec());
                     theadDataAccess.doUPDATE_MessageQueue_Send2AttOUT(messageQueueVO,
                             "В шаблоне для пост-обработки статуса " + XMLchars.DirectERROUT + " " + Message.MessageTemplate4Perform.getPropExeMetodPostExec() + " нет параметров для Rest-HttpGet вклюая логин/пароль", 1232,
                             messageQueueVO.getRetry_Count(),  MessageSend_Log);
@@ -914,7 +914,7 @@ public class PerformQueueMessages {
                             return -20L;
                         } else {
                             if (Message.MessageTemplate4Perform.getIsDebugged())
-                                MessageSend_Log.info("[" + Queue_Id + "] Исполнение ErrTransXSLT ExecuteSQLinXML:" + Message.MsgReason.toString());
+                                MessageSend_Log.info("[{}] Исполнение ErrTransXSLT ExecuteSQLinXML:{}", Queue_Id, Message.MsgReason.toString());
                             //ConcurrentQueue.addMessageQueueVO2queue(  messageQueueVO, null, null,  monitoringQueueVO, MessageSend_Log);
                             /*if (theadDataAccess.do_SelectMESSAGE_QUEUE(messageQueueVO, MessageSend_Log) == 0)
                                 ConcurrentQueue.addMessageQueueVO2queue(messageQueueVO, "Исполнение ExecuteSQLinXML:" + Passed_Envelope4ErrTransXSLT,
@@ -998,8 +998,8 @@ public class PerformQueueMessages {
         catch ( Exception exp ) {
             ConvXMLuseXSLTerr = sStackTrace.strInterruptedException(exp);
             exp.printStackTrace();
-            System.err.println( "["+ QueueId  + "] ConvXMLuseXSLT.ByteArrayInputStream Exception" );
-            MessageSend_Log.error("["+ QueueId  + "] Exception: {}" , ConvXMLuseXSLTerr );
+            System.err.println( "["+ QueueId + "] ConvXMLuseXSLT.ByteArrayInputStream Exception:" + ConvXMLuseXSLTerr );
+            MessageSend_Log.error("[{}] ConvXMLuseXSLT.ByteArrayInputStream Exception: {}", QueueId, ConvXMLuseXSLTerr);
             MsgResult.setLength(0);
             MsgResult.append( "ConvXMLuseXSLT:");  MsgResult.append( ConvXMLuseXSLTerr );
             return XMLchars.EmptyXSLT_Result ;
@@ -1036,7 +1036,7 @@ public class PerformQueueMessages {
             XsltExecutable xsltStylesheet = xsltCompiler.compile( srcXSLT );
             Xslt30Transformer xslt30Ttransformer = xsltStylesheet.load30();
             if (IsDebugged)
-            MessageSend_Log.warn("["+ QueueId  + "] using XsltLanguageVersion {}",  xsltCompiler.getXsltLanguageVersion() ) ;
+                MessageSend_Log.warn("[{}] using XsltLanguageVersion {}", QueueId, xsltCompiler.getXsltLanguageVersion());
             Serializer outSerializer = processor.newSerializer();
             outSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
             outSerializer.setOutputProperty(Serializer.Property.ENCODING, "utf-8");
@@ -1085,7 +1085,7 @@ public class PerformQueueMessages {
                 MessageSend_Log.error("[{}] ConvXMLuseXSLT( XSLT ): {}", QueueId, XSLTdata);
                 MessageSend_Log.error("[{}] ConvXMLuseXSLT( XML out ): {}", QueueId, res);
             }
-            MessageSend_Log.error("["+ QueueId  + "] Transformer.Exception: " + ConvXMLuseXSLTerr);
+            MessageSend_Log.error("[{}] Transformer.Exception: {}", QueueId, ConvXMLuseXSLTerr);
             MsgResult.setLength(0);
             MsgResult.append( "ConvXMLuseXSLT.Transformer:");  MsgResult.append( ConvXMLuseXSLTerr );
             throw exp;
@@ -1122,7 +1122,7 @@ public class PerformQueueMessages {
             serializer_Property_METHOD =  "text";
         }
         else serializer_Property_METHOD =  "xml";
-        ;
+
 
         ByteArrayInputStream xmlInputStream=null;
         //BufferedInputStream  _xmlInputStream;
@@ -1159,7 +1159,7 @@ public class PerformQueueMessages {
             serializationProperties = outSerializer.getSerializationProperties();
             Properties properties= serializationProperties.getProperties();
 
-            int  serializationPropertiesSise;
+            // int  serializationPropertiesSise; --Variable 'serializationPropertiesSise' is never used
             if (IsDebugged)
                 MessageSend_Log.warn("[{}] ConvXMLuseXSLT30: Serializer.Property {}, Serializer.Property.all {}", QueueId, properties.size(), properties.toString());
 

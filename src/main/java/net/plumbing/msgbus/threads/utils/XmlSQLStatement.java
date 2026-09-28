@@ -22,44 +22,42 @@ import java.sql.*;
 
 public class XmlSQLStatement {
 
-    public static final String  TagNameHead       = "SQLRequest";
+    //public static final String  TagNameHead       = "SQLRequest";
 
-    public static final String  TagNameStatement  = "SQLStatement";
-    public static final String  AttrNameStateType  = "type";
-    public static final String  AttrNameStateNum   = "snum";
-    public static final String  TagNamePSTMT      = "PSTMT";
-    public static final String  TagNameParam      = "Param";
-    public static final String  AttrNameParamNum  = "pnum";
-    public static final String  AttrNameParamType = "type";
-    public static final String  AttrNameParamDir  = "dir";
+    //public static final String  TagNameStatement  = "SQLStatement";
+    //public static final String  AttrNameStateType  = "type";
+    //public static final String  AttrNameStateNum   = "snum";
+    //public static final String  TagNamePSTMT      = "PSTMT";
+    //public static final String  TagNameParam      = "Param";
+    //public static final String  AttrNameParamNum  = "pnum";
+    //public static final String  AttrNameParamType = "type";
+    //public static final String  AttrNameParamDir  = "dir";
 
-    public static final String  TagNameResultSet  = "ResultSet";
-    public static final String  TagNameResult     = "Result";
-    public static final String  AttrNameResNum    = "rnum";
-    public static final String  TagNameReturn     = "Return";
-    public static final String  TagNameRetNorm    = "Normal";
-    public static final String  TagNameRetFault   = "Fault";
+    //public static final String  TagNameResultSet  = "ResultSet";
+    //public static final String  TagNameResult     = "Result";
+    //public static final String  AttrNameResNum    = "rnum";
+    //public static final String  TagNameReturn     = "Return";
+    //public static final String  TagNameRetNorm    = "Normal";
+    //public static final String  TagNameRetFault   = "Fault";
 
-    public static final String  ParTypeString   = "string";
-    public static final String  ParTypeNumber   = "number";
-    public static final String  ParTypeDirIN    = "in";
-    public static final String  ParTypeDirOUT   = "out";
+    //public static final String  ParTypeString   = "string";
+    //public static final String  ParTypeNumber   = "number";
+    //public static final String  ParTypeDirIN    = "in";
+    //public static final String  ParTypeDirOUT   = "out";
 
-    public static final String  OperTypeSel     = "select";
-    public static final String  OperTypeIns     = "insert";
-    public static final String  OperTypeUpdt    = "update";
-    public static final String  OperTypeDel     = "delete";
-    public static final String  OperTypeFunc    = "function";
+    //public static final String  OperTypeSel     = "select";
+    //public static final String  OperTypeIns     = "insert";
+    //public static final String  OperTypeUpdt    = "update";
+    //public static final String  OperTypeDel     = "delete";
+    //public static final String  OperTypeFunc    = "function";
 
     public static int ExecuteSQLincludedXML(TheadDataAccess theadDataAccess,
                                             String Passed_Envelope4XSLTPost,
                                             MessageQueueVO messageQueueVO,
                                             @NotNull MessageDetails messageDetails, boolean isDebugged, Logger MessegeSend_Log) {
         int nn = 0;
-       // TODO ExecuteSQLincludedXML не должен Message.clear() и сбрасывать MessageRowNum = 0, но это надо тестить
-        // messageDetails.Message.clear();
-       // messageDetails.MessageRowNum = 0;
-       // messageDetails.Message_Tag_Num = 0;
+        // ExecuteSQLincludedXML не должен Message.clear() и сбрасывать MessageRowNum = 0, но это надо тестить (done!)
+        // messageDetails.Message.clear();messageDetails.MessageRowNum = 0;messageDetails.Message_Tag_Num = 0;
         messageDetails.MsgReason.setLength(0);
        // messageDetails.MsgReason.append("ExecuteSQLinXML is not ready yet! ");
 
@@ -77,7 +75,7 @@ public class XmlSQLStatement {
 
                 String xpathSQLStatementExpression="/SQLRequest/SQLStatement/PSTMT";
                 String xpathSQLStatementParamExpression = "/SQLRequest/SQLStatement/Param[2]"; ///SQLRequest/SQLStatement/Param[2]
-                Integer iMsgStaus = 1233;
+                //Integer iMsgStaus = 1233; Variable 'iMsgStaus' is never used
 
                 XPathExpression<Element> xpathSQLStatement = XPathFactory.instance().compile(xpathSQLStatementExpression, Filters.element());
                 Element emtSQLStatement = xpathSQLStatement.evaluateFirst(document);
@@ -86,7 +84,7 @@ public class XmlSQLStatement {
                     messageDetails.MsgReason.append("ExecuteSQLincludedXML: SQLStatement=(").append(SQLcallableStatementExpression).append(")");
                     }
                 else { messageDetails.MsgReason.append("ExecuteSQLincludedXML: Не нашли ").append(xpathSQLStatementExpression).append(" в результате XSLT прообразования ").append(Passed_Envelope4XSLTPost);
-                    MessegeSend_Log.error("[" + messageQueueVO.getQueue_Id() + " ] " + messageDetails.MsgReason.toString());
+                    MessegeSend_Log.error("[{} ] {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                     return -2;
 
                 }
@@ -106,7 +104,9 @@ public class XmlSQLStatement {
                 CallableStatement enableDBMS_OUTPUTStmt;
                 CallableStatement disableDBMS_OUTPUTStmt=null;
                 if ( (isDebugged ) && theadDataAccess.getRdbmsVendor().equals("oracle") ) {
+                    // language=GeneralSQL
                     enableDBMS_OUTPUTStmt = theadDataAccess.Hermes_Connection.prepareCall("BEGIN DBMS_OUTPUT.ENABLE(buffer_size => NULL); END;");
+                    // language=GeneralSQL
                     disableDBMS_OUTPUTStmt = theadDataAccess.Hermes_Connection.prepareCall("BEGIN DBMS_OUTPUT.DISABLE; END;");
 
                     enableDBMS_OUTPUTStmt.execute();
@@ -129,7 +129,7 @@ public class XmlSQLStatement {
                     // COMMIT! ( Мало ли кто не закоммитил )
                     theadDataAccess.Hermes_Connection.commit();
                     } catch (SQLException e) {
-                        messageDetails.MsgReason.append(", SQLException callableStatement.execute():=").append(e.toString());
+                        messageDetails.MsgReason.append(", SQLException callableStatement.execute():=").append(e.getMessage());
                         MessegeSend_Log.error("[{}] ExecuteSQLincludedXML {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                         callableStatement.close();
                         theadDataAccess.Hermes_Connection.rollback();
@@ -140,7 +140,7 @@ public class XmlSQLStatement {
 
                         while (warning != null) {
                             // System.out.println(warning.getMessage());
-                            MessegeSend_Log.warn("[{} ] callableStatement.SQLWarning: {}", messageQueueVO.getQueue_Id(), warning.getMessage());
+                            MessegeSend_Log.warn("[{}] callableStatement.SQLWarning: {}", messageQueueVO.getQueue_Id(), warning.getMessage());
                             warning = warning.getNextWarning();
                         }
                     }
@@ -155,6 +155,7 @@ public class XmlSQLStatement {
                     {
                         CallableStatement getOutputStmt;
                         try {
+                            // language=GeneralSQL
                             getOutputStmt = theadDataAccess.Hermes_Connection.prepareCall("BEGIN DBMS_OUTPUT.GET_LINES(?, ?); END;");
                             getOutputStmt.registerOutParameter(1, Types.ARRAY, "DBMSOUTPUT_LINESARRAY");
                             getOutputStmt.registerOutParameter(2, Types.NUMERIC, 100); // For the number of lines
@@ -174,10 +175,9 @@ public class XmlSQLStatement {
                             disableDBMS_OUTPUTStmt.close();
                         }
                     }
-
                     callableStatement.close();
                 } catch (SQLException e) {
-                    messageDetails.MsgReason.append("SQLExceptio Hermes_Connection.prepareCall:=").append(e.toString());
+                    messageDetails.MsgReason.append("SQLExceptio Hermes_Connection.prepareCall:=").append(e.getMessage());
                     MessegeSend_Log.error("[{}] {}", messageQueueVO.getQueue_Id(), messageDetails.MsgReason.toString());
                     return -2;
                 }
@@ -195,29 +195,6 @@ public class XmlSQLStatement {
             messageDetails.MsgReason.append("ExecuteSQLincludedXML.documentBuilder fault: ").append(sStackTrace.strInterruptedException(ex));
         }
 
-/******************** ПОТОМ
-        try {
-            theadDataAccess.stmtMsgQueueDet.setLong(1, messageQueueVO.getQueue_Id());
-            ResultSet rs = theadDataAccess.stmtMsgQueueDet.executeQuery();
-            while (rs.next()) {
-                MessageDetailVO messageDetailVO = new MessageDetailVO();
-                messageDetailVO.setMessageQueue(
-                        rs.getString("Tag_Id"),
-                        rs.getString("Tag_Value"),
-                        rs.getInt("Tag_Num"),
-                        rs.getInt("Tag_Par_Num")
-                );
-                messageDetails.Message.put(messageDetails.MessageRowNum, messageDetailVO);
-                messageDetails.MessageRowNum += 1;
-                // MessegeSend_Log.info( "Tag_Id:" + rs.getString("Tag_Id") + " [" + rs.getString("Tag_Value") + "]");
-
-            }
-        } catch (SQLException e) {
-            MessegeSend_Log.error("Queue_Id=[" + messageQueueVO.getQueue_Id() + "] :" + sStackTrace.strInterruptedException(e));
-            e.printStackTrace();
-            return nn;
-        }
-************************************************************/
         return nn;
     }
 
