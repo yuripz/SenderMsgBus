@@ -265,14 +265,28 @@ public class MessageHttpSend {
                                 restResponseStatus, messageDetails.XML_MsgResponse.toString());
             if ( IsDebugged )
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log );
+            else {
+                if ( restResponseStatus != 200) { // получили в ответ проблему
+                    // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                    if ( ROWID_QUEUElog == null)
+                    ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), SoapEnvelope.substring(0,
+                            (Math.min(SoapEnvelope.length(), 64))) + "...", MessageSend_Log);
+                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
+                }
+            }
 
         } catch ( Exception e) {
             // Журналируем ответ как есть
             MessageSend_Log.error("[{}]sendSoapMessage.POST ({}) fault:{}", messageQueueVO.getQueue_Id(), EndPointUrl, sStackTrace.strInterruptedException(e));
             messageDetails.MsgReason.append(" sendSoapMessage.POST (" ).append ( EndPointUrl )
                                     .append ( ") fault: " ).append ( sStackTrace.strInterruptedException(e));
-
-            if ( IsDebugged )
+            if ( !IsDebugged ) // если IsDebugged==true, то doINSERT_QUEUElog вероятно был выполнен перед отправкой
+            {
+                if (ROWID_QUEUElog == null) // проверяем, была ли уже вставка
+                    ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), SoapEnvelope.substring(0,
+                            (Math.min(SoapEnvelope.length(), 64))) + "...", MessageSend_Log);
+            }
+            // if ( IsDebugged ) при возникновении Exception , всегда пишем его в журнал независимо от признака IsDebugged
                 theadDataAccess.doUPDATE_QUEUElog( ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log );
 
             // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
@@ -962,7 +976,15 @@ public class MessageHttpSend {
 
                 if (IsDebugged)
                         theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
-
+                else {
+                    if ( restResponseStatus != 200) {
+                        // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                        if (ROWID_QUEUElog == null) // но проверяем, был ли doINSERT_QUEUElog
+                        ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), RequestBody.substring(0,
+                                (Math.min(RequestBody.length(), 64))) + "...", MessageSend_Log);
+                        theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
+                    }
+                }
 
                 // обработку HTTP статусов 502, 503 и 504 от внешних систем как транспортную ошибку
                 if (( restResponseStatus == 502)
@@ -1302,10 +1324,17 @@ public class MessageHttpSend {
             sendIoExc.printStackTrace();
             MessageUtils.ProcessingSendError(messageQueueVO, messageDetails, theadDataAccess,
                     "sendPostMessage.POST", true, sendIoExc, MessageSend_Log);
-            if (IsDebugged)
-                theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(sendIoExc), MessageSend_Log);
-            return -1;
+                if (IsDebugged)
+                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(sendIoExc), MessageSend_Log);
+                else {
+                        // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                    if (ROWID_QUEUElog == null) // но проверяем, был ли doINSERT_QUEUElog
+                        ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.substring(0,
+                                (Math.min(messageDetails.XML_MsgSEND.length(), 64))) + "...", MessageSend_Log);
+                        theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(sendIoExc), MessageSend_Log);
                 }
+            return -1;
+            }
 
             restResponseStatus = Response.statusCode();
 
@@ -1343,6 +1372,13 @@ public class MessageHttpSend {
                         "sendPostMessage.POST", true, ioExc, MessageSend_Log);
                 if (IsDebugged)
                     theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(ioExc), MessageSend_Log);
+                else {
+                    // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                    if (ROWID_QUEUElog == null) // но проверяем, был ли doINSERT_QUEUElog
+                    ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.substring(0,
+                            (Math.min(messageDetails.XML_MsgSEND.length(), 64))) + "...", MessageSend_Log);
+                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(ioExc), MessageSend_Log);
+                }
                 return -1;
             }
             // обработку HTTP статусов 502, 503 и 504 от внешних систем как транспортную ошибку
@@ -1353,6 +1389,7 @@ public class MessageHttpSend {
                 Exception e = new Exception(" sendPostMessage.Response httpCode=" + Integer.toString(restResponseStatus  ) + "\n" + RestResponse );
                 if (IsDebugged)
                     MessageSend_Log.error("[{}] sendPostMessage.POST call handle_Transport_Errors: `{}`", messageQueueVO.getQueue_Id(), e.getMessage());
+
                 return handle_Transport_Errors(theadDataAccess, messageQueueVO, messageDetails, EndPointUrl, "sendPostMessage.POST", e,
                         ROWID_QUEUElog, IsDebugged, MessageSend_Log);
             }
@@ -1412,6 +1449,14 @@ public class MessageHttpSend {
                             } catch (Exception JSONe) { // получили непонятно что
                                     MessageSend_Log.error("[{}] sendPostMessage.POST Exception JSONe получили непонятно что=({})", messageQueueVO.getQueue_Id(),
                                             JSONe.getMessage());
+                                if (!IsDebugged)
+                                {
+                                    // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                                    if (ROWID_QUEUElog == null) // но проверяем, был ли doINSERT_QUEUElog
+                                    ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.substring(0,
+                                            (Math.min(messageDetails.XML_MsgSEND.length(), 64))) + "...", MessageSend_Log);
+                                    theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), RestResponse, MessageSend_Log);
+                                }
 
                                 // Кладем полученный ответ в <MsgData><![CDATA[" RestResponse "]]></MsgData>
                                 append_Http_ResponseStatus_and_PlaneResponse( messageDetails.XML_MsgResponse, restResponseStatus , RestResponse, responseHttpHeaders );
@@ -1431,11 +1476,18 @@ public class MessageHttpSend {
             if (IsDebugged)
                 MessageSend_Log.info("[{}] sendPostMessage.POST Envelope_MsgResponse=({})", messageQueueVO.getQueue_Id(), messageDetails.XML_MsgResponse.toString());
 
-
             // -- Задваивается в случае ошибки => это делается внутри ProcessingSendError()
             // messageQueueVO.setRetry_Count(messageQueueVO.getRetry_Count() + 1);
 
         } catch (Exception e) {
+            if (!IsDebugged) {
+                // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                if ( ROWID_QUEUElog == null) // но лучше проверить!
+                ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.substring(0,
+                        (Math.min(messageDetails.XML_MsgSEND.length(), 64))) + "...", MessageSend_Log);
+            }
+                theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
+
             return handle_Transport_Errors ( theadDataAccess,  messageQueueVO,  messageDetails,  EndPointUrl,  "sendPostMessage.POST", e,
                      ROWID_QUEUElog,  IsDebugged,   MessageSend_Log);
 
@@ -1578,6 +1630,13 @@ public class MessageHttpSend {
         // Журналируем UnirestException-ответ как есть
         if (IsDebugged)
             theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
+        else {
+            // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+            if ( ROWID_QUEUElog == null) // но лучше проверить!
+                ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.substring(0,
+                        (Math.min(messageDetails.XML_MsgSEND.length(), 64))) + "...", MessageSend_Log);
+        }
+        theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
 
         // HE-4892 Если транспорт отвалился , то Шина ВСЁ РАВНО формирует как бы ответ , но с Fault внутри.
         // НАДО проверять количество порыток !!!
@@ -1907,6 +1966,12 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                         "HttpDeleteMessage.DELETE", true, e, MessageSend_Log);
                 if (IsDebugged)
                     theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
+                else {
+                    // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                    if ( ROWID_QUEUElog == null) // но лучше проверить!
+                        ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), (EndPointUrl + messageDetails.XML_MsgSEND), MessageSend_Log);
+                }
+                theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
                 return -1;
             }
         }
@@ -2196,6 +2261,13 @@ public static int HttpDeleteMessage(@NotNull MessageQueueVO messageQueueVO, @Not
                       "HttpGetMessage.GET", true, e, MessageSend_Log);
               if (IsDebugged)
                   theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
+              else {
+                  // если IsDebugged==true, то doINSERT_QUEUElog был выполнен перед отправкой
+                  if ( ROWID_QUEUElog == null) // но лучше проверить!
+                      ROWID_QUEUElog = theadDataAccess.doINSERT_QUEUElog(messageQueueVO.getQueue_Id(), messageDetails.XML_MsgSEND.substring(0,
+                              (Math.min(messageDetails.XML_MsgSEND.length(), 64))) + "...", MessageSend_Log);
+              }
+              theadDataAccess.doUPDATE_QUEUElog(ROWID_QUEUElog, messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e), MessageSend_Log);
               return -1;
           }
       }

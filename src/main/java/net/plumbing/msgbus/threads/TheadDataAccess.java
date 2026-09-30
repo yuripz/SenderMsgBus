@@ -527,12 +527,14 @@ public class TheadDataAccess {
             stmt_UPDATE_QUEUElog.setLong(2, Queue_Id);
             stmt_UPDATE_QUEUElog.setString(1, sResponse);
             stmt_UPDATE_QUEUElog.executeUpdate();
-            dataAccess_log.info("[{}] commit: {} = '{}' update {}.MESSAGE_QUEUElog L set systimestamp where l.Queue_Id = {}  ;",
-                    Queue_Id, UPDATE_QUEUElog_Response, sResponse, dbSchema, Queue_Id);
+            // dataAccess_log.info("[{}] commit: {} = '{}' update {}.MESSAGE_QUEUElog L set systimestamp where l.Queue_Id = {}  ;",  Queue_Id, UPDATE_QUEUElog_Response, sResponse, dbSchema, Queue_Id);
+            // убираем из dataAccess_log.info строку -тело sResponse
+            dataAccess_log.info("[{}] commit: {} for update {}.MESSAGE_QUEUElog L set systimestamp where l.Queue_Id = {}  ;",
+                    Queue_Id, UPDATE_QUEUElog_Response, dbSchema, Queue_Id);
             Hermes_Connection.commit();
 
         } catch (Exception e) {
-            dataAccess_log.error("doUPDATE_QUEUElog for [{}]: {}) fault: {}", Queue_Id, UPDATE_QUEUElog_Response, e.getMessage());
+            dataAccess_log.error("[{}] doUPDATE_QUEUElog for update `{}` by `{}`) fault: {}", Queue_Id, UPDATE_QUEUElog_Response, sResponse, e.getMessage());
             System.err.println("doUPDATE_QUEUElog for [" + Queue_Id + "]: " + UPDATE_QUEUElog_Response + ") fault: " + e.getMessage());
             if (!rdbmsVendor.equals("oracle"))
             {  try {
