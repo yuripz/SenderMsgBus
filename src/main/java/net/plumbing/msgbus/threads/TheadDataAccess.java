@@ -496,16 +496,19 @@ public class TheadDataAccess {
 
     public PreparedStatement make_UPDATE_QUEUE_InfoStreamId(Logger dataAccess_log) {
         PreparedStatement StmtMsg_Queue;
+        /*
         if ( rdbmsVendor.equals("oracle") )
             UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
         else
             UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where CTID= ?::tid";  // CTID='(921,21)'::tid  ;
+         */
+        dataAccess_log.warn("try make_UPDATE_QUEUE_InfoStreamId (`{}` )", UPDATE_QUEUE_InfoStreamId);
         // TODO where CTID= ?::tid для PostGree
-        UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
+        UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_InfoStreamId = ? where q.ROWID = ?";
         try {
             StmtMsg_Queue = this.Hermes_Connection.prepareStatement(UPDATE_QUEUE_InfoStreamId);
         } catch (Exception e) {
-            dataAccess_log.error( "prepareStatement `" + UPDATE_QUEUE_InfoStreamId + "` fault: " + e.getMessage());
+            dataAccess_log.error("prepareStatement `{}` fault: {}", UPDATE_QUEUE_InfoStreamId, e.getMessage());
             System.err.println("prepareStatement `" + UPDATE_QUEUE_InfoStreamId + "` fault: ");
             e.printStackTrace();
             return null;
@@ -568,7 +571,7 @@ public class TheadDataAccess {
             Hermes_Connection.commit();
 
         } catch (Exception e) {
-            dataAccess_log.error("[{}]: {}) fault: {}", Queue_Id, UPDATE_QUEUE_InfoStreamId, e.getMessage());
+            dataAccess_log.error("[{}]: doUPDATE_QUEUE_InfoStreamId_by_RowId() {} fault: {}", Queue_Id, UPDATE_QUEUE_InfoStreamId, e.getMessage());
             System.err.println("[" + Queue_Id + "]: " + UPDATE_QUEUE_InfoStreamId + ") fault: " + e.getMessage());
             if (!rdbmsVendor.equals("oracle"))
             {  try {
