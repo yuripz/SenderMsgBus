@@ -576,7 +576,9 @@ public class MessageSendTask  implements Runnable
                                         isNoLock = false;
                                     }
                                     else { // если запускается под управлением Cubernate надо лочить с учетом экземпляра CuberNumId
-                                        if (theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId( LockedROWID_QUEUE, LockedQueue_Id,
+                                        // TODO where CTID= ?::tid для PostGree  if ( !rdbmsVendor.equals("oracle") )
+
+                                            if (theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId( LockedROWID_QUEUE, LockedQueue_Id,
                                                 (theadNum + this.FirstInfoStreamId + this.CuberNumId*1000), MessegeSend_Log)
                                                 != 0
                                         ) // Не смогли установить свой №№ обработчика - значит, считаем, что блокировка не сработала.

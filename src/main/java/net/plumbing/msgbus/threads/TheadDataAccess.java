@@ -500,6 +500,8 @@ public class TheadDataAccess {
             UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
         else
             UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where CTID= ?::tid";  // CTID='(921,21)'::tid  ;
+        // TODO where CTID= ?::tid для PostGree
+        UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
         try {
             StmtMsg_Queue = this.Hermes_Connection.prepareStatement(UPDATE_QUEUE_InfoStreamId);
         } catch (Exception e) {
