@@ -592,7 +592,8 @@ public class TheadDataAccess {
         if (!rdbmsVendor.equals("oracle")) {
             // TODO 4_Postgre
             PreparedStatement StmtMsg_Queue;
-            INSERT_QUEUElog_Request="insert into " + dbSchema + ".MESSAGE_QUEUElog  ( Queue_Id, Req_dt, RowId, Request ) values( ?, current_timestamp, cast(nextval( '"+ dbSchema + ".message_queuelog_seq') as varchar), ?) ";
+            // language=GeneralSQL
+            INSERT_QUEUElog_Request="insert into " + dbSchema + ".MESSAGE_QUEUElog  ( Queue_Id, Req_dt, RowId, Request ) values( ?, current_timestamp, cast(nextval( '"+ dbSchema + ".message_queuelog_seq') as varchar), ?) RETURNING RowId ";
             try {  StmtMsg_Queue = this.Hermes_Connection.prepareCall(INSERT_QUEUElog_Request);
             } catch (Exception e) {
                 dataAccess_log.error(e.getMessage());
@@ -629,31 +630,35 @@ public class TheadDataAccess {
         //dataAccess_log.info( "[" + Queue_Id + "] do {call insert into " + dbSchema + ".MESSAGE_QUEUElog L ( Queue_Id, Req_dt, request ) values(" + Queue_Id + ", current_timestamp, '"+sRequest+ "' ) returning ROWID into ? };" );
         int count ;
         String ROWID_QUEUElog=null;
+
         try {
             stmt_INSERT_QUEUElog.setLong( 1, Queue_Id );
             stmt_INSERT_QUEUElog.setString( 2, sRequest );
-            // TODO for Oracle ROWID, в случае Postgree комментим !!!
+
             if ( rdbmsVendor.equals("oracle") )
-            stmt_INSERT_QUEUElog.registerOutParameter( 3, Types.ROWID );
-
-            count = stmt_INSERT_QUEUElog.executeUpdate();
-            if (count>0)
             {
-                // TODO for Oracle ROWID, в случае Postgree комментим !!!
-                if ( rdbmsVendor.equals("oracle") )
-                ROWID_QUEUElog  = stmt_INSERT_QUEUElog.getString(3); //rest is not null and not empty
-
-                else { // TODO RowId Postgree
-                    Statement stmt = Hermes_Connection.createStatement();
-
-                    // get the PostgreSQL serial field value with this query
-                    ResultSet rs = stmt.executeQuery("select cast(currval('"+ dbSchema + ".message_queuelog_seq')as varchar)");
-                    if (rs.next()) {
-                        ROWID_QUEUElog = rs.getString(1);
-                    }
-                    stmt.close();
+                stmt_INSERT_QUEUElog.registerOutParameter( 3, Types.ROWID );
+                count = stmt_INSERT_QUEUElog.executeUpdate();
+                // dataAccess_log.info( "[" + Queue_Id + "] count = stmt_INSERT_QUEUElog.executeUpdate() => " + count);
+                if (count>0)
+                {
+                    ROWID_QUEUElog  = stmt_INSERT_QUEUElog.getString(3); //rest is not null and not empty
+                    dataAccess_log.info("[{}] ROWID = stmt_INSERT_QUEUElog.executeUpdate() => {}", Queue_Id, ROWID_QUEUElog);
                 }
-                dataAccess_log.info("[{}] ROWID = stmt_INSERT_QUEUElog.executeUpdate() => {}", Queue_Id, ROWID_QUEUElog);
+                else {
+                    dataAccess_log.error("[{}] ROWID = stmt_INSERT_QUEUElog.executeUpdate() Is Not returned, count row= {}", Queue_Id, count);
+                }
+            } else // в случае Postgree
+            {  // Используем executeQuery(), так как запрос Postgree возвращает строку с данными
+                ResultSet rs = stmt_INSERT_QUEUElog.executeQuery();
+                if (rs.next()) {
+                    ROWID_QUEUElog = rs.getString(1);
+                    dataAccess_log.info("[{}] ROWID = stmt_INSERT_QUEUElog.executeQuery() => {}", Queue_Id, ROWID_QUEUElog);
+                }
+                rs.close();
+                if ( ROWID_QUEUElog == null ) {
+                    dataAccess_log.error("[{}] ROWID = stmt_INSERT_QUEUElog.executeQuery() Is Not returned, ROWID_QUEUElog is NULL", Queue_Id);
+                }
             }
             Hermes_Connection.commit();
             // dataAccess.do_Commit();
@@ -666,7 +671,7 @@ public class TheadDataAccess {
                 System.err.println( "[" + Queue_Id + "] rollback (" + INSERT_QUEUElog_Request + ") fault: " + SQLe.getMessage()  );
             }
             e.printStackTrace();
-            return ROWID_QUEUElog;
+            return null;
         }
         return ROWID_QUEUElog;
     }
