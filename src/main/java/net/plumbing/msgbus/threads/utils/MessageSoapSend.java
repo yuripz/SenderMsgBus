@@ -251,7 +251,14 @@ public class MessageSoapSend {
 		for (int i = 0; i < Elements.size(); i++) {
 			Element XMLelement = Elements.get(i);
 			String ElementEntry = XMLelement.getName();
-			String ElementContent = XmlEscapers.xmlAttributeEscaper().escape( XMLelement.getText()); // .getValue() вынимает СОДЕРЖАНИЕ всех дочерних элементов!
+			String ElementContent;
+			if (XMLelement.getChildren().isEmpty())
+				 ElementContent = XmlEscapers.xmlContentEscaper().escape( XMLelement.getText()); // .getValue() вынимает СОДЕРЖАНИЕ всех дочерних элементов!
+			else {
+				ElementContent = "";
+				// ElementContent = XmlEscapers.xmlContentEscaper().escape(XMLelement.getText().trim());
+			}
+
 			// MessegeSend_Log.warn("XML_BodyElemets2StringB getValue: `<" + ElementEntry + ">" + XMLelement.getValue() + "</" + ElementEntry + ">`");
 			// MessegeSend_Log.warn("XML_BodyElemets2StringB getText: `<" + ElementEntry + ">" + XMLelement.getText() + "</" + ElementEntry + ">`");
 			messageDetails.XML_ClearBodyResponse.append(XMLchars.OpenTag + ElementEntry);
