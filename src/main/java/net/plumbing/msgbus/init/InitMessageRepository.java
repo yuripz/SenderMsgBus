@@ -163,6 +163,7 @@ public static void SaxonExtensionConfiguration( Logger AppThead_log  ) {
                 MessageTypeVOkey  = MessageRepositoryHelper.look4MessageTypeVO_2_Perform(rs.getInt("operation_id"), AppThead_log );
                 if ( MessageTypeVOkey >= 0 ) {
                     AppThead_log.info("Update MessageTypes[{}]: Msg_Type {}", MessageTypeVOkey, MessageType.AllMessageType.get(MessageTypeVOkey).getMsg_Type());
+                    MessageType.AllMessageType.get( MessageTypeVOkey ).setMsg_Type( rs.getString("msg_type") );
                     MessageType.AllMessageType.get( MessageTypeVOkey ).setURL_SOAP_Send( rs.getString("url_soap_send") );
                     MessageType.AllMessageType.get( MessageTypeVOkey ).setMax_Retry_Count( rs.getInt("max_retry_count") );
                     MessageType.AllMessageType.get( MessageTypeVOkey ).setMax_Retry_Time( rs.getInt("max_retry_time"));
