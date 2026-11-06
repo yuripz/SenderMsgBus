@@ -156,6 +156,25 @@ public class MessageSoapSend {
 		//  Если прарсинг ответа НЕ прошел, то тут уже псевдо-ответ от обработчика ошибки парсера
 		if ( p_XMLdocument == null ) {
 			documentBuilder = new SAXBuilder();
+			/* TODO
+			// 2. Подменяем фабрику  для фильтрации Pretty-print
+			documentBuilder.setJDOMFactory(new DefaultJDOMFactory() {
+				@Override
+				public Text text(int line, int col, String text) {
+					// Если текстовый узел состоит только из пробелов и переносов — игнорируем
+					if (text == null || text.trim().isEmpty()) {
+						return null;
+					}
+					return super.text(line, col, text);
+				}
+				@Override
+				public CDATA cdata(int line, int col, String text) {
+					if (text == null || text.trim().isEmpty()) {
+						return null;
+					}
+					return super.cdata(line, col, text);
+				}
+			});*/
 			parsedConfigStream = new ByteArrayInputStream(messageDetails.XML_MsgResponse.toString().getBytes(StandardCharsets.UTF_8));
 			try {
 				document =  documentBuilder.build(parsedConfigStream); // .parse(parsedConfigStream);

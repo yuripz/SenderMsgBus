@@ -279,8 +279,9 @@ public class MessageSendTask  implements Runnable
                              """
                             + NumMessageInScan;
                     // CTID::varchar as ROWID и where CTID=?::tid
-                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update SKIP LOCKED" ); //  nowait -> SKIP LOCKED
-                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update SKIP LOCKED" ); //  nowait -> SKIP LOCKED
+                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update NOWAIT" ); //  nowait -> SKIP LOCKED -> for update NOWAIT
+                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update NOWAIT" ); //  nowait -> SKIP LOCKED
+                    MessegeSend_Log.info("stmtQueueLock_MESSAGE_QueueSelect: {}{}{}", "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from ", HrmsSchema, ".MESSAGE_QUEUE Q where CTID=?::tid for update NOWAIT");
                 }
                 MessegeSend_Log.info("Main_MESSAGE_QueueSelect:{{}} Q.Msg_InfostreamId ={}", selectMessageSQL, this.FirstInfoStreamId + theadNum);
                 stmtMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
