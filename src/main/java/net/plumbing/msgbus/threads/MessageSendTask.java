@@ -5,7 +5,7 @@ import net.plumbing.msgbus.common.ApplicationProperties;
 import net.plumbing.msgbus.common.DataAccess;
 import net.plumbing.msgbus.model.MessageDetails;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ import net.plumbing.msgbus.model.MessageTemplate;
 import net.plumbing.msgbus.model.MessageType;
 import net.plumbing.msgbus.model.MessageQueueVO;
 import net.plumbing.msgbus.common.sStackTrace;
-import net.plumbing.msgbus.model.MonitoringQueueVO;
+//import net.plumbing.msgbus.model.MonitoringQueueVO;
 import net.plumbing.msgbus.threads.utils.MessageRepositoryHelper;
 import net.plumbing.msgbus.common.json.JSONObject;
 
@@ -23,7 +23,6 @@ import java.sql.*;
 import java.sql.Connection;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.TimeUnit;
 import static net.plumbing.msgbus.common.XMLchars.DirectOUT;
 
 @Component
@@ -181,13 +180,15 @@ public class MessageSendTask  implements Runnable
         // PreparedStatement stmtUpdateMessage4RowId; - вместо этого TheadDataAccess.doUPDATE_QUEUE_InfoStreamId()
         String rdbmsVendor = theadDataAccess.getRdbmsVendor();
         String selectMessageSQL;
-        String selectMessage4QueueIdSQL;
+        String selectMessageSQL_4_Lock_by_RowID;
+        String selectQueueLock4JMSconsumer;
+        String selectMessage_Queue_by_QueueIdSQL;
         if ( theadDataAccess.Hermes_Connection != null )
             // Готовим набор SQL
             try {
 
                 if (rdbmsVendor.equals("oracle") )
-                selectMessage4QueueIdSQL= """
+                selectMessage_Queue_by_QueueIdSQL= """
                         select q.ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, Current_TimeStamp - Interval '1' Minute) as Queue_Date,
                         Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id,
                         Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid,
@@ -199,7 +200,7 @@ public class MessageSendTask  implements Runnable
                         """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.queue_id=?";
                         // """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.ROWID=? ";
                 else // для PostGree используем псевдостолбец CTID с типом::tid
-                    selectMessage4QueueIdSQL= """
+                    selectMessage_Queue_by_QueueIdSQL= """
                         select CTID::varchar as ROWID, Q.queue_id, Q.queue_direction, COALESCE(Q.queue_date, now() AT TIME ZONE 'Europe/Moscow' - Interval '1' Minute) as Queue_Date,
                         Q.msg_status, Q.msg_date Msg_Date, Q.operation_id, to_Char(Q.outqueue_id, '999999999999999') as outqueue_id,
                         Q.msg_type, Q.msg_reason, Q.msgdirection_id, Q.msg_infostreamid,
@@ -210,7 +211,7 @@ public class MessageSendTask  implements Runnable
                         from
                         """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where q.queue_id=?";
                         // """ + " " + HrmsSchema + ".MESSAGE_QUEUE q where CTID=?::tid ";
-                stmtGetMessage4QueueId = theadDataAccess.Hermes_Connection.prepareStatement( selectMessage4QueueIdSQL );
+                stmtGetMessage4QueueId = theadDataAccess.Hermes_Connection.prepareStatement( selectMessage_Queue_by_QueueIdSQL );
                 //stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update ARTX_PROJ.MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
                 // String PreSelectMessageSQL;
                 if (rdbmsVendor.equals("oracle") ) // для PostGree используем псевдостолбец CTID с типом ::tid
@@ -244,10 +245,13 @@ public class MessageSendTask  implements Runnable
                                       and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc, Q.queue_id asc) QUEUE where rownum <\040
                                     """
                                     + NumMessageInScan;
-                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where q.ROWID=? for update nowait" );
-                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait" );
 
                     // selectMessageSQL = PreSelectMessageSQL + " and Q.Msg_Date < Current_TimeStamp order by Q.Priority_Level asc , Q.queue_id asc ) QUEUE where rownum < " + NumMessageInScan;
+
+                    selectMessageSQL_4_Lock_by_RowID = "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where q.ROWID=? for update nowait";
+                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL_4_Lock_by_RowID );
+                    selectQueueLock4JMSconsumer = "select Q.ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update nowait";
+                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( selectQueueLock4JMSconsumer );
                    }
                 else {
                     selectMessageSQL = """
@@ -279,11 +283,16 @@ public class MessageSendTask  implements Runnable
                              """
                             + NumMessageInScan;
                     // CTID::varchar as ROWID и where CTID=?::tid
-                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update NOWAIT" ); //  nowait -> SKIP LOCKED -> for update NOWAIT
-                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update NOWAIT" ); //  nowait -> SKIP LOCKED
-                    MessegeSend_Log.info("stmtQueueLock_MESSAGE_QueueSelect: {}{}{}", "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from ", HrmsSchema, ".MESSAGE_QUEUE Q where CTID=?::tid for update NOWAIT");
+                    selectMessageSQL_4_Lock_by_RowID = "select Q.Queue_Id, Q.Queue_Direction, Q.Msg_InfostreamId  from " + HrmsSchema + ".MESSAGE_QUEUE Q where CTID=?::tid for update NOWAIT"; //  nowait -> SKIP LOCKED -> for update NOWAIT
+                    stmtQueueLock = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL_4_Lock_by_RowID );
+                    selectQueueLock4JMSconsumer= "select CTID::varchar as ROWID, q.Queue_Direction, q.Msg_InfostreamId from " + HrmsSchema + ".MESSAGE_QUEUE q where q.Queue_Id=? for update NOWAIT" ; //  nowait -> SKIP LOCKED
+                    stmtQueueLock4JMSconsumer = theadDataAccess.Hermes_Connection.prepareStatement( selectQueueLock4JMSconsumer );
+
                 }
-                MessegeSend_Log.info("Main_MESSAGE_QueueSelect:{{}} Q.Msg_InfostreamId ={}", selectMessageSQL, this.FirstInfoStreamId + theadNum);
+                MessegeSend_Log.info("Main_MESSAGE_QueueSelect:`{}` param Q.Msg_InfostreamId={}", selectMessageSQL, this.FirstInfoStreamId + theadNum);
+                MessegeSend_Log.info("selectQueueLock4JMSconsumer =`{}`", selectQueueLock4JMSconsumer);
+                MessegeSend_Log.info("selectMessageSQL_4_Lock_by_RowID =`{}`", selectMessageSQL_4_Lock_by_RowID);
+
                 stmtMsgQueue = theadDataAccess.Hermes_Connection.prepareStatement( selectMessageSQL);
 
                 // Получеем перечень потоков, которым надо помогать ДАННОМУ потоку
@@ -426,7 +435,7 @@ public class MessageSendTask  implements Runnable
                                 rs.getLong("Perform_Object_Id")
                         );
                         if ( (theadRunCount % 10L) == 0L )
-                            MessegeSend_Log.info("messageQueueVO.Queue_Id:{} [Msg_InfoStreamId={}] [ {}] SubSys_Cod={}Curr_Server_Time=`{}`,  ROWID={}",
+                            MessegeSend_Log.info("[{}] Main Thread: Msg_InfoStreamId={} [{}] SubSys_Cod=`{}` Curr_Server_Time=`{}`,  ROWID=`{}`",
                                     rs.getLong("Queue_Id"), rs.getInt("Msg_InfoStreamId"), rs.getString("Msg_Type"),
                                     rs.getString("SubSys_Cod"), rs.getTimestamp("Curr_Server_Time").toString(), rs.getString("ROWID"));
                         // вместо java.sql.Timestamp.valueOf(LocalDateTime.now(ZoneId.of( "Europe/Moscow"))) локального компьютера берём время от сервера БД
@@ -434,24 +443,28 @@ public class MessageSendTask  implements Runnable
                         messageQueueVO.setMsg_Date( rs.getTimestamp("Curr_Server_Time") );
                         // пробуем захватить запись
                         boolean isNoLock = true;
+
                         try {
                             // TODO Oracle stmtQueueLock.setRowId(1, rs.getRowId("ROWID") );
                             stmtQueueLock.setString(1, rs.getString("ROWID") );
                             int LockedMsg_InfoStreamId=0;
                             long LockedQueue_Id=0L;
-                            String LockedQueue_Direction;
+                            String stmtQueueLock_RowId;
                             rLock = stmtQueueLock.executeQuery();
                             while (rLock.next()) {
+                                stmtQueueLock_RowId = rs.getString("ROWID");
                                 LockedMsg_InfoStreamId = rLock.getInt("Msg_InfoStreamId");
                                 LockedQueue_Id = rLock.getLong("Queue_Id");
-                                LockedQueue_Direction = rLock.getString("Queue_Direction");
-                                MessegeSend_Log.info("Main Thread: stmtQueueLock.Queue_Id:{} [Msg_InfoStreamId={}] [LockedQueue_Direction={}] do record locked",
-                                        LockedQueue_Id, LockedMsg_InfoStreamId, LockedQueue_Direction);
+                                String LockedQueue_Direction = rLock.getString("Queue_Direction");
+                                MessegeSend_Log.info("[{}] Main Thread stmtQueueLock: Msg_InfoStreamId={} LockedQueue_Direction=`{}`, RowId=`{}` do record locked by `{}`",
+                                        LockedQueue_Id, LockedMsg_InfoStreamId, LockedQueue_Direction, stmtQueueLock_RowId, selectMessageSQL_4_Lock_by_RowID);
                             }
-                            if ( LockedMsg_InfoStreamId != messageQueueVO.getMsg_InfoStreamId() ) // может быть 103 , а может быть и 2000 + 103, перечитываем как есть
+                            if (( LockedMsg_InfoStreamId != messageQueueVO.getMsg_InfoStreamId() ) || // может быть 103 , а может быть и 2000 + 103, перечитываем как есть
+                                 ( LockedMsg_InfoStreamId != (theadNum + this.FirstInfoStreamId) )
+                            )
                             { // пока читали, кто-то уже забрал на себя
-                                MessegeSend_Log.warn("Main Thread: stmtQueueLock.Queue_Id:{} record can't be locked, {}!={} (пока читали, кто-то уже забрал на себя)",
-                                        messageQueueVO.getQueue_Id(), LockedMsg_InfoStreamId, messageQueueVO.getMsg_InfoStreamId());
+                                MessegeSend_Log.warn("[{}] Main Thread stmtQueueLock record can't be locked, {}!={} || {}!={}  (пока читали, кто-то уже забрал на себя) by `{}`",
+                                        messageQueueVO.getQueue_Id(), LockedMsg_InfoStreamId, messageQueueVO.getMsg_InfoStreamId(), LockedMsg_InfoStreamId, (theadNum + this.FirstInfoStreamId), selectMessageSQL_4_Lock_by_RowID);
                                 isNoLock = false;
                             }
                             else { // запись захвачена, Ok
@@ -460,22 +473,22 @@ public class MessageSendTask  implements Runnable
                                             (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000), MessegeSend_Log);
                                     messageQueueVO.setMsg_InfoStreamId( (theadNum + this.FirstInfoStreamId + this.CuberNumId * 1000) );
                                 }
-                                // Иначе Менять InfoStreamId не надо, это "свойй поток" нет параллельно работающих Sender'z
+                                // Иначе Менять InfoStreamId не надо, это "свой поток" нет параллельно работающих Sender'z
                                 // TheadDataAccess.doUPDATE_QUEUE_InfoStreamId( rs.getRowId("ROWID") , LockedQueue_Id ,
                                 //                                            (theadNum + this.FirstInfoStreamId), MessegeSend_Log );
                             }
                         }
                         catch (SQLException e) {
                             // Запись захвачена другим потоком
-                            MessegeSend_Log.warn("Main Thread: record [{}] is locked by some where, stmtQueueLock.Queue_Id:{} record can't be locked, {} :{}",
-                                                messageQueueVO.getQueue_Id(), e.getSQLState(), e.getMessage(), sStackTrace.strInterruptedException(e));
+                            MessegeSend_Log.warn("[{}] Main Thread: record is locked by some where, stmtQueueLock.Queue_Id:{} record can't be locked by {} :{}",
+                                                messageQueueVO.getQueue_Id(), e.getSQLState(), selectMessageSQL_4_Lock_by_RowID, sStackTrace.strInterruptedException(e));
                             isNoLock = false;
                             try {
                                 theadDataAccess.Hermes_Connection.rollback();
                             }
                             catch (SQLException rollback_e) {
-                                MessegeSend_Log.info("Main Thread: stmtQueueLock4JMSconsumer.Queue_Id:{} Hermes_Connection.rollback() fault, {} :{}, achtung {}",
-                                                        messageQueueVO.getQueue_Id(), e.getSQLState(), e.getMessage(), sStackTrace.strInterruptedException(e));
+                                MessegeSend_Log.info("[{}] Main Thread, stmtQueueLock: Hermes_Connection.rollback() fault, `{}` :{}, achtung!!! {}",
+                                                        messageQueueVO.getQueue_Id(), e.getSQLState(), selectMessageSQL_4_Lock_by_RowID, sStackTrace.strInterruptedException(e));
                             }
                         }
 
@@ -485,15 +498,15 @@ public class MessageSendTask  implements Runnable
                             // Очистили Message от всего, что там было
                             Message.ReInitMessageDetails( ApiRestWaitTime );
                             try {
-                                MessegeSend_Log.warn("Main Thread: (l480:)stmtQueueLock.Queue_Id:{} record  locked, Msg_InfoStreamId={}",
+                                MessegeSend_Log.warn("Main Thread: (l496:) stmtQueueLock.Queue_Id:{} record  locked, Msg_InfoStreamId={}",
                                             messageQueueVO.getQueue_Id(), messageQueueVO.getMsg_InfoStreamId());
                                 PerformQueueMessages.performMessage(Message, messageQueueVO, theadDataAccess, MessegeSend_Log);
                             } catch (Exception   e) {
                                 CurrentTaskStatus ="performMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage();
                                 System.err.println( CurrentTaskStatus );
                                 e.printStackTrace();
-                                MessegeSend_Log.error("performMessage Exception Queue_Id:[{}] {}", messageQueueVO.getQueue_Id(), e.getMessage());
-                                MessegeSend_Log.error("что то пошло совсем не так...");
+                                MessegeSend_Log.error("[{}] performMessage Exception:{}", messageQueueVO.getQueue_Id(), sStackTrace.strInterruptedException(e));
+                                MessegeSend_Log.error("[{}] что то пошло совсем не так...", messageQueueVO.getQueue_Id());
                             }
                         }
                         if ( rLock != null)
@@ -503,10 +516,10 @@ public class MessageSendTask  implements Runnable
                     rs.close();
                     theadDataAccess.Hermes_Connection.commit();
                 } catch (Exception e) {
-                    CurrentTaskStatus ="Exception: что то пошло совсем не так... см.:`" + e.getMessage() + "`";
+                    CurrentTaskStatus ="Exception: что то, как то  пошло совсем не так... см.:`" + e.getMessage() + "`";
                     MessegeSend_Log.error(e.getMessage());
                     e.printStackTrace();
-                    MessegeSend_Log.error("Exception: что то пошло совсем не так... см.:`{}` StackTrace `{}`", e.getMessage(),sStackTrace.strInterruptedException(e) );
+                    MessegeSend_Log.error("Exception: что то, как то (l517:) пошло совсем не так... см.:`{}` StackTrace `{}`", e.getMessage(),sStackTrace.strInterruptedException(e) );
                     return;
                 }
                 if ( num_Message4Perform <  NumMessageInScan ) // если в курсор был НЕ полон
@@ -660,8 +673,8 @@ public class MessageSendTask  implements Runnable
 
                                 messageQueueVO.setQueue_Direction("NONE");
                                 //  инициируем обработку с использованием JMS
-                                PerformJMSMessage(  stmtQueueLock4JMSconsumer,
-                                        stmtGetMessage4QueueId, selectMessage4QueueIdSQL,
+                                PerformJMSMessage(  stmtQueueLock4JMSconsumer, selectQueueLock4JMSconsumer,
+                                        stmtGetMessage4QueueId, selectMessage_Queue_by_QueueIdSQL,
                                         JMSTextMessage.getText(),
                                         Message, messageQueueVO, // monitoringQueueVO,
                                         PerformQueueMessages,
@@ -739,8 +752,8 @@ private  boolean  LockMessage_Queue_ROW(RowId LockedROWID_QUEUE, MessageQueueVO 
 }
 */
 
-    private Long PerformJMSMessage ( PreparedStatement stmtQueueLock4JMSconsumer,
-                                     PreparedStatement stmtGetMessage4QueueId, String selectMessage4QueueIdSQL,
+    private Long PerformJMSMessage ( PreparedStatement stmtQueueLock4JMSconsumer, String selectQueueLock4JMSconsumer,
+                                     PreparedStatement stmtGetMessage4QueueId, String selectMessage_Queue_by_QueueIdSQL,
                                      String MessageText,
                                      MessageDetails Message, MessageQueueVO messageQueueVO,
                                      // MonitoringQueueVO monitoringQueueVO,
@@ -768,51 +781,51 @@ private  boolean  LockMessage_Queue_ROW(RowId LockedROWID_QUEUE, MessageQueueVO 
             return -1L;
         }
 /*
-stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessage4QueueIdSQL );
+stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( selectMessage_Queue_by_QueueIdSQL );
          stmtUpdateMessage4RowId = TheadDataAccess.Hermes_Connection.prepareStatement( "update " + HrmsSchema + ".MESSAGE_QUEUE q set q.msg_infostreamid = ? where q.ROWID=?" );
  */
         // пробуем захватить запись
-        MessegeSend_Log.info("PerformJMSMessage: пробуем захватить (`{}`) запись Queue_Id={}", selectMessage4QueueIdSQL, Queue_Id);
+        MessegeSend_Log.info("[{}] PerformJMSMessage: пробуем захватить (`{}`) запись by Queue_Id={}", Queue_Id, selectQueueLock4JMSconsumer, Queue_Id);
 
         String Queue_Direction=null;
 
         // TODO : for Ora java.sql.RowId QueueRowId = null;
         // RowId QueueRowId = null;
         String QueueRowId = null;
-
+        int msg_InfostreamId = 0;
         try {
             stmtQueueLock4JMSconsumer.setLong(1, Queue_Id );
             rLock = stmtQueueLock4JMSconsumer.executeQuery();
             while (rLock.next()) {
                 Queue_Direction = rLock.getString("Queue_Direction");
+                msg_InfostreamId = rLock.getInt("msg_InfostreamId");
                 if ( theadDataAccess.getRdbmsVendor().equals("oracle") ) {
                     QueueRowId = rLock.getString("rowid"); // TODO : for Ora  rLock.getRowId
                     MessegeSend_Log.info( "[{}] PerformJMSMessage: stmtQueueLock4JMSconsumer QueueRowId :{} record locked. msg_InfostreamId={} Queue_Direction=[{}]",
-                            Queue_Id, QueueRowId, rLock.getInt("msg_InfostreamId"), Queue_Direction );
+                            Queue_Id, QueueRowId, msg_InfostreamId, Queue_Direction );
                 }
                 else {
                     QueueRowId = rLock.getString("rowid");
-                    MessegeSend_Log.info("PerformJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id={} :{} record locked. msg_InfostreamId={} Queue_Direction=[{}]",
-                                            Queue_Id, QueueRowId, rLock.getInt("msg_InfostreamId"), Queue_Direction);
+                    MessegeSend_Log.info("[{}] PerformJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id= :{} record locked. msg_InfostreamId={} Queue_Direction=[{}]",
+                                            Queue_Id, QueueRowId, msg_InfostreamId, Queue_Direction);
                 }
             }
         }
         catch (SQLException e) {
             // Запись захвачена другим потоком
-            MessegeSend_Log.info("PerformJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:{} record can't be locked, {} :{}", Queue_Id, e.getSQLState(), e.getMessage());
+            MessegeSend_Log.info("[{}] PerformJMSMessage: stmtQueueLock4JMSconsumer record can't be locked, {} :{}", Queue_Id, e.getSQLState(), sStackTrace.strInterruptedException(e));
             try {
                 theadDataAccess.Hermes_Connection.rollback();
             }
             catch (SQLException rollback_e) {
-                MessegeSend_Log.info( "PerformJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:{} Hermes_Connection.rollback() fault, {} :{}" ,Queue_Id, e.getSQLState() , e.getMessage() );
+                MessegeSend_Log.info( "[{}] PerformJMSMessage: stmtQueueLock4JMSconsumer, Hermes_Connection.rollback() fault, {} :{}" ,Queue_Id, e.getSQLState(), sStackTrace.strInterruptedException(e) );
             }
-
             isNoLock = false;
         }
         if ( QueueRowId != null )
-            MessegeSend_Log.info("[{}] PerformJMSMessage: select for update вернул rowid ={}", Queue_Id, QueueRowId);
+            MessegeSend_Log.info("[{}] PerformJMSMessage: select for update вернул rowid =`{}`, msg_InfostreamId={}", Queue_Id, QueueRowId, msg_InfostreamId);
         else
-            MessegeSend_Log.warn("[{}] PerformJMSMessage: select for update вернул rowid = NULL", Queue_Id);
+            MessegeSend_Log.warn("[{}] PerformJMSMessage: select for update вернул rowid == NULL, msg_InfostreamId=`{}`", Queue_Id, msg_InfostreamId );
         // У "своих" из ОЧЕРЕДИ может увести сообщение только свой и он отпустит его рлмле SEND
         // надо проверять при блокировке, а не захватил ли сообщение какой-нибудь ещё "Помощник". Такой конфтгурации пока нет, но... java.lang.NullPointerException: Cannot invoke "String.equals(Object)" because "Queue_Direction" is null
         if ( ( isNoLock ) && // запись захвачена и
@@ -829,7 +842,7 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                         rLock.close();
                         theadDataAccess.Hermes_Connection.rollback();
                     } catch (SQLException ee) {
-                        MessegeSend_Log.error(ee.getMessage());
+                        MessegeSend_Log.error("[{}] theadDataAccess.doUPDATE_QUEUE_InfoStreamId_by_RowId rollback() fault: {}", Queue_Id,  sStackTrace.strInterruptedException(ee));
                         System.err.println("sqlException Queue_Id:[" + Queue_Id + "] rollback()");
                         ee.printStackTrace();
                         MessegeSend_Log.error("PerformJMSMessage: Ошибка при закрытии SQL-ResultSet select for Update ...");
@@ -883,16 +896,16 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                                 rs.getLong("Perform_Object_Id")
                         );
 
-                        MessegeSend_Log.info("[{}] as messageQueueVO.Queue_Id for PerformJMSMessage: Msg_Type=`{}` SubSys_Cod={}, ROWID={}", rs.getLong("Queue_Id"), rs.getString("Msg_Type"), rs.getString("SubSys_Cod"), rs.getString("ROWID"));
+                        MessegeSend_Log.info("[{}] setMessageQueue as messageQueueVO.Queue_Id for PerformJMSMessage: Msg_Type=`{}` SubSys_Cod={}, ROWID={}", rs.getLong("Queue_Id"), rs.getString("Msg_Type"), rs.getString("SubSys_Cod"), rs.getString("ROWID"));
                         messageQueueVO.setMsg_Date(java.sql.Timestamp.valueOf(LocalDateTime.now(ZoneId.of("Europe/Moscow"))));
                     }
                     if ( !isRecordFoud ) {
-                        MessegeSend_Log.error("PerformJMSMessage: не нашли запись в `{}` =>`{}`", selectMessage4QueueIdSQL, QueueRowId);
+                        MessegeSend_Log.error("[{}] PerformJMSMessage: не нашли запись в `{}` =>`{}`", Queue_Id, selectMessage_Queue_by_QueueIdSQL, QueueRowId);
                         theadDataAccess.Hermes_Connection.rollback();
                     }
                 } catch (SQLException e) {
                     System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
-                    MessegeSend_Log.error("[{}] PerformJMSMessage: Ошибка выборки `{}` ... SQLException {}", Queue_Id, selectMessage4QueueIdSQL, e.getMessage());
+                    MessegeSend_Log.error("[{}] PerformJMSMessage: Ошибка выборки `{}` ... SQLException {}", Queue_Id, selectMessage_Queue_by_QueueIdSQL, e.getMessage());
                     try { rLock.close(); theadDataAccess.Hermes_Connection.rollback();
                     } catch (SQLException ee) { MessegeSend_Log.error("[{}] theadDataAccess.Hermes_Connection.rollback {} : {}", Queue_Id, ee.getMessage(), sStackTrace.strInterruptedException(e)); 
                         System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); ee.printStackTrace();
@@ -910,12 +923,12 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                     System.err.println("PerformJMSMessage Exception Queue_Id:[" + messageQueueVO.getQueue_Id() + "] " + e.getMessage());
                     e.printStackTrace();
                     MessegeSend_Log.error("[{}] PerformJMSMessage Exception `{}`; {}", messageQueueVO.getQueue_Id(), e.getMessage(), sStackTrace.strInterruptedException(e));
-                    MessegeSend_Log.error("что то пошло совсем не так...");
+                    MessegeSend_Log.error("[{}] PerformJMSMessage: что то пошло совсем не так...", Queue_Id);
                 }
             }
             else {
                 // Запись уже обрабатывется, надо разблокировать
-                MessegeSend_Log.warn("Запись уже обрабатывется, надо разблокировать Queue_Id={}", Queue_Id);
+                MessegeSend_Log.warn("[{}] PerformJMSMessage:Запись уже обрабатывается, надо разблокировать Queue_Id={}", Queue_Id, Queue_Id);
                 try {
                      rLock.close();
                         try {
@@ -925,7 +938,7 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
                             MessegeSend_Log.info("PerformJMSMessage: stmtQueueLock4JMSconsumer.Queue_Id:{} Hermes_Connection.rollback() fault, {} :{}", messageQueueVO.getQueue_Id(), rollback_e.getSQLState(), rollback_e.getMessage());
                         }
                 } catch (SQLException e) { MessegeSend_Log.error(e.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
-                    MessegeSend_Log.error( "Ошибка при закрытии SQL-ResultSet select for Update ...{}", sStackTrace.strInterruptedException(e));
+                    MessegeSend_Log.error( "[{}] PerformJMSMessage: Ошибка при закрытии SQL-ResultSet select for Update ...{}", Queue_Id, sStackTrace.strInterruptedException(e));
                     return -2L;
                 }
             }
@@ -934,8 +947,9 @@ stmtGetMessage4QueueId = TheadDataAccess.Hermes_Connection.prepareStatement( sel
         try {
             if ( rLock != null)
             { rLock.close(); theadDataAccess.Hermes_Connection.commit(); }
-        } catch (SQLException e) { MessegeSend_Log.error(e.getMessage()); System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
-            MessegeSend_Log.error( "Ошибка при закрытии SQL-ResultSet select for Update ...");
+        } catch (SQLException e) {
+            System.err.println("sqlException Queue_Id:[" + Queue_Id + "]"); e.printStackTrace();
+            MessegeSend_Log.error( "[{}] PerformJMSMessage: Ошибка при закрытии SQL-ResultSet select for Update ... SQLException: {}", Queue_Id, sStackTrace.strInterruptedException(e));
             return -2L;
         }
         return performMessageResult;

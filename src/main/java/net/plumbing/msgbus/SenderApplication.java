@@ -71,7 +71,7 @@ public class SenderApplication implements CommandLineRunner {
 	public static String propJDBC;
 	public static String propExtJDBC;
 	public static String firstInfoStreamId;
-	public static final String ApplicationName="*Sender_BUS* v.6.11.10";
+	public static final String ApplicationName="*Sender_BUS* v.6.11.11";
     private final Environment ApplicationEnv;
     // Spring автоматически внедрит Environment через этот единственный конструктор без @Autowired
 

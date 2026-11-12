@@ -496,15 +496,16 @@ public class TheadDataAccess {
 
     public PreparedStatement make_UPDATE_QUEUE_InfoStreamId(Logger dataAccess_log) {
         PreparedStatement StmtMsg_Queue;
-        /*
+
+        // TODO where CTID= ?::tid для PostGree
+        // UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_InfoStreamId = ? where q.ROWID = ?";
         if ( rdbmsVendor.equals("oracle") )
             UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where q.ROWID = ?";
         else
-            UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where CTID= ?::tid";  // CTID='(921,21)'::tid  ;
-         */
+            UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_infostreamid = ? where CTID= (?)::tid";  // CTID='(921,21)'::tid  ;
+
         dataAccess_log.warn("try make_UPDATE_QUEUE_InfoStreamId (`{}` )", UPDATE_QUEUE_InfoStreamId);
-        // TODO where CTID= ?::tid для PostGree
-        UPDATE_QUEUE_InfoStreamId = "update " + dbSchema + ".MESSAGE_QUEUE q set msg_InfoStreamId = ? where q.ROWID = ?";
+
         try {
             StmtMsg_Queue = this.Hermes_Connection.prepareStatement(UPDATE_QUEUE_InfoStreamId);
         } catch (Exception e) {
@@ -556,11 +557,12 @@ public class TheadDataAccess {
 
     public int doUPDATE_QUEUE_InfoStreamId_by_RowId(// TODO : for Ora  @NotNull java.sql.RowId
                                                     @NotNull String ROWID_QUEUE,
-                                                    @NotNull long Queue_Id, int Msg_InfoStreamId,
+                                                    @NotNull long Queue_Id,
+                                                    @NotNull int Msg_InfoStreamId,
                                            Logger dataAccess_log) {
 
         try {
-            stmt_UPDATE_QUEUE_InfoStreamId.setString(2, ROWID_QUEUE);
+            stmt_UPDATE_QUEUE_InfoStreamId.setString(2, ROWID_QUEUE);  // (? as String)::TID for PostGree
             // stmt_UPDATE_QUEUE_InfoStreamId.setRowId(2, ROWID_QUEUE);
             stmt_UPDATE_QUEUE_InfoStreamId.setInt(1, Msg_InfoStreamId);
 
